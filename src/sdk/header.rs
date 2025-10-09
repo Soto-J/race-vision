@@ -20,7 +20,7 @@ pub struct Header {
 impl Header {
     pub fn create_var_buffers(self, shared_mem: *mut u8) -> Vec<VarBuffer> {
         (0..self.num_buf)
-            .map(|i| VarBuffer::new(shared_mem, 48 + i * 16))
+            .map(|i| VarBuffer::new(shared_mem, 48 + i * 16, self.buf_len))
             .collect()
     }
 }
