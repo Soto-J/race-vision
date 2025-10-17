@@ -1,11 +1,7 @@
 use bitflags::bitflags;
 
-mod sdk;
 mod ibt;
-
-pub enum StatusField {
-    StatusConnected = 1,
-}
+mod sdk;
 
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
