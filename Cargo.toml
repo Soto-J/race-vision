@@ -5,6 +5,13 @@ edition = "2024"
 
 [dependencies]
 bitflags = "2.9.4"
+reqwest = "0.12.24"
 serde = "1.0.228"
 serde_yaml = "0.9.34"
 sysinfo = { version = "0.37.2", features = ["windows"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+  "Win32_System_Memory",
+  "Win32_Foundation",
+] }

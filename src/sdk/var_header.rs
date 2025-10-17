@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct VarHeader {
     pub var_type: i32,
     pub offset: i32,
