@@ -1,20 +1,22 @@
+#![allow(unused)]
+
 use std::sync::Arc;
 
 #[repr(C)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VarBuffer {
     shared_mem: Arc<[u8]>,
-    buff_len: usize,
+    buf_len: usize,
     offset: usize,
     frozen_memory: Option<Vec<u8>>,
     is_memory_frozen: bool,
 }
 
 impl VarBuffer {
-    pub fn new(shared_mem: Arc<[u8]>, buff_len: usize, offset: usize) -> Self {
+    pub fn new(shared_mem: Arc<[u8]>, buf_len: usize, offset: usize) -> Self {
         Self {
             shared_mem,
-            buff_len,
+            buf_len,
             offset,
             frozen_memory: None,
             is_memory_frozen: false,
@@ -45,9 +47,9 @@ impl VarBuffer {
         self.buff_offset_raw()
     }
 
-    fn freeze(&mut self) {
+    pub fn freeze(&mut self) {
         let buff_offset = self.buff_offset_raw() as usize;
-        let end = buff_offset + self.buff_len;
+        let end = buff_offset + self.buf_len;
 
         let frozen = self.shared_mem[buff_offset..end].to_vec();
         self.frozen_memory = Some(frozen);
@@ -55,12 +57,12 @@ impl VarBuffer {
     }
 
     // Read `_buf_offset` at offset 4 (int32)
-    fn unfreeze(&mut self) {
+    pub fn unfreeze(&mut self) {
         self.frozen_memory = None;
         self.is_memory_frozen = false;
     }
 
-    fn get_memory(&self) -> &[u8] {
+    pub fn get_memory(&self) -> &[u8] {
         if self.is_memory_frozen {
             return self
                 .frozen_memory

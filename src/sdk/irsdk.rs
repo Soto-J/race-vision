@@ -1,33 +1,49 @@
-use crate::sdk::{StatusField, header::Header, var_buffer::VarBuffer, var_header::VarHeader};
+#![allow(unused)]
+
+use crate::{
+    sdk::{
+        Header, StatusField, VarBuffer, VarHeader, check_sim_status, map_to_address,
+        open_data_valid_event, open_memory_mapped_file, open_test_file_mmap,
+    },
+    utils::{
+        BROADCAST_MSG_NAME, IRACING_BITFIELD, IRACING_BOOL, IRACING_CHAR, IRACING_DOUBLE,
+        IRACING_FLOAT, IRACING_INT, MEM_MAP_FILE, TelemetryValue, VAR_HEADER_SIZE,
+    },
+};
 
 use std::{
     collections::HashMap,
     error,
     ffi::{CString, OsStr},
+    fs::File,
+    io::Write,
     os::windows::ffi::OsStrExt,
-    sync::Arc,
+    sync::{Arc, OnceLock},
 };
+
 use tokio;
-use windows::Win32::System::Memory::MEMORY_MAPPED_VIEW_ADDRESS;
+
+use windows::Win32::{
+    Foundation::{LPARAM, WPARAM},
+    UI::WindowsAndMessaging::{HWND_BROADCAST, RegisterWindowMessageW, SendNotifyMessageW},
+};
 #[cfg(windows)]
 use windows::{
     Win32::{
-        Foundation::{CloseHandle, HANDLE},
-        System::Memory::{
-            FILE_MAP_READ, MapViewOfFile, OpenFileMappingA, OpenFileMappingW, UnmapViewOfFile,
+        Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT},
+        System::{
+            Memory::{
+                FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile, OpenFileMappingA,
+                OpenFileMappingW, UnmapViewOfFile,
+            },
+            Threading::WaitForSingleObject,
         },
     },
     core::{PCSTR, PCWSTR},
 };
 
-const DATA_VALID_EVENT_NAME: &str = "Local\\IRSDKDataValidEvent";
-const MEM_MAP_FILE: &str = "Local\\IRSDKMemMapFileName";
-const MEM_MAP_FILE_SIZE: usize = 1164 * 1024;
-const SYNCHRONIZE_ACCESS: u32 = 0x00100000;
-
-const SIM_STATUS_URL: &str = "http://127.0.0.1:32034/get_sim_status?object=simStatus";
-
-#[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
+#[derive(Debug, Default)]
 pub struct IRSDK {
     pub parse_yaml_async: bool,
     pub is_initialized: bool,
@@ -48,73 +64,86 @@ pub struct IRSDK {
     var_headers_dict: HashMap<String, VarHeader>,
     var_headers_names: Option<Vec<String>>,
     var_buffer_latest: Option<VarBuffer>,
+
     // Session and state
     session_info_dict: HashMap<String, serde_yaml::Value>,
     broadcast_msg_id: Option<u32>,
-    test_file: Option<String>,
+    test_file: Option<File>,
     workaround_connected_state: u16,
 }
 
 impl IRSDK {
-    pub fn new() -> Self {
-        Self {
-            parse_yaml_async: false,
-            is_initialized: false,
-            last_session_info_update: 0,
-
-            shared_mem_handle: None,
-            shared_mem_ptr: None,
-            data_valid_event: None,
-
-            header: None,
-            var_headers: Vec::new(),
-            var_headers_dict: HashMap::new(),
-            var_headers_names: None,
-            var_buffer_latest: None,
-            session_info_dict: HashMap::new(),
-            broadcast_msg_id: None,
-            test_file: None,
-            workaround_connected_state: 0,
-        }
-    }
-
     pub async fn start_up(
         &mut self,
         test_file: Option<String>,
-        dump_to: Option<String>,
+        dump_path: Option<String>,
     ) -> Result<(), Box<dyn error::Error>> {
         if let None = test_file {
-            if Self::check_sim_status().await.is_err() {
-                return Err("Iracing is not connected".into());
+            if check_sim_status().await.is_err() {
+                return Err("Iracing is not connected (HTTP check failed)".into());
             }
 
-            self.data_valid_event = Some(Self::open_data_valid_event()?);
+            // wait for new telemetry data to become available.
+            self.data_valid_event = Some(open_data_valid_event()?);
         }
 
-        let shared_mem_handle = Self::open_memory_map()?;
+        if !self.wait_for_valid_data_event() {
+            self.data_valid_event = None;
 
-        let (shared_ptr, address_space) = Self::map_to_address(shared_mem_handle)?;
+            return Err(
+                "Failed to receive valid data event from iRacing (timeout after 32ms)".into(),
+            );
+        }
 
-        // Create Header struct around shared memory pointer
-        let header = Header::new(shared_ptr.clone());
+        if self.shared_mem_handle.is_none() {
+            match test_file {
+                Some(file) => self.shared_mem_ptr = Some(open_test_file_mmap(&file)?),
+                None => {
+                    let handle = open_memory_mapped_file(MEM_MAP_FILE)?;
 
-        if header.status() != StatusField::StatusConnected as i32 {
-            unsafe {
-                let _ = UnmapViewOfFile(address_space);
-                let _ = CloseHandle(shared_mem_handle.clone());
+                    let (shared_ptr, address_space) = map_to_address(handle)?;
+
+                    self.shared_mem_handle = Some(handle);
+                    self.shared_mem_ptr = Some(shared_ptr.clone());
+                    self.header = Some(Header::new(shared_ptr));
+
+                    if self.header.as_ref().unwrap().status() != StatusField::StatusConnected as i32
+                    {
+                        unsafe {
+                            UnmapViewOfFile(address_space);
+                            CloseHandle(handle);
+                        };
+
+                        return Err(
+                            "Shared memory exists but sim is not connected (status != 1)".into(),
+                        );
+                    }
+
+                    println!(
+                        "Header version: {}",
+                        self.header.as_ref().unwrap().version()
+                    );
+                    println!("Header status: {}", self.header.as_ref().unwrap().status());
+                    println!(
+                        "Header tick_rate: {}",
+                        self.header.as_ref().unwrap().tick_rate()
+                    );
+                    println!(
+                        "Header num_buf: {}",
+                        self.header.as_ref().unwrap().num_buf()
+                    );
+                }
             }
-
-            return Err("Shared memory exists but sim is not connected (status != 1)".into());
         }
 
-        println!("Header version: {}", header.version());
-        println!("Header status: {}", header.status());
-        println!("Header tick_rate: {}", header.tick_rate());
-        println!("Header num_buf: {}", header.num_buf());
+        if let Some(path) = dump_path {
+            if let Some(shared_mem) = &self.shared_mem_ptr {
+                let mut file = File::create(path)?;
 
-        self.header = Some(header);
-        self.shared_mem_handle = Some(shared_mem_handle);
-        self.shared_mem_ptr = Some(shared_ptr);
+                file.write_all(shared_mem)?;
+            }
+        }
+
         self.is_initialized = true;
 
         Ok(())
@@ -135,83 +164,207 @@ impl IRSDK {
         self.test_file = None;
     }
 
-    fn map_to_address(
-        mem_handle: HANDLE,
-    ) -> Result<(Arc<[u8]>, MEMORY_MAPPED_VIEW_ADDRESS), Box<dyn error::Error>> {
-        // Map it into our address space
-        let address_space =
-            unsafe { MapViewOfFile(mem_handle.clone(), FILE_MAP_READ, 0, 0, MEM_MAP_FILE_SIZE) };
+    fn broadcast_msg_id(&mut self) -> u32 {
+        match self.broadcast_msg_id {
+            Some(id) => id,
+            None => {
+                // Lazily initialize just once
+                static BROADCAST_MSG_ID: OnceLock<u32> = OnceLock::new();
 
-        let base_ptr = address_space.Value as *const u8;
+                let msg_id = *BROADCAST_MSG_ID.get_or_init(|| {
+                    // Convert Rust string to wide UTF-16
+                    let wide: Vec<u16> = BROADCAST_MSG_NAME
+                        .encode_utf16()
+                        .chain(std::iter::once(0))
+                        .collect();
+                    unsafe { RegisterWindowMessageW(PCWSTR(wide.as_ptr())) }
+                });
 
-        if base_ptr.is_null() {
-            let _ = unsafe { CloseHandle(mem_handle.clone()) };
-            return Err("MapViewOfFile returned null pointer".into());
+                self.broadcast_msg_id = Some(msg_id);
+                msg_id
+            }
+        }
+    }
+
+    fn broadcast_msg(&self, broadcast_type: u32, var1: u32, var2: u32, var3: u32) {
+        if let Some(msg) = &self.broadcast_msg_id {
+            let wparam = WPARAM((broadcast_type | (var1 << 16)) as usize);
+            let lparam = LPARAM((var2 | (var3 << 16)) as isize);
+
+            unsafe { SendNotifyMessageW(HWND_BROADCAST, msg.clone(), wparam, lparam) }.unwrap()
+        }
+    }
+
+    // fn cam_switch_pos(&self, position: u32, group: u32, camera: u32) {
+    //     self.broadcast_msg(broadcast_type, var1, var2, var3);
+    // }
+
+    // fn cam_switch_num(self, position: u32, group: u32, camera: u32) {
+    //     self.broadcast_msg(broadcast_type, var1, var2, var3);
+    // }
+
+    fn wait_for_valid_data_event(&self) -> bool {
+        match self.data_valid_event {
+            None => true,
+            Some(handle) => unsafe {
+                let wait_result = WaitForSingleObject(handle, 32);
+                matches!(wait_result, WAIT_OBJECT_0)
+            },
+        }
+    }
+
+    fn get_item(&self, key: &str) -> Result<TelemetryValue, Box<dyn error::Error>> {
+        if let Some(var_header) = self.var_headers_dict.get(key) {
+            let var_buf_latest = self
+                .var_buffer_latest
+                .as_ref()
+                .ok_or("No variable buffer available")?;
+
+            let memory = var_buf_latest.get_memory();
+            let buf_offset = var_buf_latest.buff_offset() as usize;
+            let data_offset = buf_offset + var_header.offset as usize;
+            let count = var_header.count as usize;
+
+            // Read data based on type
+            let value = match var_header.var_type {
+                IRACING_CHAR => {
+                    let mut chars = Vec::with_capacity(count);
+                    for i in 0..count {
+                        chars.push(memory[data_offset + i]);
+                    }
+                    TelemetryValue::Char(chars)
+                }
+                IRACING_BOOL => {
+                    let mut bools = Vec::with_capacity(count);
+                    for i in 0..count {
+                        bools.push(memory[data_offset + i] != 0);
+                    }
+                    TelemetryValue::Bool(bools)
+                }
+                IRACING_INT => {
+                    let mut ints = Vec::with_capacity(count);
+                    for i in 0..count {
+                        let offset = data_offset + i * 4;
+                        let bytes = &memory[offset..offset + 4];
+                        ints.push(i32::from_le_bytes(bytes.try_into()?));
+                    }
+                    TelemetryValue::Int(ints)
+                }
+                IRACING_BITFIELD => {
+                    let mut bitfields = Vec::with_capacity(count);
+                    for i in 0..count {
+                        let offset = data_offset + i * 4;
+                        let bytes = &memory[offset..offset + 4];
+                        bitfields.push(u32::from_le_bytes(bytes.try_into()?));
+                    }
+                    TelemetryValue::Bitfield(bitfields)
+                }
+                IRACING_FLOAT => {
+                    let mut floats = Vec::with_capacity(count);
+                    for i in 0..count {
+                        let offset = data_offset + i * 4;
+                        let bytes = &memory[offset..offset + 4];
+                        floats.push(f32::from_le_bytes(bytes.try_into()?));
+                    }
+                    TelemetryValue::Float(floats)
+                }
+                IRACING_DOUBLE => {
+                    let mut doubles = Vec::with_capacity(count);
+                    for i in 0..count {
+                        let offset = data_offset + i * 8;
+                        let bytes = &memory[offset..offset + 8];
+                        doubles.push(f64::from_le_bytes(bytes.try_into()?));
+                    }
+                    TelemetryValue::Double(doubles)
+                }
+                _ => return Err(format!("Unknown variable type: {}", var_header.var_type).into()),
+            };
+
+            return Ok(value);
         }
 
-        let shared_ptr: Arc<[u8]> = unsafe {
-            let slice = std::slice::from_raw_parts(base_ptr, MEM_MAP_FILE_SIZE);
-            Arc::from(slice.to_vec())
-        };
-
-        Ok((shared_ptr, address_space))
+        Err("Item not found!".into())
     }
 
-    fn open_data_valid_event() -> Result<HANDLE, Box<dyn error::Error>> {
-        let wide_name: Vec<u16> = OsStr::new(DATA_VALID_EVENT_NAME)
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
+    fn update_var_buf_latest(&mut self) {
+        if let Some(header) = &self.header {
+            let mut buffers = header.var_buffers();
 
-        let handle =
-            unsafe { OpenFileMappingW(SYNCHRONIZE_ACCESS, false, PCWSTR(wide_name.as_ptr())) }?;
+            buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
 
-        Ok(handle)
-    }
-
-    fn open_memory_map() -> Result<HANDLE, Box<dyn error::Error>> {
-        // Create a null-terminated string for the Windows API
-        let mem_map_name = CString::new(MEM_MAP_FILE)?;
-
-        let handle = unsafe {
-            OpenFileMappingA(
-                FILE_MAP_READ.0,
-                false,
-                PCSTR(mem_map_name.as_ptr() as *const u8),
-            )
-        }?;
-
-        Ok(handle)
+            // Get the 2nd most recent buffer (index 1)
+            self.var_buffer_latest = if buffers.len() > 1 {
+                Some(buffers[1].clone())
+            } else {
+                buffers.get(0).cloned()
+            };
+        }
     }
 
     fn is_connected(&mut self) -> bool {
-        if let Some(header) = &self.header {
-            if header.status() == StatusField::StatusConnected as i32 {
-                self.workaround_connected_state = 0;
-            }
-
-            if self.workaround_connected_state == 0
-                && header.status() != StatusField::StatusConnected as i32
-            {
-                self.workaround_connected_state = 1;
-            }
-
-            //  (self.test_file || self.data_valid_event)
-            // && (header.status() == StatusField::StatusConnected as i32
-            //     || self.workaround_connected_state == 3)
+        let Some(header) = &self.header else {
+            return false;
         };
 
-        false
+        let status = header.status();
+        let connected = StatusField::StatusConnected as i32;
+        let has_session_num = self.var_headers_dict.contains_key("SessionNum");
+
+        self.workaround_connected_state = match (self.workaround_connected_state, status) {
+            (0, s) if s != connected => 1,
+            (1, _) if !has_session_num || self.test_file.is_some() => 2,
+            (2, _) if self.var_headers_dict.contains_key("SessionNum") => 3,
+            (state, s) if s == connected => 0,
+            (state, _) => state,
+        };
+
+        let is_status_connected = status == connected;
+        let is_workaround_connected = self.workaround_connected_state == 3;
+        let has_data_source = self.test_file.is_some() || self.data_valid_event.is_some();
+
+        has_data_source && (is_status_connected || is_workaround_connected)
     }
 
-    async fn check_sim_status() -> Result<(), reqwest::Error> {
-        let response = reqwest::get(SIM_STATUS_URL).await?;
-        println!("Sim Status: {:?}", response);
-        Ok(())
+    pub fn session_info_update(&self) -> Option<i32> {
+        match &self.header {
+            Some(header) => Some(header.session_info_update()),
+            None => None,
+        }
     }
 
-    fn var_headers(&self) -> &Vec<VarHeader> {
+    fn var_headers(&mut self) -> &Vec<VarHeader> {
+        if self.var_headers.is_empty() {
+            self.load_var_headers();
+        }
+
         &self.var_headers
+    }
+
+    fn load_var_headers(&mut self) {
+        let (Some(header), Some(shared_mem)) = (&self.header, &self.shared_mem_ptr) else {
+            return;
+        };
+
+        let num_vars = header.num_vars().max(0) as usize;
+        let base_offset = header.var_header_offset().max(0) as usize;
+
+        for i in 0..num_vars {
+            let offset = base_offset + i * VAR_HEADER_SIZE;
+            let end = offset + VAR_HEADER_SIZE;
+
+            if end > shared_mem.len() {
+                break;
+            }
+
+            if let Some(var_header) = VarHeader::from_bytes(&shared_mem[offset..end]) {
+                if let Some(name) = var_header.name_str() {
+                    self.var_headers_dict
+                        .insert(name.to_string(), var_header.clone());
+                }
+
+                self.var_headers.push(var_header);
+            }
+        }
     }
 
     fn var_headers_dict(&self) -> &HashMap<String, VarHeader> {
@@ -220,8 +373,8 @@ impl IRSDK {
 }
 
 #[tokio::test]
-async fn test() {
-    let mut irsdk = IRSDK::new();
+async fn should_pass_when_iracing_is_open() {
+    let mut irsdk = IRSDK::default();
     let response = irsdk.start_up(None, None).await;
 
     assert!(response.is_ok(), "start_up should succeed.")
@@ -229,11 +382,11 @@ async fn test() {
 
 #[tokio::test]
 async fn fails_when_iracing_closed() {
-    let mut irsdk = IRSDK::new();
+    let mut irsdk = IRSDK::default();
     let response = irsdk.start_up(None, None).await;
 
     assert!(
         response.is_err(),
         "start_up should fail when iRacing is not running"
-    );
+    )
 }

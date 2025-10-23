@@ -1,17 +1,21 @@
-pub struct IBT {
-    // self._ibt_file = None
-    //     self._shared_mem = None
-    //     self._header = None
-    //     self._disk_header = None
+use crate::sdk::{DiskSubHeader, Header, VarHeader};
 
-    //     self.__var_headers = None
-    //     self.__var_headers_dict = None
-    //     self.__var_headers_names = None
-    //     self.__session_info_dict = None
-} 
+use std::{default, sync::Arc};
+
+#[derive(Debug, Default)]
+pub struct IBT {
+    //  ibt_file : Option<>,
+    shared_mem: Arc<[u8]>,
+    header: Option<Header>,
+    disk_header: Option<DiskSubHeader>,
+    var_headers: Option<VarHeader>,
+    // var_headers_dict : Option<>,
+    // var_headers_names : Option<>,
+    // session_info_dict : Option<>,
+}
 
 impl IBT {
-  // pub fn new() -> Self {
+    // pub fn new() -> Self {
 
-  // }
+    // }
 }

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::{error, fmt};
 
 #[derive(Debug)]
