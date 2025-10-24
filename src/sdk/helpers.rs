@@ -4,9 +4,9 @@ use crate::utils::{
 
 use std::{
     error,
-    ffi::{CString, OsStr, c_void},
+    ffi::{CString, OsStr},
     fs::File,
-    os::windows::{ffi::OsStrExt, io::AsRawHandle},
+    os::windows::ffi::OsStrExt,
     sync::Arc,
 };
 
@@ -29,6 +29,7 @@ pub async fn check_sim_status() -> Result<(), reqwest::Error> {
 }
 
 pub fn open_data_valid_event() -> Result<HANDLE, Box<dyn error::Error>> {
+    // Convert String to Wide String (UTF-16)
     let wide_name: Vec<u16> = OsStr::new(DATA_VALID_EVENT_NAME)
         .encode_wide()
         .chain(Some(0))
@@ -36,8 +37,8 @@ pub fn open_data_valid_event() -> Result<HANDLE, Box<dyn error::Error>> {
 
     let handle = unsafe {
         OpenEventW(
-            SYNCHRONIZATION_ACCESS_RIGHTS(SYNCHRONIZE_ACCESS),
-            false,
+            SYNCHRONIZATION_ACCESS_RIGHTS(SYNCHRONIZE_ACCESS), // This requests permission to wait on the event.
+            false, // Don’t inherit this handle by child processes
             PCWSTR(wide_name.as_ptr()),
         )
     }?;
@@ -45,7 +46,7 @@ pub fn open_data_valid_event() -> Result<HANDLE, Box<dyn error::Error>> {
     Ok(handle)
 }
 
-pub fn open_memory_mapped_file(file: &str) -> Result<HANDLE, Box<dyn error::Error>> {
+pub fn open_memory_mapped_file() -> Result<HANDLE, Box<dyn error::Error>> {
     // Create a null-terminated string for the Windows API
     let mem_map_name = CString::new(MEM_MAP_FILE)?;
 
@@ -67,7 +68,7 @@ pub fn open_test_file_mmap(file_path: &str) -> Result<Arc<[u8]>, Box<dyn error::
     let mmap = unsafe { MmapOptions::new().map(&file)? };
 
     // Convert mmap to Arc<[u8]> to match the shared memory format
-    let data = Arc::from(mmap.as_ref());
+    let data: Arc<[u8]> = Arc::from(mmap.as_ref());
 
     Ok(data)
 }

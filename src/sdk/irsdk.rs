@@ -2,7 +2,7 @@
 
 use crate::{
     sdk::{
-        Header, StatusField, VarBuffer, VarHeader, check_sim_status, map_to_address,
+        Broadcast, Header, StatusField, VarBuffer, VarHeader, check_sim_status, map_to_address,
         open_data_valid_event, open_memory_mapped_file, open_test_file_mmap,
     },
     utils::{
@@ -16,7 +16,7 @@ use std::{
     error,
     ffi::{CString, OsStr},
     fs::File,
-    io::Write,
+    io::{self, Write},
     os::windows::ffi::OsStrExt,
     sync::{Arc, OnceLock},
 };
@@ -48,6 +48,7 @@ pub struct IRSDK {
     pub parse_yaml_async: bool,
     pub is_initialized: bool,
     pub last_session_info_update: u64,
+    pub broadcast: Option<Broadcast>,
 
     // memory/handle fields (Windows-specific will use raw pointers)
     #[cfg(windows)]
@@ -83,7 +84,6 @@ impl IRSDK {
                 return Err("Iracing is not connected (HTTP check failed)".into());
             }
 
-            // wait for new telemetry data to become available.
             self.data_valid_event = Some(open_data_valid_event()?);
         }
 
@@ -99,7 +99,7 @@ impl IRSDK {
             match test_file {
                 Some(file) => self.shared_mem_ptr = Some(open_test_file_mmap(&file)?),
                 None => {
-                    let handle = open_memory_mapped_file(MEM_MAP_FILE)?;
+                    let handle = open_memory_mapped_file()?;
 
                     let (shared_ptr, address_space) = map_to_address(handle)?;
 
@@ -155,6 +155,7 @@ impl IRSDK {
         self.shared_mem_handle = None;
         self.shared_mem_ptr = None;
         self.header = None;
+        self.data_valid_event = None;
         self.var_headers.clear();
         self.var_headers_dict.clear();
         self.var_headers_names = None;
@@ -164,44 +165,13 @@ impl IRSDK {
         self.test_file = None;
     }
 
-    fn broadcast_msg_id(&mut self) -> u32 {
-        match self.broadcast_msg_id {
-            Some(id) => id,
-            None => {
-                // Lazily initialize just once
-                static BROADCAST_MSG_ID: OnceLock<u32> = OnceLock::new();
-
-                let msg_id = *BROADCAST_MSG_ID.get_or_init(|| {
-                    // Convert Rust string to wide UTF-16
-                    let wide: Vec<u16> = BROADCAST_MSG_NAME
-                        .encode_utf16()
-                        .chain(std::iter::once(0))
-                        .collect();
-                    unsafe { RegisterWindowMessageW(PCWSTR(wide.as_ptr())) }
-                });
-
-                self.broadcast_msg_id = Some(msg_id);
-                msg_id
-            }
+    pub fn broadcast(&mut self) -> Result<&Broadcast, io::Error> {
+        if self.broadcast.is_none() {
+            self.broadcast = Some(Broadcast::new()?);
         }
+
+        Ok(self.broadcast.as_ref().unwrap())
     }
-
-    fn broadcast_msg(&self, broadcast_type: u32, var1: u32, var2: u32, var3: u32) {
-        if let Some(msg) = &self.broadcast_msg_id {
-            let wparam = WPARAM((broadcast_type | (var1 << 16)) as usize);
-            let lparam = LPARAM((var2 | (var3 << 16)) as isize);
-
-            unsafe { SendNotifyMessageW(HWND_BROADCAST, msg.clone(), wparam, lparam) }.unwrap()
-        }
-    }
-
-    // fn cam_switch_pos(&self, position: u32, group: u32, camera: u32) {
-    //     self.broadcast_msg(broadcast_type, var1, var2, var3);
-    // }
-
-    // fn cam_switch_num(self, position: u32, group: u32, camera: u32) {
-    //     self.broadcast_msg(broadcast_type, var1, var2, var3);
-    // }
 
     fn wait_for_valid_data_event(&self) -> bool {
         match self.data_valid_event {
@@ -232,6 +202,7 @@ impl IRSDK {
                     for i in 0..count {
                         chars.push(memory[data_offset + i]);
                     }
+
                     TelemetryValue::Char(chars)
                 }
                 IRACING_BOOL => {
@@ -239,6 +210,7 @@ impl IRSDK {
                     for i in 0..count {
                         bools.push(memory[data_offset + i] != 0);
                     }
+
                     TelemetryValue::Bool(bools)
                 }
                 IRACING_INT => {
@@ -248,6 +220,7 @@ impl IRSDK {
                         let bytes = &memory[offset..offset + 4];
                         ints.push(i32::from_le_bytes(bytes.try_into()?));
                     }
+
                     TelemetryValue::Int(ints)
                 }
                 IRACING_BITFIELD => {
@@ -257,6 +230,7 @@ impl IRSDK {
                         let bytes = &memory[offset..offset + 4];
                         bitfields.push(u32::from_le_bytes(bytes.try_into()?));
                     }
+
                     TelemetryValue::Bitfield(bitfields)
                 }
                 IRACING_FLOAT => {
@@ -266,6 +240,7 @@ impl IRSDK {
                         let bytes = &memory[offset..offset + 4];
                         floats.push(f32::from_le_bytes(bytes.try_into()?));
                     }
+
                     TelemetryValue::Float(floats)
                 }
                 IRACING_DOUBLE => {
@@ -275,6 +250,7 @@ impl IRSDK {
                         let bytes = &memory[offset..offset + 8];
                         doubles.push(f64::from_le_bytes(bytes.try_into()?));
                     }
+
                     TelemetryValue::Double(doubles)
                 }
                 _ => return Err(format!("Unknown variable type: {}", var_header.var_type).into()),
