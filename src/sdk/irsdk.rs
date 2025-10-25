@@ -343,7 +343,21 @@ impl IRSDK {
         }
     }
 
-    fn var_headers_dict(&self) -> &HashMap<String, VarHeader> {
+    fn var_headers_dict(&mut self) -> &HashMap<String, VarHeader> {
+        if self.var_headers_dict.is_empty() {
+            if let Some(header) = &self.header {
+                for var_header in &self.var_headers {
+                    let var_header_name = var_header
+                        .name_str()
+                        .expect("Failed to get var_header name")
+                        .to_owned();
+
+                    self.var_headers_dict
+                        .insert(var_header_name, var_header.to_owned());
+                }
+            }
+        }
+        
         &self.var_headers_dict
     }
 }

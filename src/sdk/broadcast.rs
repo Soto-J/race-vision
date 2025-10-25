@@ -1,16 +1,19 @@
 #![allow(unused)]
 
-use crate::{BroadcastMsg, utils::BROADCAST_MSG_NAME};
-#[cfg(windows)]
-use crate::{ChatCommandMode, RpyPosMode, RpySrchMode, RpyStateMode};
+use crate::{
+    BroadcastMsg, ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode,
+    RpySrchMode, RpyStateMode, TelemCommandMode, VideoCaptureMode, utils::BROADCAST_MSG_NAME,
+};
 
 #[cfg(windows)]
-use std::error;
 use std::{
+    error,
     ffi::{OsStr, c_void},
+    io,
     os::windows::ffi::OsStrExt,
     sync::OnceLock,
 };
+#[cfg(windows)]
 use windows::{
     Win32::{
         Foundation::{BOOL, HWND, LPARAM, WPARAM},
@@ -27,7 +30,7 @@ pub struct Broadcast {
 
 #[cfg(windows)]
 impl Broadcast {
-    pub fn new() -> Result<Self, std::io::Error> {
+    pub fn new() -> Result<Self, io::Error> {
         let wide: Vec<u16> = OsStr::new("IRSDK_BROADCASTMSG")
             .encode_wide()
             .chain(Some(0))
@@ -36,8 +39,6 @@ impl Broadcast {
         let msg_id = unsafe { RegisterWindowMessageW(PCWSTR(wide.as_ptr())) };
 
         if msg_id == 0 {
-            use std::io;
-
             return Err(io::Error::last_os_error());
         }
 
@@ -46,9 +47,9 @@ impl Broadcast {
 
     pub fn cam_switch_pos(
         &self,
-        position: u32,
-        group: Option<u32>,
-        camera: Option<u32>,
+        position: u16,
+        group: Option<u16>,
+        camera: Option<u16>,
     ) -> Result<(), windows::core::Error> {
         let group = group.unwrap_or(1);
         let camera = camera.unwrap_or(0);
@@ -63,55 +64,60 @@ impl Broadcast {
 
     pub fn cam_switch_num(
         &self,
-        car_number: u32,
-        group: Option<u32>,
-        camera: Option<u32>,
+        car_number: u16,
+        group: Option<u16>,
+        camera: Option<u16>,
     ) -> Result<(), windows::core::Error> {
         let group = group.unwrap_or(1);
         let camera = camera.unwrap_or(0);
 
-        self.send(BroadcastMsg::CamSwitchNum, car_number, group, camera)
+        self.send(
+            BroadcastMsg::CamSwitchNum,
+            car_number,
+            Some(group),
+            Some(camera),
+        )
     }
 
-    pub fn cam_set_state(&self, camera_state: u32) -> Result<(), windows::core::Error> {
+    pub fn cam_set_state(&self, camera_state: u16) -> Result<(), windows::core::Error> {
         self.send(BroadcastMsg::CamSetState, camera_state, None, None)
     }
 
     pub fn replay_set_play_speed(
         &self,
-        speed: u32,
+        speed: u16,
         slow_motion: bool,
     ) -> Result<(), windows::core::Error> {
         let var3 = if slow_motion { 1 } else { 0 };
 
-        self.send(BroadcastMsg::ReplaySetPlaySpeed, speed, var3, None)
+        self.send(BroadcastMsg::ReplaySetPlaySpeed, speed, Some(var3), None)
     }
 
     pub fn replay_set_play_position(
         &self,
         pos_mode: Option<RpyPosMode>,
-        frame_num: Option<u32>,
+        frame_num: Option<u16>,
     ) -> Result<(), windows::core::Error> {
-        let var2 = pos_mode.unwrap_or(RpyPosMode::Begin);
+        let var2 = pos_mode.unwrap_or(RpyPosMode::Begin) as u16;
         let var3 = frame_num.unwrap_or(0);
 
-        self.send(BroadcastMsg::ReplaySetPlayPosition, var2, var3, None)
+        self.send(BroadcastMsg::ReplaySetPlayPosition, var2, Some(var3), None)
     }
 
     pub fn replay_search(
         &self,
         search_mode: Option<RpySrchMode>,
     ) -> Result<(), windows::core::Error> {
-        let var2 = search_mode.unwrap_or(RpySrchMode::ToStart);
+        let var2 = search_mode.unwrap_or(RpySrchMode::ToStart) as u16;
 
         self.send(BroadcastMsg::ReplaySearch, var2, None, None)
     }
 
     pub fn replay_set_state(
         &self,
-        state_mode: Option<RpyStateMode>,
+        search_mode: Option<RpyStateMode>,
     ) -> Result<(), windows::core::Error> {
-        let var2 = search_mode.unwrap_or(RpyStateMode::EraseTape);
+        let var2 = search_mode.unwrap_or(RpyStateMode::EraseTape) as u16;
 
         self.send(BroadcastMsg::ReplaySetState, var2, None, None)
     }
@@ -119,19 +125,19 @@ impl Broadcast {
     pub fn reload_all_textures(&self) -> Result<(), windows::core::Error> {
         self.send(
             BroadcastMsg::ReloadTextures,
-            ReloadTexturesMode::All,
+            ReloadTexturesMode::All as u16,
             None,
             None,
         )
     }
 
-    pub fn reload_texture(&self, car_idx: Option<u32>) -> Result<(), windows::core::Error> {
-        let var3 = car_idx.unwrap_or(0);
+    pub fn reload_texture(&self, car_idx: Option<u16>) -> Result<(), windows::core::Error> {
+        let var3 = car_idx.unwrap_or(0) as u16;
 
         self.send(
             BroadcastMsg::ReloadTextures,
-            ReloadTexturesMode::CarIdx,
-            var3,
+            ReloadTexturesMode::CarIdx as u16,
+            Some(var3),
             None,
         )
     }
@@ -140,18 +146,18 @@ impl Broadcast {
         &self,
         chat_command_mode: Option<ChatCommandMode>,
     ) -> Result<(), windows::core::Error> {
-        let var2 = chat_command_mode.unwrap_or(ChatCommandMode::BeginChat);
+        let var2 = chat_command_mode.unwrap_or(ChatCommandMode::BeginChat) as u16;
 
         self.send(BroadcastMsg::ReloadTextures, var2, None, None)
     }
 
-    pub fn chat_command_macro(&self, macro_num: Option<u32>) -> Result<(), windows::core::Error> {
+    pub fn chat_command_macro(&self, macro_num: Option<u16>) -> Result<(), windows::core::Error> {
         let var3 = macro_num.unwrap_or(0);
 
         self.send(
             BroadcastMsg::ChatCommand,
-            ChatCommandMode::Macro,
-            var3,
+            ChatCommandMode::Macro as u16,
+            Some(var3),
             None,
         )
     }
@@ -159,12 +165,12 @@ impl Broadcast {
     pub fn pit_command(
         &self,
         pit_command_mode: Option<PitCommandMode>,
-        var: Option<u32>,
+        var: Option<u16>,
     ) -> Result<(), windows::core::Error> {
         let var2 = pit_command_mode.unwrap_or(PitCommandMode::Clear);
         let var3 = var.unwrap_or(0);
 
-        self.send(BroadcastMsg::PitCommand, var2, var3, None)
+        self.send(BroadcastMsg::PitCommand, var2 as u16, Some(var3), None)
     }
 
     pub fn telem_command(
@@ -173,46 +179,51 @@ impl Broadcast {
     ) -> Result<(), windows::core::Error> {
         let var2 = telem_command_mode.unwrap_or(TelemCommandMode::Stop);
 
-        self.send(BroadcastMsg::PitCommand, var2, None, None)
+        self.send(BroadcastMsg::PitCommand, var2 as u16, None, None)
     }
 
     pub fn ffb_command(
         &self,
         ffb_command_mode: Option<FFBCommandMode>,
-        value: Option<u32>,
+        value: Option<u16>,
     ) -> Result<(), windows::core::Error> {
-        let var2 = telem_command_mode.unwrap_or(FFBCommandMode::FfbCommandMaxForce);
+        let var2 = ffb_command_mode.unwrap_or(FFBCommandMode::FfbCommandMaxForce) as u16;
         let var3 = value.unwrap_or(0);
 
-        self.send(BroadcastMsg::FfbCommand, var2, var3, None)
+        self.send(BroadcastMsg::FfbCommand, var2, Some(var3), None)
     }
 
     pub fn replay_search_session_time(
         &self,
-        session_num: Option<u32>,
-        session_time_ms: Option<u32>,
+        session_num: Option<u16>,
+        session_time_ms: Option<u16>,
     ) -> Result<(), windows::core::Error> {
         let var2 = session_num.unwrap_or(0);
         let var3 = session_time_ms.unwrap_or(0);
 
-        self.send(BroadcastMsg::ReplaySearchSessionTime, var2, var3, None)
+        self.send(
+            BroadcastMsg::ReplaySearchSessionTime,
+            var2,
+            Some(var3),
+            None,
+        )
     }
 
     pub fn video_capture(
         &self,
         video_capture_mode: Option<VideoCaptureMode>,
     ) -> Result<(), windows::core::Error> {
-        let var2 = video_capture_mode.unwrap_or(VideoCaptureMode::TriggerScreenShot);
+        let var2 = video_capture_mode.unwrap_or(VideoCaptureMode::TriggerScreenShot) as u16;
 
         self.send(BroadcastMsg::VideoCapture, var2, None, None)
     }
 
     fn send(
         &self,
-        broadcast_msg: BroadcastMsg,
-        var1: u32,
-        var2: Option<u32>,
-        var3: Option<u32>,
+        broadcast_msg_type: BroadcastMsg,
+        var1: u16,
+        var2: Option<u16>,
+        var3: Option<u16>,
     ) -> Result<(), windows::core::Error> {
         let var2 = var2.unwrap_or(0);
         let var3 = var3.unwrap_or(0);
@@ -221,7 +232,7 @@ impl Broadcast {
             SendNotifyMessageW(
                 HWND(0xFFFF as *mut c_void),
                 self.msg_id,
-                WPARAM((broadcast_msg_type as u32 | (var1 << 16)) as usize),
+                WPARAM((broadcast_msg_type as u16 | (var1 << 16)) as usize),
                 LPARAM((var2 | (var3 << 16)) as isize),
             )
         }
@@ -233,7 +244,7 @@ mod test {
 
     #[test]
     fn test_cam_switch_pos() {
-        let brodcast = broadcast::new();
+        // let brodcast = broadcast::new();
     }
     fn test_cam_switch_num() {}
     fn test_replay_set_play_speed() {}
