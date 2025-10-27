@@ -357,7 +357,7 @@ impl IRSDK {
                 }
             }
         }
-        
+
         &self.var_headers_dict
     }
 }
@@ -367,6 +367,11 @@ async fn should_pass_when_iracing_is_open() {
     let mut irsdk = IRSDK::default();
     let response = irsdk.start_up(None, None).await;
 
+    let handle = irsdk
+        .data_valid_event
+        .expect("Problem getting data valid event");
+
+    print!("handle: {:?}", handle);
     assert!(response.is_ok(), "start_up should succeed.")
 }
 
