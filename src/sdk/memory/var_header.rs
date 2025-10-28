@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+use std::fmt;
+
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct VarHeader {
@@ -58,7 +60,13 @@ impl VarHeader {
             .iter()
             .position(|&b| b == 0)
             .unwrap_or(self.unit.len());
-        
+
         std::str::from_utf8(&self.unit[..null_pos]).ok()
+    }
+}
+
+impl fmt::Display for VarHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "VarHeader {}", self)
     }
 }

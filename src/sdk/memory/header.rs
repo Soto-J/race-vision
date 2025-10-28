@@ -1,24 +1,36 @@
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
 
 use crate::sdk::VarBuffer;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Header {
     shared_mem: Arc<[u8]>,
-    offset: usize,
+}
+
+impl fmt::Display for Header {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Header: {{ version: {}, status: {}, tick_rate: {}, num_vars: {}, num_buf: {}, buf_len: {} }}",
+            self.version(),
+            self.status(),
+            self.tick_rate(),
+            self.num_vars(),
+            self.num_buf(),
+            self.buf_len()
+        )
+    }
 }
 
 impl Header {
     pub fn new(shared_mem: Arc<[u8]>) -> Self {
-        Self {
-            shared_mem,
-            offset: 0,
-        }
+        let header = Self { shared_mem };
+        println!("{}", header);
+        header
     }
 
-    fn read_i32(&self, rel_offset: usize) -> i32 {
-        let abs = self.offset + rel_offset;
-        let bytes = &self.shared_mem[abs..abs + 4];
+    fn read_i32(&self, offset: usize) -> i32 {
+        let bytes = &self.shared_mem[offset..offset + 4];
         i32::from_le_bytes(bytes.try_into().unwrap())
     }
 

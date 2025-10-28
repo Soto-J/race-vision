@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 #[repr(C)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DiskSubHeader {
     pub session_start_date: u64,
     pub session_start_time: f64,
