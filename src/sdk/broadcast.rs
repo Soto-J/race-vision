@@ -1,8 +1,9 @@
 #![allow(unused)]
 
+#[cfg(windows)]
 use crate::{
     BroadcastMsg, ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode,
-    RpySrchMode, RpyStateMode, TelemCommandMode, VideoCaptureMode, utils::BROADCAST_MSG_NAME,
+    RpySrchMode, RpyStateMode, TelemCommandMode, VideoCaptureMode,
 };
 
 #[cfg(windows)]
@@ -132,6 +133,8 @@ impl Broadcast {
     }
 
     pub fn reload_texture(&self, car_idx: Option<u32>) -> Result<(), windows::core::Error> {
+        use crate::ReloadTexturesMode;
+
         let var3 = car_idx.unwrap_or(0);
 
         self.send(

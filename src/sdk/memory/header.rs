@@ -1,6 +1,6 @@
 use std::{fmt, sync::Arc};
 
-use crate::sdk::VarBuffer;
+use crate::sdk::memory::var_buffer::VarBuffer;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Header {

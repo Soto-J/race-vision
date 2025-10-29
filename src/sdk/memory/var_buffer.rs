@@ -25,7 +25,7 @@ impl VarBuffer {
 
     fn read_i32(&self, rel_offset: usize) -> i32 {
         let abs = self.offset + rel_offset;
-        let bytes = &self.get_memory()[abs..abs + 4];
+        let bytes = &self.shared_mem[abs..abs + 4];
         i32::from_le_bytes(bytes.try_into().unwrap())
     }
 
@@ -35,8 +35,7 @@ impl VarBuffer {
 
     // Read `_buf_offset` at offset 4 (int32)
     pub fn buff_offset_raw(&self) -> i32 {
-        let bytes = &self.get_memory()[4..8];
-        i32::from_le_bytes(bytes.try_into().unwrap())
+        self.read_i32(4)
     }
 
     pub fn buff_offset(&self) -> i32 {

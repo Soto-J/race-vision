@@ -2,42 +2,44 @@
 
 use crate::{
     sdk::{
-        Broadcast, Header, StatusField, VarBuffer, VarHeader, check_sim_status, map_to_address,
-        open_data_valid_event, open_memory_mapped_file, open_test_file_mmap,
+        broadcast::Broadcast,
+        error::IRSDKError,
+        helpers::{check_sim_status, map_to_address},
+        memory::{header::Header, var_buffer::VarBuffer, var_header::VarHeader},
+        status::StatusField,
     },
-    utils::{
-        BROADCAST_MSG_NAME, IRACING_BITFIELD, IRACING_BOOL, IRACING_CHAR, IRACING_DOUBLE,
-        IRACING_FLOAT, IRACING_INT, MEM_MAP_FILE, TelemetryValue, VAR_HEADER_SIZE,
+    utils::constants::{
+        BROADCAST_MSG_NAME, DATA_VALID_EVENT_NAME, IRACING_BITFIELD, IRACING_BOOL, IRACING_CHAR,
+        IRACING_DOUBLE, IRACING_FLOAT, IRACING_INT, MEM_MAP_FILE, SYNCHRONIZE_ACCESS,
+        TelemetryValue, VAR_HEADER_SIZE,
     },
 };
 
+use memmap2::MmapOptions;
 use std::{
     collections::HashMap,
-    error,
+    error::{self, Error},
     ffi::{CString, OsStr},
     fs::File,
     io::{self, Write},
     os::windows::ffi::OsStrExt,
+    path::PathBuf,
     sync::{Arc, OnceLock},
 };
-
 use tokio;
 
-use windows::Win32::{
-    Foundation::{LPARAM, WPARAM},
-    UI::WindowsAndMessaging::{HWND_BROADCAST, RegisterWindowMessageW, SendNotifyMessageW},
-};
 #[cfg(windows)]
 use windows::{
     Win32::{
-        Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT},
+        Foundation::{CloseHandle, HANDLE, LPARAM, WAIT_OBJECT_0, WAIT_TIMEOUT, WPARAM},
         System::{
             Memory::{
                 FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile, OpenFileMappingA,
                 OpenFileMappingW, UnmapViewOfFile,
             },
-            Threading::WaitForSingleObject,
+            Threading::{OpenEventW, SYNCHRONIZATION_ACCESS_RIGHTS, WaitForSingleObject},
         },
+        UI::WindowsAndMessaging::{HWND_BROADCAST, RegisterWindowMessageW, SendNotifyMessageW},
     },
     core::{PCSTR, PCWSTR},
 };
@@ -78,26 +80,35 @@ pub struct IRSDK {
 impl IRSDK {
     pub async fn start_up(
         &mut self,
-        test_file: Option<String>,
-        dump_path: Option<String>,
+        test_file: Option<PathBuf>,
+        dump_path: Option<PathBuf>,
     ) -> Result<(), Box<dyn error::Error>> {
         if test_file.is_none() {
-            if check_sim_status().await.is_err() {
-                return Err("Iracing is not connected (HTTP check failed)".into());
-            }
+            check_sim_status()
+                .await
+                .map_err(|_| "Iracing is not connected (HTTP check failed)")?;
 
-            self.data_valid_event = Some(open_data_valid_event()?);
+            let wide_name: Vec<u16> = OsStr::new(DATA_VALID_EVENT_NAME)
+                .encode_wide()
+                .chain(Some(0))
+                .collect();
+
+            let handle: HANDLE = unsafe {
+                OpenEventW(
+                    SYNCHRONIZATION_ACCESS_RIGHTS(SYNCHRONIZE_ACCESS), // This requests permission to wait on the event.
+                    false, // Don’t inherit this handle by child processes
+                    PCWSTR(wide_name.as_ptr()),
+                )
+            }?;
+
+            self.data_valid_event = Some(handle);
         }
 
-        if !self.wait_for_valid_data_event() {
-            self.data_valid_event = None;
+        self.wait_for_valid_data_event()
+            .map_err(|_| "Timed out waiting for valid data event")?;
 
-            return Err(
-                "Failed to receive valid data event from iRacing (timeout after 32ms)".into(),
-            );
-        }
-
-        self.load_meta_data(test_file);
+        self.load_meta_data(test_file)
+            .map_err(|_| "Failed to load meta data")?;
 
         if let Some(path) = dump_path {
             if let Some(shared_mem) = &self.shared_mem_ptr {
@@ -107,6 +118,7 @@ impl IRSDK {
             }
         }
 
+        self.update_var_buf_latest();
         self.is_initialized = true;
 
         Ok(())
@@ -119,6 +131,7 @@ impl IRSDK {
         self.shared_mem_ptr = None;
         self.header = None;
         self.data_valid_event = None;
+        self.address_space = None;
         self.var_headers.clear();
         self.var_headers_dict.clear();
         self.var_headers_names = None;
@@ -128,27 +141,28 @@ impl IRSDK {
         self.test_file = None;
     }
 
-    fn load_meta_data(&mut self, test_file: Option<String>) -> Result<(), Box<dyn error::Error>> {
-        use memmap2::MmapOptions;
-
+    fn load_meta_data(&mut self, test_file: Option<PathBuf>) -> Result<(), Box<dyn error::Error>> {
         if self.shared_mem_handle.is_some() {
             return Ok(());
         }
 
         match test_file {
             Some(file) => {
-                let file = File::open(file).expect("Failed to open test_file");
+                let file = File::open(file).map_err(|_| "Failed to open test file")?;
+
                 let mmap = unsafe {
                     MmapOptions::new()
                         .map(&file)
-                        .expect("Failed to create Mmap")
+                        .map_err(|_| "Failed to create Mmap")?
                 };
 
                 let data: Arc<[u8]> = Arc::from(mmap.as_ref());
                 self.shared_mem_ptr = Some(data);
             }
             None => {
-                let mmap_name = CString::new(MEM_MAP_FILE).expect("Failed to create CString");
+                let mmap_name =
+                    CString::new(MEM_MAP_FILE).map_err(|_| "Failed to create CString")?;
+
                 let handle = unsafe {
                     OpenFileMappingA(
                         FILE_MAP_READ.0,
@@ -156,7 +170,7 @@ impl IRSDK {
                         PCSTR(mmap_name.as_ptr() as *const u8),
                     )
                 }
-                .expect("Failed to open Mmap");
+                .map_err(|_| "Failed to open Mmap")?;
 
                 let (shared_ptr, address_space) = map_to_address(handle)?;
 
@@ -216,13 +230,14 @@ impl IRSDK {
         Ok(self.broadcast.as_ref().unwrap())
     }
 
-    fn wait_for_valid_data_event(&self) -> bool {
+    pub fn wait_for_valid_data_event(&self) -> Result<(), IRSDKError> {
         match self.data_valid_event {
-            None => true,
             Some(handle) => unsafe {
                 let wait_result = WaitForSingleObject(handle, 32);
-                matches!(wait_result, WAIT_OBJECT_0)
+                matches!(wait_result, WAIT_OBJECT_0);
+                Ok(())
             },
+            None => Err(IRSDKError::Timeout),
         }
     }
 
@@ -305,7 +320,7 @@ impl IRSDK {
         Err("Item not found!".into())
     }
 
-    fn update_var_buf_latest(&mut self) {
+    pub fn update_var_buf_latest(&mut self) {
         if let Some(header) = &self.header {
             let mut buffers = header.var_buffers();
 
@@ -318,6 +333,21 @@ impl IRSDK {
                 buffers.get(0).cloned()
             };
         }
+    }
+
+    pub fn unfreeze_var_buffer_latest(&mut self) {
+        if let Some(var_buffer) = &mut self.var_buffer_latest {
+            var_buffer.unfreeze();
+        }
+    }
+
+    pub fn freeze_var_buffer_latest(&mut self) {
+        // First unfreeze any existing frozen buffer
+        &mut self.unfreeze_var_buffer_latest();
+
+        // Wait for new valid data
+        self.wait_for_valid_data_event();
+        // self.var_buffer_latest =
     }
 
     fn is_connected(&mut self) -> bool {
@@ -387,7 +417,7 @@ impl Drop for IRSDK {
 }
 
 #[tokio::test]
-async fn should_pass_when_iracing_is_open() {
+async fn test_startup() {
     let mut irsdk = IRSDK::default();
     let response = irsdk.start_up(None, None).await;
 
@@ -419,7 +449,7 @@ async fn list_all_available_variables() {
     println!("\n===== Available Variables ({}) =====", var_headers.len());
 
     for (i, name) in var_headers.iter().enumerate() {
-        if i < 30 {
+        if i < 50 {
             println!(
                 "\t{}:\t{}",
                 i + 1,
@@ -428,4 +458,22 @@ async fn list_all_available_variables() {
         }
     }
     println!("  ... and {} more", var_headers.len() - 20);
+}
+
+#[tokio::test]
+async fn test_data_valid_event() {
+    let mut sdk = IRSDK::default();
+
+    sdk.start_up(None, None)
+        .await
+        .expect("Failed to start IRSDK");
+
+    let data = sdk
+        .data_valid_event
+        .expect("Failed to get data valid event");
+
+    assert!(
+        data.0 != std::ptr::null_mut(),
+        "Event handle should be valid"
+    );
 }

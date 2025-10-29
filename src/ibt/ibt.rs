@@ -1,4 +1,4 @@
-use crate::sdk::{DiskSubHeader, Header, VarHeader};
+use crate::sdk::memory::{disk_sub_header::DiskSubHeader, header::Header, var_header::VarHeader};
 
 use std::{collections::HashMap, fs::File, sync::Arc};
 
