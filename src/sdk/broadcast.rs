@@ -2,10 +2,9 @@
 
 #[cfg(windows)]
 use crate::{
-    BroadcastMsg, ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode,
-    RpySrchMode, RpyStateMode, TelemCommandMode, VideoCaptureMode,
+    ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode, RpySrchMode,
+    RpyStateMode, TelemCommandMode, VideoCaptureMode, utils::enums::BroadcastMsg,
 };
-
 #[cfg(windows)]
 use std::{
     error,

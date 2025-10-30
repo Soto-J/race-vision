@@ -8,10 +8,12 @@ use crate::{
         memory::{header::Header, var_buffer::VarBuffer, var_header::VarHeader},
         status::StatusField,
     },
-    utils::constants::{
-        BROADCAST_MSG_NAME, DATA_VALID_EVENT_NAME, IRACING_BITFIELD, IRACING_BOOL, IRACING_CHAR,
-        IRACING_DOUBLE, IRACING_FLOAT, IRACING_INT, MEM_MAP_FILE, SYNCHRONIZE_ACCESS,
-        TelemetryValue, VAR_HEADER_SIZE,
+    utils::{
+        constants::{
+            BROADCAST_MSG_NAME, DATA_VALID_EVENT_NAME, MEM_MAP_FILE, SYNCHRONIZE_ACCESS,
+            VAR_HEADER_SIZE,
+        },
+        enums::{IRacingVarType, VarData},
     },
 };
 
@@ -56,7 +58,7 @@ pub struct IRSDK {
     #[cfg(windows)]
     shared_mem_handle: Option<HANDLE>,
     #[cfg(windows)]
-    shared_mem_ptr: Option<Arc<[u8]>>,
+    shared_mem: Option<Arc<[u8]>>,
     #[cfg(windows)]
     data_valid_event: Option<HANDLE>,
     #[cfg(windows)]
@@ -111,7 +113,7 @@ impl IRSDK {
             .map_err(|_| "Failed to load meta data")?;
 
         if let Some(path) = dump_path {
-            if let Some(shared_mem) = &self.shared_mem_ptr {
+            if let Some(shared_mem) = &self.shared_mem {
                 let mut file = File::create(path)?;
 
                 file.write_all(shared_mem)?;
@@ -128,7 +130,7 @@ impl IRSDK {
         self.is_initialized = false;
         self.last_session_info_update = 0;
         self.shared_mem_handle = None;
-        self.shared_mem_ptr = None;
+        self.shared_mem = None;
         self.header = None;
         self.data_valid_event = None;
         self.address_space = None;
@@ -157,7 +159,7 @@ impl IRSDK {
                 };
 
                 let data: Arc<[u8]> = Arc::from(mmap.as_ref());
-                self.shared_mem_ptr = Some(data);
+                self.shared_mem = Some(data);
             }
             None => {
                 let mmap_name =
@@ -175,7 +177,7 @@ impl IRSDK {
                 let (shared_ptr, address_space) = map_to_address(handle)?;
 
                 self.shared_mem_handle = Some(handle);
-                self.shared_mem_ptr = Some(shared_ptr.clone());
+                self.shared_mem = Some(shared_ptr.clone());
                 self.header = Some(Header::new(shared_ptr.clone()));
 
                 // Load VarHeaders
@@ -241,83 +243,61 @@ impl IRSDK {
         }
     }
 
-    pub fn get_item(&self, key: &str) -> Result<TelemetryValue, Box<dyn error::Error>> {
-        if let Some(var_header) = self.var_headers_dict.get(key) {
-            let var_buf_latest = self
-                .var_buffer_latest
-                .as_ref()
-                .ok_or("No variable buffer available")?;
+    pub fn get_item(&self, key: &str) -> Result<VarData, Box<dyn error::Error>> {
+        let var_header = self.var_headers_dict.get(key).ok_or("Item not found!")?;
 
-            let memory = var_buf_latest.get_memory();
-            let buf_offset = var_buf_latest.buff_offset() as usize;
-            let data_offset = buf_offset + var_header.offset as usize;
-            let count = var_header.count as usize;
+        let buffer = self
+            .var_buffer_latest
+            .as_ref()
+            .ok_or("No variable buffer available")?;
 
-            // Read data based on type
-            let value = match var_header.var_type {
-                IRACING_CHAR => {
-                    let mut chars = Vec::with_capacity(count);
-                    for i in 0..count {
-                        chars.push(memory[data_offset + i]);
-                    }
+        let memory = buffer.get_memory();
+        let base = (buffer.buff_offset() + var_header.offset) as usize;
+        let count = var_header.count as usize;
 
-                    TelemetryValue::Char(chars)
-                }
-                IRACING_BOOL => {
-                    let mut bools = Vec::with_capacity(count);
-                    for i in 0..count {
-                        bools.push(memory[data_offset + i] != 0);
-                    }
+        let var_type = IRacingVarType::try_from(var_header.var_type)?;
 
-                    TelemetryValue::Bool(bools)
-                }
-                IRACING_INT => {
-                    let mut ints = Vec::with_capacity(count);
-                    for i in 0..count {
-                        let offset = data_offset + i * 4;
-                        let bytes = &memory[offset..offset + 4];
-                        ints.push(i32::from_le_bytes(bytes.try_into()?));
-                    }
+        let value = match var_type {
+            IRacingVarType::Char => VarData::Chars(memory[base..base + count].to_vec()),
+            IRacingVarType::Bool => {
+                let bools = memory[base..base + count].iter().map(|&b| b != 0).collect();
 
-                    TelemetryValue::Int(ints)
-                }
-                IRACING_BITFIELD => {
-                    let mut bitfields = Vec::with_capacity(count);
-                    for i in 0..count {
-                        let offset = data_offset + i * 4;
-                        let bytes = &memory[offset..offset + 4];
-                        bitfields.push(u32::from_le_bytes(bytes.try_into()?));
-                    }
+                VarData::Bools(bools)
+            }
+            IRacingVarType::Int => {
+                let int = memory[base..base + count * 4]
+                    .chunks_exact(4)
+                    .map(|b| i32::from_le_bytes(b.try_into().unwrap()))
+                    .collect();
 
-                    TelemetryValue::Bitfield(bitfields)
-                }
-                IRACING_FLOAT => {
-                    let mut floats = Vec::with_capacity(count);
-                    for i in 0..count {
-                        let offset = data_offset + i * 4;
-                        let bytes = &memory[offset..offset + 4];
-                        floats.push(f32::from_le_bytes(bytes.try_into()?));
-                    }
+                VarData::Int(int)
+            }
+            IRacingVarType::Bitfield => {
+                let bitfields = memory[base..base + count * 4]
+                    .chunks_exact(4)
+                    .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+                    .collect();
+                VarData::Bitfields(bitfields)
+            }
+            IRacingVarType::Float => {
+                let floats = memory[base..base + count * 4]
+                    .chunks_exact(4)
+                    .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+                    .collect();
+                VarData::Floats(floats)
+            }
+            IRacingVarType::Double => {
+                let doubles = memory[base..base + count * 8]
+                    .chunks_exact(8)
+                    .map(|b| f64::from_le_bytes(b.try_into().unwrap()))
+                    .collect();
+                VarData::Doubles(doubles)
+            }
 
-                    TelemetryValue::Float(floats)
-                }
-                IRACING_DOUBLE => {
-                    let mut doubles = Vec::with_capacity(count);
-                    for i in 0..count {
-                        let offset = data_offset + i * 8;
-                        let bytes = &memory[offset..offset + 8];
-                        doubles.push(f64::from_le_bytes(bytes.try_into()?));
-                    }
+            _ => return Err(format!("Unknown variable type: {}", var_header.var_type).into()),
+        };
 
-                    TelemetryValue::Double(doubles)
-                }
-                _ => return Err(format!("Unknown variable type: {}", var_header.var_type).into()),
-            };
-
-            return Ok(value);
-        }
-
-        Err("Item not found!".into())
+        Ok(value)
     }
 
     pub fn update_var_buf_latest(&mut self) {
@@ -341,13 +321,26 @@ impl IRSDK {
         }
     }
 
-    pub fn freeze_var_buffer_latest(&mut self) {
-        // First unfreeze any existing frozen buffer
+    pub fn freeze_var_buffer_latest(&mut self) -> Result<(), IRSDKError> {
         &mut self.unfreeze_var_buffer_latest();
 
-        // Wait for new valid data
         self.wait_for_valid_data_event();
-        // self.var_buffer_latest =
+
+        // Get all buffers and find the most recent one (highest tick_count)
+        if let Some(header) = &self.header {
+            let mut buffers = header.var_buffers();
+
+            buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
+
+            if let Some(mut latest_buffer) = buffers.into_iter().next() {
+                latest_buffer.unfreeze();
+
+                self.var_buffer_latest = Some(latest_buffer);
+                return Ok(());
+            }
+        }
+
+        Err(IRSDKError::Timeout)
     }
 
     fn is_connected(&mut self) -> bool {

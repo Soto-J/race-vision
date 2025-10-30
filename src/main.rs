@@ -1,6 +1,6 @@
 use race_vision::{
     sdk::{helpers::check_sim_status, irsdk::IRSDK},
-    utils::constants::TelemetryValue,
+    utils::enums::VarData,
 };
 use std::{error, thread::sleep, time::Duration};
 use tokio;
@@ -22,7 +22,20 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         // another one in next line of code could change
         // to the next iracing internal tick_count
         // and you will get incosistent data
+        irsdk.freeze_var_buffer_latest()?;
 
+        println!("DEBUG: Number of var_headers: {}", irsdk.var_headers.len());
+
+        let session_time = irsdk
+            .get_item("SessionTime")
+            .map_err(|_| "Failed to get session time.")?;
+        println!("Session Time: {:?}", session_time);
+
+        let car_setup = irsdk
+            .get_item("CarSetup")
+            .map_err(|_| "Failed to get car set up")?;
+
+        sleep(Duration::from_millis(1000));
     }
 }
 
@@ -133,42 +146,39 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 //         sleep(Duration::from_millis(100));
 //     }
 // }
-fn format_telemetry_value(value: &race_vision::utils::constants::TelemetryValue) -> String {
+fn format_telemetry_value(value: &VarData) -> String {
     match value {
-        TelemetryValue::Float(vals) => {
+        VarData::Floats(vals) => {
             if vals.len() == 1 {
                 format!("{:.2}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        TelemetryValue::Double(vals) => {
+        VarData::Doubles(vals) => {
             if vals.len() == 1 {
                 format!("{:.2}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        TelemetryValue::Int(vals) => {
+        VarData::Int(vals) => {
             if vals.len() == 1 {
                 format!("{}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        TelemetryValue::Bool(vals) => {
+        VarData::Bools(vals) => {
             if vals.len() == 1 {
                 format!("{}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        TelemetryValue::Bitfield(vals) => format!("{:?}", vals),
-        TelemetryValue::Char(vals) => String::from_utf8_lossy(vals).to_string(),
+        VarData::Bitfields(vals) => format!("{:?}", vals),
+        VarData::Chars(vals) => String::from_utf8_lossy(vals).to_string(),
     }
 }
 
-
-async fn check_iracing() {
-
-}
+async fn check_iracing() {}

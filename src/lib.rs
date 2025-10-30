@@ -52,58 +52,6 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TrkLoc {
-    NotInWorld = -1,
-    OffTrack = 0,
-    InPitStall = 1,
-    ApproachingPits = 2,
-    OnTrack = 3,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TrkSurf {
-    NotInWorld = -1,
-    Undefined = 0,
-    Asphalt1 = 1,
-    Asphalt2 = 2,
-    Asphalt3 = 3,
-    Asphalt4 = 4,
-    Concrete1 = 5,
-    Concrete2 = 6,
-    RacingDirt1 = 7,
-    RacingDirt2 = 8,
-    Paint1 = 9,
-    Paint2 = 10,
-    Rumble1 = 11,
-    Rumble2 = 12,
-    Rumble3 = 13,
-    Rumble4 = 14,
-    Grass1 = 15,
-    Grass2 = 16,
-    Grass3 = 17,
-    Grass4 = 18,
-    Dirt1 = 19,
-    Dirt2 = 20,
-    Dirt3 = 21,
-    Dirt4 = 22,
-    Sand = 23,
-    Gravel1 = 24,
-    Gravel2 = 25,
-    GRASSCRETE = 26,
-    Astroturf = 27,
-}
-
-pub enum SessionState {
-    Invalid = 0,
-    GetInCar = 1,
-    Warmup = 2,
-    ParadeLaps = 3,
-    Racing = 4,
-    Checkered = 5,
-    CoolDown = 6,
-}
-
 bitflags! {
     pub struct  CameraState: u16 {
         const is_session_screen       = 0x0001; // the camera tool can only be activated if viewing the session screen (out of car)
@@ -120,22 +68,7 @@ bitflags! {
     }
 }
 
-pub enum BroadcastMsg {
-    CamSwitchPos = 0,             // car position, group, camera
-    CamSwitchNum = 1,             // driver #, group, camera
-    CamSetState = 2,              // CameraState, unused, unused
-    ReplaySetPlaySpeed = 3,       // speed, slowMotion, unused
-    ReplaySetPlayPosition = 4,    // RpyPosMode, Frame Number (high, low)
-    ReplaySearch = 5,             // RpySrchMode, unused, unused
-    ReplaySetState = 6,           // RpyStateMode, unused, unused
-    ReloadTextures = 7,           // ReloadTexturesMode, carIdx, unused
-    ChatCommand = 8,              // ChatCommandMode, subCommand, unused
-    PitCommand = 9,               // PitCommandMode, parameter
-    TelemCommand = 10,            // irsdk_TelemCommandMode, unused, unused
-    FfbCommand = 11,              // irsdk_FFBCommandMode, value (float, high, low)
-    ReplaySearchSessionTime = 12, // sessionNum, sessionTimeMS (high, low)
-    VideoCapture = 13,            // irsdk_VideoCaptureMode, unused, unused
-}
+
 
 pub enum ChatCommandMode {
     Macro = 0,     // pass in a number from 1-15 representing the chat macro to launch

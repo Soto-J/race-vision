@@ -26,6 +26,7 @@ impl VarBuffer {
     fn read_i32(&self, rel_offset: usize) -> i32 {
         let abs = self.offset + rel_offset;
         let bytes = &self.shared_mem[abs..abs + 4];
+
         i32::from_le_bytes(bytes.try_into().unwrap())
     }
 
@@ -33,25 +34,20 @@ impl VarBuffer {
         self.read_i32(0)
     }
 
-    // Read `_buf_offset` at offset 4 (int32)
-    pub fn buff_offset_raw(&self) -> i32 {
-        self.read_i32(4)
-    }
-
     pub fn buff_offset(&self) -> i32 {
         if self.is_memory_frozen {
             return 0;
         }
 
-        self.buff_offset_raw()
+        self.read_i32(4)
     }
 
     pub fn freeze(&mut self) {
-        let buff_offset = self.buff_offset_raw() as usize;
+        let buff_offset = self.buff_offset() as usize;
         let end = buff_offset + self.buf_len;
 
-        let frozen = self.shared_mem[buff_offset..end].to_vec();
-        self.frozen_memory = Some(frozen);
+        let memory = self.shared_mem[buff_offset..end].to_vec();
+        self.frozen_memory = Some(memory);
         self.is_memory_frozen = true;
     }
 
@@ -69,6 +65,9 @@ impl VarBuffer {
                 .expect("frozen_memory should exist when frozen.");
         }
 
-        &self.shared_mem
+        let start = self.buff_offset() as usize;
+        let end = start + self.buf_len;
+
+        &self.shared_mem[start..end]
     }
 }
