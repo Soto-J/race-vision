@@ -1,9 +1,9 @@
 #![allow(unused)]
 
 #[cfg(windows)]
-use crate::{
-    ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode, RpySrchMode,
-    RpyStateMode, TelemCommandMode, VideoCaptureMode, utils::enums::BroadcastMsg,
+use crate::sdk::broadcast::enums::{
+    BroadcastMsg, ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode,
+    RpySrchMode, RpyStateMode, TelemCommandMode, VideoCaptureMode,
 };
 #[cfg(windows)]
 use std::{
@@ -132,8 +132,6 @@ impl Broadcast {
     }
 
     pub fn reload_texture(&self, car_idx: Option<u32>) -> Result<(), windows::core::Error> {
-        use crate::ReloadTexturesMode;
-
         let var3 = car_idx.unwrap_or(0);
 
         self.send(

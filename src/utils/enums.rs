@@ -35,22 +35,7 @@ pub enum VarData {
     Floats(Vec<f32>),
     Doubles(Vec<f64>),
 }
-pub enum BroadcastMsg {
-    CamSwitchPos = 0,             // car position, group, camera
-    CamSwitchNum = 1,             // driver #, group, camera
-    CamSetState = 2,              // CameraState, unused, unused
-    ReplaySetPlaySpeed = 3,       // speed, slowMotion, unused
-    ReplaySetPlayPosition = 4,    // RpyPosMode, Frame Number (high, low)
-    ReplaySearch = 5,             // RpySrchMode, unused, unused
-    ReplaySetState = 6,           // RpyStateMode, unused, unused
-    ReloadTextures = 7,           // ReloadTexturesMode, carIdx, unused
-    ChatCommand = 8,              // ChatCommandMode, subCommand, unused
-    PitCommand = 9,               // PitCommandMode, parameter
-    TelemCommand = 10,            // irsdk_TelemCommandMode, unused, unused
-    FfbCommand = 11,              // irsdk_FFBCommandMode, value (float, high, low)
-    ReplaySearchSessionTime = 12, // sessionNum, sessionTimeMS (high, low)
-    VideoCapture = 13,            // irsdk_VideoCaptureMode, unused, unused
-}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrkLoc {
