@@ -2,11 +2,24 @@ use race_vision::{
     sdk::{helpers::check_sim_status, irsdk::IRSDK},
     utils::enums::VarData,
 };
-use std::{error, thread::sleep, time::Duration};
-use tokio;
+use std::{error, time::Duration};
+use tokio::{self, time};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn error::Error>> {
+    let telemetry_vars = vec![
+        "Speed",              // Current speed
+        "RPM",                // Engine RPM
+        "Gear",               // Current gear
+        "Throttle",           // Throttle position (0-1)
+        "Brake",              // Brake position (0-1)
+        "SteeringWheelAngle", // Steering angle
+        "LapDistPct",         // Current lap distance percentage
+        "SessionTime",        // Session time
+        "FuelLevel",          // Fuel level
+        "WaterTemp",          // Water temperature
+    ];
+
     let mut irsdk = IRSDK::default();
 
     println!("Connecting to iRacing...");
@@ -15,6 +28,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 
     loop {
         check_sim_status().await?;
+
         // on each tick we freeze buffer with live telemetry
         // it is optional, but useful if you use vars like CarIdxXXX
         // this way you will have consistent data from those vars inside one tick
@@ -24,18 +38,28 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         // and you will get incosistent data
         irsdk.freeze_var_buffer_latest()?;
 
-        println!("DEBUG: Number of var_headers: {}", irsdk.var_headers.len());
+        // let session_time = irsdk
+        //     .get_item("SessionTime")
+        //     .map_err(|_| "Failed to get session time.")?;
+        // println!("Session Time: {:?}", session_time);
 
-        let session_time = irsdk
-            .get_item("SessionTime")
-            .map_err(|_| "Failed to get session time.")?;
-        println!("Session Time: {:?}", session_time);
+        // let car_setup = irsdk
+        //     .get_item("CarSetup")
+        //     .map_err(|_| "Failed to get car set up")?;
 
-        let car_setup = irsdk
-            .get_item("CarSetup")
-            .map_err(|_| "Failed to get car set up")?;
+        for var_name in telemetry_vars.clone() {
+            match irsdk.get_item(var_name) {
+                Ok(value) => {
+                    let formatted_value = format_telemetry_value(&value);
+                    println!("{:20} : {}", var_name, formatted_value);
+                }
+                Err(e) => {
+                    println!("{:20} : Error - {}", var_name, e);
+                }
+            }
+        }
 
-        sleep(Duration::from_millis(1000));
+        time::sleep(Duration::from_millis(1000)).await;
     }
 }
 
@@ -98,18 +122,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 // }
 // println!();
 
-// let telemetry_vars = vec![
-//     "Speed",              // Current speed
-//     "RPM",                // Engine RPM
-//     "Gear",               // Current gear
-//     "Throttle",           // Throttle position (0-1)
-//     "Brake",              // Brake position (0-1)
-//     "SteeringWheelAngle", // Steering angle
-//     "LapDistPct",         // Current lap distance percentage
-//     "SessionTime",        // Session time
-//     "FuelLevel",          // Fuel level
-//     "WaterTemp",          // Water temperature
-// ];
 //     loop {
 //         // Wait for iRacing to signal new data is available (blocks until new data or timeout)
 //         let _ = irsdk.wait_for_valid_data_event();
@@ -126,18 +138,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 //                 buf.tick_count(),
 //                 buf.buff_offset()
 //             );
-//         }
-
-//         for var_name in &telemetry_vars {
-//             match irsdk.get_item(var_name) {
-//                 Ok(value) => {
-//                     let formatted_value = format_telemetry_value(&value);
-//                     println!("{:20} : {}", var_name, formatted_value);
-//                 }
-//                 Err(e) => {
-//                     println!("{:20} : Error - {}", var_name, e);
-//                 }
-//             }
 //         }
 
 //         println!("\nPress Ctrl+C to exit");

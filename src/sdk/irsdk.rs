@@ -1,4 +1,4 @@
-#![allow(unused)]
+#![allow(dead_code)]
 
 use crate::{
     sdk::{
@@ -41,7 +41,7 @@ use windows::{
                 FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile, OpenFileMappingA,
                 OpenFileMappingW, UnmapViewOfFile,
             },
-            Threading::{OpenEventW, SYNCHRONIZATION_ACCESS_RIGHTS, WaitForSingleObject},
+            Threading::{self, OpenEventW, SYNCHRONIZATION_ACCESS_RIGHTS},
         },
         UI::WindowsAndMessaging::{HWND_BROADCAST, RegisterWindowMessageW, SendNotifyMessageW},
     },
@@ -149,7 +149,7 @@ impl IRSDK {
 
         // Close OS handles safely
         if let Some(handle) = self.data_valid_event.take() {
-            unsafe { CloseHandle(handle) };
+            unsafe { CloseHandle(handle).unwrap() };
         }
 
         self.address_space = None;
@@ -185,8 +185,8 @@ impl IRSDK {
 
         if header.status() != StatusField::StatusConnected as i32 {
             unsafe {
-                UnmapViewOfFile(address_space);
-                CloseHandle(handle);
+                UnmapViewOfFile(address_space)?;
+                CloseHandle(handle)?;
             };
 
             return Err("Shared memory exists but sim is not connected (status != 1)".into());
@@ -236,19 +236,16 @@ impl IRSDK {
     }
 
     pub fn wait_for_valid_data_event(&self) -> Result<(), IRSDKError> {
-        match self.data_valid_event {
-            Some(handle) => {
-                unsafe {
-                    let wait_result = WaitForSingleObject(handle, 32);
+        let handle = self.data_valid_event.ok_or(IRSDKError::Timeout)?;
 
-                    if wait_result != WAIT_OBJECT_0 {
-                        return Err(IRSDKError::Timeout);
-                    }
-                }
+        unsafe {
+            let wait_result = Threading::WaitForSingleObject(handle, 32);
 
-                Ok(())
+            if wait_result != WAIT_OBJECT_0 {
+                return Err(IRSDKError::Timeout);
             }
-            None => Err(IRSDKError::Timeout),
+
+            Ok(())
         }
     }
 
@@ -261,10 +258,32 @@ impl IRSDK {
             .ok_or("No variable buffer available")?;
 
         let memory = buffer.get_memory();
-        let base = (buffer.buff_offset() + var_header.offset) as usize;
+
+        let base = var_header.offset as usize;
         let count = var_header.count as usize;
 
         let var_type = IRacingVarType::try_from(var_header.var_type)?;
+
+        // Calculate the total size needed for bounds checking
+        let size_per_element = match var_type {
+            IRacingVarType::Char | IRacingVarType::Bool => 1,
+            IRacingVarType::Int | IRacingVarType::Bitfield | IRacingVarType::Float => 4,
+            IRacingVarType::Double => 8,
+        };
+
+        let end = base + count * size_per_element;
+
+        // Bounds check to prevent panic
+        if end > memory.len() {
+            return Err(format!(
+                "Variable '{}' data range [{}, {}) exceeds buffer size {}",
+                key,
+                base,
+                end,
+                memory.len()
+            )
+            .into());
+        }
 
         let value = match var_type {
             IRacingVarType::Char => VarData::Chars(memory[base..base + count].to_vec()),
@@ -302,8 +321,6 @@ impl IRSDK {
                     .collect();
                 VarData::Doubles(doubles)
             }
-
-            _ => return Err(format!("Unknown variable type: {}", var_header.var_type).into()),
         };
 
         Ok(value)
@@ -315,26 +332,25 @@ impl IRSDK {
         }
     }
 
+    // Get all buffers and find the most recent one (highest tick_count)
     pub fn freeze_var_buffer_latest(&mut self) -> Result<(), IRSDKError> {
-        &mut self.unfreeze_var_buffer_latest();
+        self.unfreeze_var_buffer_latest();
 
-        self.wait_for_valid_data_event();
+        self.wait_for_valid_data_event()?;
 
-        // Get all buffers and find the most recent one (highest tick_count)
-        if let Some(header) = &self.header {
-            let mut buffers = header.var_buffers();
+        let header = self.header.as_ref().ok_or(IRSDKError::Timeout)?;
 
-            buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
+        let mut buffers = header.var_buffers();
 
-            if let Some(mut latest_buffer) = buffers.into_iter().next() {
-                latest_buffer.unfreeze();
+        buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
 
-                self.var_buffer_latest = Some(latest_buffer);
-                return Ok(());
-            }
-        }
+        // Take the newest one
+        let mut latest = buffers.into_iter().next().ok_or(IRSDKError::Timeout)?;
 
-        Err(IRSDKError::Timeout)
+        latest.unfreeze();
+
+        self.var_buffer_latest = Some(latest);
+        Ok(())
     }
 
     fn is_connected(&mut self) -> bool {
@@ -350,7 +366,7 @@ impl IRSDK {
             (0, s) if s != connected => 1,
             (1, _) if !has_session_num || self.test_file.is_some() => 2,
             (2, _) if self.var_headers_hash.contains_key("SessionNum") => 3,
-            (state, s) if s == connected => 0,
+            (_, s) if s == connected => 0,
             (state, _) => state,
         };
 
@@ -382,14 +398,14 @@ impl IRSDK {
         let len = header.session_info_len() as usize;
 
         // Write session info YAML
-        file.write_all(&memory[offset..offset + len]);
-        file.write_all(b"\n");
+        file.write_all(&memory[offset..offset + len])?;
+        file.write_all(b"\n")?;
 
         // Write variable headers
         for (key, var_header) in &self.var_headers_hash {
             let line = format!("{:32}{}\n", key, var_header);
 
-            file.write_all(line.as_bytes());
+            file.write_all(line.as_bytes())?;
         }
 
         Ok(())
@@ -402,15 +418,15 @@ impl Drop for IRSDK {
             if let Some(ptr) = self.address_space {
                 let addr = MEMORY_MAPPED_VIEW_ADDRESS { Value: ptr };
 
-                UnmapViewOfFile(addr);
+                let _ = UnmapViewOfFile(addr);
             }
 
             if let Some(handle) = self.shared_mem_handle {
-                CloseHandle(handle);
+                let _ = CloseHandle(handle);
             }
 
             if let Some(handle) = self.data_valid_event {
-                CloseHandle(handle);
+                let _ = CloseHandle(handle);
             }
         }
     }

@@ -63,11 +63,24 @@ pub enum ReloadTexturesMode {
     CarIdx = 1, // reload only textures for the specific carIdx
 }
 
+impl From<ReloadTexturesMode> for u16 {
+    fn from(mode: ReloadTexturesMode) -> Self {
+        mode as u16
+    }
+}
+
+#[repr(u16)]
 pub enum ChatCommandMode {
     Macro = 0,     // pass in a number from 1-15 representing the chat macro to launch
     BeginChat = 1, // Open up a new chat window
     Reply = 2,     // Reply to last private chat
     Cancel = 3,    // Close chat window
+}
+
+impl From<ChatCommandMode> for u16 {
+    fn from(mode: ChatCommandMode) -> Self {
+        mode as u16
+    }
 }
 
 // You can call this any time, but telemtry only records when driver is in there car
