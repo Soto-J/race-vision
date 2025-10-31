@@ -15,9 +15,6 @@ pub enum IRSDKError {
     Other(String),
 }
 
-#[derive(Debug)]
-pub enum SimStartupError {}
-
 impl fmt::Display for IRSDKError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

@@ -1,10 +1,14 @@
-use crate::utils::constants::{DATA_VALID_EVENT_NAME, MEM_MAP_FILE, MEM_MAP_FILE_SIZE, SIM_STATUS_URL, SYNCHRONIZE_ACCESS};
+use crate::utils::constants::{
+    DATA_VALID_EVENT_NAME, MEM_MAP_FILE, MEM_MAP_FILE_SIZE, SIM_STATUS_URL, SYNCHRONIZE_ACCESS,
+};
 
 use std::{
     error,
     ffi::{CString, OsStr},
     fs::File,
+    io::Write,
     os::windows::ffi::OsStrExt,
+    path::Path,
     sync::Arc,
 };
 
@@ -92,3 +96,5 @@ pub fn map_to_address(
 
     Ok((shared_ptr, address_space))
 }
+
+
