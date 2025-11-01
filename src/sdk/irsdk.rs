@@ -88,12 +88,12 @@ impl IRSDK {
     ) -> Result<(), Box<dyn error::Error>> {
         match &test_file {
             Some(file) => {
-                let file = File::open(file).map_err(|_| "Failed to open test file")?;
+                let file = File::open(file).map_err(|_| IRSDKError::Io)?;
 
                 let mmap = unsafe {
                     MmapOptions::new()
                         .map(&file)
-                        .map_err(|_| "Failed to create Mmap")?
+                        .map_err(|e|IRSDKError::FailedToMapView(e.into()))?
                 };
 
                 self.shared_mem = Some(Arc::from(mmap.as_ref()));
@@ -116,7 +116,7 @@ impl IRSDK {
                         PCWSTR(wide_name.as_ptr()),
                     )
                 }?;
-
+                // possibly use invalidhandle
                 self.data_valid_event = Some(handle);
 
                 self.wait_for_valid_data_event()
@@ -172,7 +172,7 @@ impl IRSDK {
                 PCSTR(mmap_name.as_ptr() as *const u8),
             )
         }
-        .map_err(|_| "Failed to open Mmap")?;
+        .map_err(|e| IRSDKError::FailedToMapView(e))?;
 
         let (shared_ptr, address_space) = map_to_address(handle)?;
 
@@ -189,7 +189,7 @@ impl IRSDK {
                 CloseHandle(handle)?;
             };
 
-            return Err("Shared memory exists but sim is not connected (status != 1)".into());
+            return Err(IRSDKError::NotConnected);
         }
 
         let mut buffers = header.var_buffers();
@@ -236,7 +236,7 @@ impl IRSDK {
     }
 
     pub fn wait_for_valid_data_event(&self) -> Result<(), IRSDKError> {
-        let handle = self.data_valid_event.ok_or(IRSDKError::Timeout)?;
+        let handle = self.data_valid_event.ok_or(IRSDKError::InvalidHandle)?;
 
         unsafe {
             let wait_result = Threading::WaitForSingleObject(handle, 32);
@@ -250,12 +250,12 @@ impl IRSDK {
     }
 
     pub fn get_item(&self, key: &str) -> Result<VarData, Box<dyn error::Error>> {
-        let var_header = self.var_headers_hash.get(key).ok_or("Item not found!")?;
+        let var_header = self.var_headers_hash.get(key).ok_or(IRSDKError::ItemNotFound)?;
 
         let buffer = self
             .var_buffer_latest
             .as_ref()
-            .ok_or("No variable buffer available")?;
+            .ok_or(IRSDKError::InvalidSharedMemory("Buffer not found"))?;
 
         let memory = buffer.get_memory();
 
@@ -338,14 +338,14 @@ impl IRSDK {
 
         self.wait_for_valid_data_event()?;
 
-        let header = self.header.as_ref().ok_or(IRSDKError::Timeout)?;
+        let header = self.header.as_ref().ok_or(IRSDKError::InvalidSharedMemory("Header not found"))?;
 
         let mut buffers = header.var_buffers();
 
         buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
 
         // Take the newest one
-        let mut latest = buffers.into_iter().next().ok_or(IRSDKError::Timeout)?;
+        let mut latest = buffers.into_iter().next().ok_or(IRSDKError::InvalidSharedMemory("Buffers not found"))?;
 
         latest.unfreeze();
 
@@ -389,10 +389,10 @@ impl IRSDK {
             return Err("".into());
         }
 
-        let mut file = File::create(path).expect("Failed to open dump to file");
+        let mut file = File::create(path).map_err(|e| IRSDKError::Io(e))?;
 
         let memory = self.shared_mem.as_ref().ok_or("No memory found")?;
-        let header = self.header.as_ref().ok_or("No header found")?;
+        let header = self.header.as_ref().ok_or(IRSDKError::InvalidSharedMemory("Header not found"))?;
 
         let offset = header.session_info_offset() as usize;
         let len = header.session_info_len() as usize;

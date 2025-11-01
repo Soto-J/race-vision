@@ -1,36 +1,37 @@
-#![allow(unused)]
+use thiserror::Error;
 
-use std::{error, fmt};
-
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum IRSDKError {
-    NotWindows,
+    #[error("File not found")]
+    FailedToOpenFile,
+
+    #[error("Failed to open file mapping: {0}")]
     FailedToOpenMapping(String),
+
+    #[error("Failed to map view: {0}")]
     FailedToMapView(String),
+
+    #[error("Item not found")]
+    ItemNotFound,
+
+    #[error("Invalid shared memory structure: {0}")]
+    InvalidSharedMemory(String),
+
+    #[error("Invalid handle")]
     InvalidHandle,
+
+    #[error("Timed out")]
     Timeout,
+
+    #[error("Not connected to iRacing")]
     NotConnected,
-    InvalidSharedMemory,
-    Io(std::io::Error),
+
+    #[error("This functionality is only available on Windows")]
+    NotWindows,
+
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("{0}")]
     Other(String),
 }
-
-impl fmt::Display for IRSDKError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IRSDKError::NotWindows => write!(f, "This functionality is only available on Windows"),
-            IRSDKError::FailedToOpenMapping(msg) => {
-                write!(f, "Failed to open file mapping: {}", msg)
-            }
-            IRSDKError::FailedToMapView(msg) => write!(f, "Failed to map view of file: {}", msg),
-            IRSDKError::InvalidHandle => write!(f, "Invalid handle"),
-            IRSDKError::Timeout => write!(f, "Timed out waiting for valid data event"),
-            IRSDKError::NotConnected => write!(f, "iRacing is not connected"),
-            IRSDKError::InvalidSharedMemory => write!(f, "Invalid shared memory structure"),
-            IRSDKError::Io(e) => write!(f, "IO error: {}", e),
-            IRSDKError::Other(msg) => write!(f, "{}", msg),
-        }
-    }
-}
-
-impl error::Error for IRSDKError {}
