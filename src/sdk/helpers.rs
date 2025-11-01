@@ -1,5 +1,8 @@
-use crate::utils::constants::{
-    DATA_VALID_EVENT_NAME, MEM_MAP_FILE, MEM_MAP_FILE_SIZE, SIM_STATUS_URL, SYNCHRONIZE_ACCESS,
+use crate::{
+    sdk::error::IRSDKError,
+    utils::constants::{
+        DATA_VALID_EVENT_NAME, MEM_MAP_FILE, MEM_MAP_FILE_SIZE, SIM_STATUS_URL, SYNCHRONIZE_ACCESS,
+    },
 };
 
 use std::{
@@ -30,24 +33,6 @@ pub async fn check_sim_status() -> Result<(), reqwest::Error> {
     Ok(())
 }
 
-pub fn open_data_valid_event() -> Result<HANDLE, Box<dyn error::Error>> {
-    // Convert String to Wide String (UTF-16)
-    let wide_name: Vec<u16> = OsStr::new(DATA_VALID_EVENT_NAME)
-        .encode_wide()
-        .chain(Some(0))
-        .collect();
-
-    let handle = unsafe {
-        OpenEventW(
-            SYNCHRONIZATION_ACCESS_RIGHTS(SYNCHRONIZE_ACCESS), // This requests permission to wait on the event.
-            false, // Don’t inherit this handle by child processes
-            PCWSTR(wide_name.as_ptr()),
-        )
-    }?;
-
-    Ok(handle)
-}
-
 pub fn open_memory_mapped_file() -> Result<HANDLE, Box<dyn error::Error>> {
     // Create a null-terminated string for the Windows API
     let mem_map_name = CString::new(MEM_MAP_FILE)?;
@@ -63,21 +48,9 @@ pub fn open_memory_mapped_file() -> Result<HANDLE, Box<dyn error::Error>> {
     Ok(handle)
 }
 
-pub fn open_test_file_mmap(file_path: &str) -> Result<Arc<[u8]>, Box<dyn error::Error>> {
-    use memmap2::MmapOptions;
-
-    let file = File::open(file_path)?;
-    let mmap = unsafe { MmapOptions::new().map(&file)? };
-
-    // Convert mmap to Arc<[u8]> to match the shared memory format
-    let data: Arc<[u8]> = Arc::from(mmap.as_ref());
-
-    Ok(data)
-}
-
 pub fn map_to_address(
     mem_handle: HANDLE,
-) -> Result<(Arc<[u8]>, MEMORY_MAPPED_VIEW_ADDRESS), Box<dyn error::Error>> {
+) -> Result<(*const u8, MEMORY_MAPPED_VIEW_ADDRESS), IRSDKError> {
     // Map it into our address space
     let address_space =
         unsafe { MapViewOfFile(mem_handle.clone(), FILE_MAP_READ, 0, 0, MEM_MAP_FILE_SIZE) };
@@ -86,15 +59,11 @@ pub fn map_to_address(
 
     if base_ptr.is_null() {
         let _ = unsafe { CloseHandle(mem_handle.clone()) };
-        return Err("MapViewOfFile returned null pointer".into());
+        return Err(IRSDKError::FailedToMapView(
+            "Map view of file returned null pointer",
+        ));
     }
 
-    let shared_ptr: Arc<[u8]> = unsafe {
-        let slice = std::slice::from_raw_parts(base_ptr, MEM_MAP_FILE_SIZE);
-        Arc::from(slice.to_vec())
-    };
-
-    Ok((shared_ptr, address_space))
+    // Return the raw pointer - we'll create Arc<[u8]> on-demand for live reads
+    Ok((base_ptr, address_space))
 }
-
-

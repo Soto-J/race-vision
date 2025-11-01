@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 
     println!("Connecting to iRacing...");
 
-    irsdk.start_up(None, None).await.unwrap();
+    irsdk.start_up(None, None).await?;
 
     loop {
         check_sim_status().await?;
@@ -38,16 +38,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         // and you will get incosistent data
         irsdk.freeze_var_buffer_latest()?;
 
-        // let session_time = irsdk
-        //     .get_item("SessionTime")
-        //     .map_err(|_| "Failed to get session time.")?;
-        // println!("Session Time: {:?}", session_time);
-
-        // let car_setup = irsdk
-        //     .get_item("CarSetup")
-        //     .map_err(|_| "Failed to get car set up")?;
-
-        for var_name in telemetry_vars.clone() {
+        for var_name in telemetry_vars.iter() {
             match irsdk.get_item(var_name) {
                 Ok(value) => {
                     let formatted_value = format_telemetry_value(&value);
@@ -60,6 +51,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         }
 
         time::sleep(Duration::from_millis(1000)).await;
+        print!("----")
     }
 }
 
@@ -180,5 +172,3 @@ fn format_telemetry_value(value: &VarData) -> String {
         VarData::Chars(vals) => String::from_utf8_lossy(vals).to_string(),
     }
 }
-
-async fn check_iracing() {}

@@ -1,37 +1,50 @@
-use thiserror::Error;
+#![allow(unused)]
 
-#[derive(Debug, Error)]
+use std::{
+    error,
+    fmt::{self, write},
+};
+
+#[derive(Debug)]
 pub enum IRSDKError {
-    #[error("File not found")]
-    FailedToOpenFile,
-
-    #[error("Failed to open file mapping: {0}")]
-    FailedToOpenMapping(String),
-
-    #[error("Failed to map view: {0}")]
-    FailedToMapView(String),
-
-    #[error("Item not found")]
-    ItemNotFound,
-
-    #[error("Invalid shared memory structure: {0}")]
-    InvalidSharedMemory(String),
-
-    #[error("Invalid handle")]
+    FailedToOpenMapping(&'static str),
+    InvalidSharedMemory(&'static str),
+    FailedToMapView(&'static str),
     InvalidHandle,
 
-    #[error("Timed out")]
-    Timeout,
-
-    #[error("Not connected to iRacing")]
+    // ThreadJoinFailed,
+    ItemNotFound,
     NotConnected,
-
-    #[error("This functionality is only available on Windows")]
+    Timeout,
     NotWindows,
+    Io(std::io::Error),
+    Other(&'static str),
+}
 
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
+impl fmt::Display for IRSDKError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IRSDKError::NotWindows => write!(f, "This functionality is only available on Windows"),
+            IRSDKError::FailedToOpenMapping(msg) => {
+                write!(f, "Failed to open file mapping: {}", msg)
+            }
+            IRSDKError::FailedToMapView(msg) => write!(f, "Failed to map view of file: {}", msg),
+            IRSDKError::InvalidHandle => write!(f, "Invalid handle"),
+            IRSDKError::Timeout => write!(f, "Timed out waiting for valid data event"),
+            IRSDKError::NotConnected => write!(f, "iRacing is not connected"),
+            IRSDKError::InvalidSharedMemory(msg) => write!(f, "Invalid shared memory structure"),
+            IRSDKError::Io(e) => write!(f, "IO error: {}", e),
+            IRSDKError::Other(msg) => write!(f, "{}", msg),
+            IRSDKError::ItemNotFound => write!(f, "Item not found"),
+            
+        }
+    }
+}
 
-    #[error("{0}")]
-    Other(String),
+impl error::Error for IRSDKError {}
+
+impl From<std::io::Error> for IRSDKError {
+    fn from(err: std::io::Error) -> Self {
+        IRSDKError::Io(err)
+    }
 }
