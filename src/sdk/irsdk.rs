@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use crate::{
     sdk::{
         broadcast::Broadcast,
@@ -9,10 +7,7 @@ use crate::{
         status::StatusField,
     },
     utils::{
-        constants::{
-            BROADCAST_MSG_NAME, DATA_VALID_EVENT_NAME, MEM_MAP_FILE, SYNCHRONIZE_ACCESS,
-            VAR_HEADER_SIZE,
-        },
+        constants::{self},
         enums::{IRacingVarType, VarData},
     },
 };
@@ -22,28 +17,22 @@ use memmap2::MmapOptions;
 #[cfg(windows)]
 use std::{
     collections::HashMap,
-    error::{self, Error},
-    ffi::{self, CString, OsStr, c_void},
+    error::{self},
+    ffi::{self},
     fs::File,
     io::{self, Write},
     os::windows::ffi::OsStrExt,
     path::PathBuf,
-    sync::{Arc, OnceLock},
+    sync::Arc,
 };
-use tokio;
-
 #[cfg(windows)]
 use windows::{
     Win32::{
-        Foundation::{CloseHandle, HANDLE, LPARAM, WAIT_OBJECT_0, WAIT_TIMEOUT, WPARAM},
+        Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0},
         System::{
-            Memory::{
-                FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile, OpenFileMappingA,
-                OpenFileMappingW, UnmapViewOfFile,
-            },
-            Threading::{OpenEventW, SYNCHRONIZATION_ACCESS_RIGHTS, WaitForSingleObject},
+            Memory::{self},
+            Threading::{self},
         },
-        UI::WindowsAndMessaging::{HWND_BROADCAST, RegisterWindowMessageW, SendNotifyMessageW},
     },
     core::{PCSTR, PCWSTR},
 };
@@ -64,7 +53,9 @@ pub struct IRSDK {
     #[cfg(windows)]
     pub data_valid_event: Option<HANDLE>,
     #[cfg(windows)]
-    address_space: Option<*mut ffi::c_void>,
+    base_ptr: Option<*const u8>, // Raw pointer to memory-mapped region for live updates
+    #[cfg(windows)]
+    address_space: Option<*mut ffi::c_void>, // for cleanup/unmapping (stored as the original *mut c_void to match Windows API requirements)
 
     // Variable header caching
     pub header: Option<Header>,
@@ -85,15 +76,16 @@ impl IRSDK {
         &mut self,
         test_file: Option<PathBuf>,
         dump_path: Option<PathBuf>,
-    ) -> Result<(), Box<dyn error::Error>> {
-        match &test_file {
+    ) -> Result<(), IRSDKError> {
+        match test_file {
             Some(file) => {
-                let file = File::open(file).map_err(|_| "Failed to open test file")?;
+                let file =
+                    File::open(file).map_err(|_| IRSDKError::Io("Failed to open test file."))?;
 
                 let mmap = unsafe {
                     MmapOptions::new()
                         .map(&file)
-                        .map_err(|_| "Failed to create Mmap")?
+                        .map_err(|_| IRSDKError::FailedToMapView("Failed to map file to memory."))?
                 };
 
                 self.shared_mem = Some(Arc::from(mmap.as_ref()));
@@ -102,36 +94,39 @@ impl IRSDK {
             None => {
                 check_sim_status()
                     .await
-                    .map_err(|_| "Iracing is not connected (HTTP check failed)")?;
+                    .map_err(|_| IRSDKError::NotConnected)?;
 
-                let wide_name: Vec<u16> = OsStr::new(DATA_VALID_EVENT_NAME)
+                let wide_name: Vec<u16> = ffi::OsStr::new(constants::DATA_VALID_EVENT_NAME)
                     .encode_wide()
                     .chain(Some(0))
                     .collect();
 
                 let handle: HANDLE = unsafe {
-                    OpenEventW(
-                        SYNCHRONIZATION_ACCESS_RIGHTS(SYNCHRONIZE_ACCESS), // This requests permission to wait on the event.
+                    Threading::OpenEventW(
+                        Threading::SYNCHRONIZATION_ACCESS_RIGHTS(constants::SYNCHRONIZE_ACCESS), // This requests permission to wait on the event.
                         false, // Don’t inherit this handle by child processes
                         PCWSTR(wide_name.as_ptr()),
                     )
-                }?;
+                }
+                .map_err(|_| IRSDKError::InvalidHandle)?;
 
+                // possibly use invalidhandle
                 self.data_valid_event = Some(handle);
 
-                self.wait_for_valid_data_event()
-                    .map_err(|_| "Timed out waiting for valid data event")?;
+                // Retry waiting for data with a timeout - iRacing needs to be actively running
+                self.wait_for_valid_data_event()?;
 
-                self.load_meta_data()
-                    .map_err(|_| "Failed to load meta data")?;
+                self.load_meta_data()?;
             }
         };
 
         if let Some(path) = dump_path {
             if let Some(shared_mem) = &self.shared_mem {
-                let mut file = File::create(path)?;
+                let mut file = File::create(path)
+                    .map_err(|_| IRSDKError::Io("Failed to create dump file."))?;
 
-                file.write_all(shared_mem)?;
+                file.write_all(shared_mem)
+                    .map_err(|_| IRSDKError::Io("Failed to write to dump file"))?;
             }
         }
 
@@ -140,57 +135,45 @@ impl IRSDK {
         Ok(())
     }
 
-    pub fn shutdown(&mut self) {
-        self.is_initialized = false;
-        self.last_session_info_update = 0;
-        self.shared_mem_handle = None;
-        self.shared_mem = None;
-        self.header = None;
-
-        // Close OS handles safely
-        if let Some(handle) = self.data_valid_event.take() {
-            unsafe { CloseHandle(handle) };
-        }
-
-        self.address_space = None;
-        self.var_headers.clear();
-        self.var_headers_hash.clear();
-        self.var_headers_names = None;
-        self.var_buffer_latest = None;
-        self.session_info_hash.clear();
-        self.broadcast_msg_id = None;
-        self.test_file = None;
-    }
-
-    fn load_meta_data(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let mmap_name = CString::new(MEM_MAP_FILE).map_err(|_| "Failed to create CString")?;
+    fn load_meta_data(&mut self) -> Result<(), IRSDKError> {
+        let mmap_name = ffi::CString::new(constants::MEM_MAP_FILE)
+            .map_err(|_| IRSDKError::Other("Failed to create C String"))?;
 
         let handle = unsafe {
-            OpenFileMappingA(
-                FILE_MAP_READ.0,
+            Memory::OpenFileMappingA(
+                Memory::FILE_MAP_READ.0,
                 false,
                 PCSTR(mmap_name.as_ptr() as *const u8),
             )
         }
-        .map_err(|_| "Failed to open Mmap")?;
+        .map_err(|_| IRSDKError::FailedToMapView("Failed to map view"))?;
 
-        let (shared_ptr, address_space) = map_to_address(handle)?;
+        let (base_ptr, address_space) = map_to_address(handle)?;
 
-        // Load shared_mem_handle, shared_mem, & header
+        // Store the raw pointer and address space - we'll read from it live
         self.shared_mem_handle = Some(handle);
+        self.base_ptr = Some(base_ptr);
+        self.address_space = Some(address_space.Value as *mut ffi::c_void);
+
+        // Create initial shared_mem from pointer
+        let shared_ptr: Arc<[u8]> = unsafe {
+            let slice = std::slice::from_raw_parts(base_ptr, constants::MEM_MAP_FILE_SIZE);
+            Arc::from(slice)
+        };
+
         self.shared_mem = Some(shared_ptr.clone());
         self.header = Some(Header::new(shared_ptr.clone()));
 
-        let header = self.header.as_ref().unwrap();
+        let header = self.header.as_ref().expect("Failed to get header.");
 
-        if header.status() != StatusField::StatusConnected as i32 {
-            unsafe {
-                UnmapViewOfFile(address_space);
-                CloseHandle(handle);
-            };
+        // if header.status() != StatusField::StatusConnected as i32 {
+        //     unsafe {
+        //         UnmapViewOfFile(address_space);
+        //         CloseHandle(handle);
+        //     };
 
-            return Err("Shared memory exists but sim is not connected (status != 1)".into());
-        }
+        //     return Err(IRSDKError::NotConnected);
+        // }
 
         let mut buffers = header.var_buffers();
         buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
@@ -207,8 +190,8 @@ impl IRSDK {
         let base_offset = header.var_header_offset().max(0) as usize;
 
         for i in 0..num_vars {
-            let offset = base_offset + i * VAR_HEADER_SIZE;
-            let end = offset + VAR_HEADER_SIZE;
+            let offset = base_offset + i * constants::VAR_HEADER_SIZE;
+            let end = offset + constants::VAR_HEADER_SIZE;
 
             if end > shared_ptr.len() {
                 break;
@@ -227,44 +210,60 @@ impl IRSDK {
         Ok(())
     }
 
-    pub fn broadcast(&mut self) -> Result<&Broadcast, io::Error> {
-        if self.broadcast.is_none() {
-            self.broadcast = Some(Broadcast::new()?);
-        }
-
-        Ok(self.broadcast.as_ref().unwrap())
-    }
-
     pub fn wait_for_valid_data_event(&self) -> Result<(), IRSDKError> {
-        match self.data_valid_event {
-            Some(handle) => {
-                unsafe {
-                    let wait_result = WaitForSingleObject(handle, 32);
+        let handle = self.data_valid_event.ok_or(IRSDKError::InvalidHandle)?;
 
-                    if wait_result != WAIT_OBJECT_0 {
-                        return Err(IRSDKError::Timeout);
-                    }
-                }
+        unsafe {
+            let wait_result = Threading::WaitForSingleObject(handle, 32);
 
+            if wait_result == WAIT_OBJECT_0 {
                 Ok(())
+            } else {
+                Err(IRSDKError::Timeout)
             }
-            None => Err(IRSDKError::Timeout),
         }
     }
 
     pub fn get_item(&self, key: &str) -> Result<VarData, Box<dyn error::Error>> {
-        let var_header = self.var_headers_hash.get(key).ok_or("Item not found!")?;
+        let var_header = self
+            .var_headers_hash
+            .get(key)
+            .ok_or(IRSDKError::ItemNotFound)?;
 
         let buffer = self
             .var_buffer_latest
             .as_ref()
-            .ok_or("No variable buffer available")?;
+            .ok_or(IRSDKError::InvalidSharedMemory("Buffer not found"))?;
 
         let memory = buffer.get_memory();
-        let base = (buffer.buff_offset() + var_header.offset) as usize;
+
+        // When memory is frozen, buff_offset() returns 0, so we need to use the variable offset directly
+        // When not frozen, we need to account for the buffer offset in shared memory
+        let base = var_header.offset as usize;
         let count = var_header.count as usize;
 
         let var_type = IRacingVarType::try_from(var_header.var_type)?;
+
+        // Calculate the total size needed for bounds checking
+        let size_per_element = match var_type {
+            IRacingVarType::Char | IRacingVarType::Bool => 1,
+            IRacingVarType::Int | IRacingVarType::Bitfield | IRacingVarType::Float => 4,
+            IRacingVarType::Double => 8,
+        };
+
+        let end = base + count * size_per_element;
+
+        // Bounds check to prevent panic
+        if end > memory.len() {
+            return Err(format!(
+                "Variable '{}' data range [{}, {}) exceeds buffer size {}",
+                key,
+                base,
+                end,
+                memory.len()
+            )
+            .into());
+        }
 
         let value = match var_type {
             IRacingVarType::Char => VarData::Chars(memory[base..base + count].to_vec()),
@@ -276,7 +275,7 @@ impl IRSDK {
             IRacingVarType::Int => {
                 let int = memory[base..base + count * 4]
                     .chunks_exact(4)
-                    .map(|b| i32::from_le_bytes(b.try_into().unwrap()))
+                    .map(|b| i32::from_le_bytes(b.try_into().unwrap())) /* Unwrap is safe here Since chunks_exact(4) guarantees the size*/
                     .collect();
 
                 VarData::Int(int)
@@ -302,8 +301,6 @@ impl IRSDK {
                     .collect();
                 VarData::Doubles(doubles)
             }
-
-            _ => return Err(format!("Unknown variable type: {}", var_header.var_type).into()),
         };
 
         Ok(value)
@@ -315,26 +312,49 @@ impl IRSDK {
         }
     }
 
+    // Get all buffers and find the most recent one (highest tick_count)
     pub fn freeze_var_buffer_latest(&mut self) -> Result<(), IRSDKError> {
-        &mut self.unfreeze_var_buffer_latest();
+        self.unfreeze_var_buffer_latest();
+        self.wait_for_valid_data_event()?;
 
-        self.wait_for_valid_data_event();
+        // CRITICAL: Create a fresh Arc<[u8]> from the mapped pointer to get live data
+        if let Some(ptr) = self.base_ptr {
+            let fresh_shared_mem: Arc<[u8]> = unsafe {
+                let slice = std::slice::from_raw_parts(ptr, constants::MEM_MAP_FILE_SIZE);
+                Arc::from(slice)
+            };
 
-        // Get all buffers and find the most recent one (highest tick_count)
-        if let Some(header) = &self.header {
-            let mut buffers = header.var_buffers();
-
-            buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
-
-            if let Some(mut latest_buffer) = buffers.into_iter().next() {
-                latest_buffer.unfreeze();
-
-                self.var_buffer_latest = Some(latest_buffer);
-                return Ok(());
-            }
+            self.shared_mem = Some(fresh_shared_mem.clone());
+            self.header = Some(Header::new(fresh_shared_mem));
         }
 
-        Err(IRSDKError::Timeout)
+        let header = self
+            .header
+            .as_ref()
+            .ok_or_else(|| IRSDKError::FailedToMapView("Failed to open map view"))?;
+
+        let mut buffers = header.var_buffers();
+
+        buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
+
+        // Take the newest one
+        let mut latest = buffers
+            .into_iter()
+            .next()
+            .ok_or(IRSDKError::InvalidSharedMemory("Buffers not found"))?;
+
+        latest.freeze();
+        self.var_buffer_latest = Some(latest);
+
+        Ok(())
+    }
+
+    pub fn broadcast(&mut self) -> Result<&Broadcast, io::Error> {
+        if self.broadcast.is_none() {
+            self.broadcast = Some(Broadcast::new()?);
+        }
+
+        Ok(self.broadcast.as_ref().unwrap())
     }
 
     fn is_connected(&mut self) -> bool {
@@ -342,15 +362,16 @@ impl IRSDK {
             return false;
         };
 
+        let session_num_key = "SessionNum";
         let status = header.status();
         let connected = StatusField::StatusConnected as i32;
-        let has_session_num = self.var_headers_hash.contains_key("SessionNum");
+        let has_session_num = self.var_headers_hash.contains_key(session_num_key);
 
         self.workaround_connected_state = match (self.workaround_connected_state, status) {
             (0, s) if s != connected => 1,
             (1, _) if !has_session_num || self.test_file.is_some() => 2,
-            (2, _) if self.var_headers_hash.contains_key("SessionNum") => 3,
-            (state, s) if s == connected => 0,
+            (2, _) if self.var_headers_hash.contains_key(session_num_key) => 3,
+            (_, s) if s == connected => 0,
             (state, _) => state,
         };
 
@@ -373,45 +394,66 @@ impl IRSDK {
             return Err("".into());
         }
 
-        let mut file = File::create(path).expect("Failed to open dump to file");
+        let mut file =
+            File::create(path).map_err(|_| IRSDKError::Io("Failed to create parse to file."))?;
 
         let memory = self.shared_mem.as_ref().ok_or("No memory found")?;
-        let header = self.header.as_ref().ok_or("No header found")?;
+        let header = self
+            .header
+            .as_ref()
+            .ok_or(IRSDKError::InvalidSharedMemory("Header not found"))?;
 
         let offset = header.session_info_offset() as usize;
         let len = header.session_info_len() as usize;
 
         // Write session info YAML
-        file.write_all(&memory[offset..offset + len]);
-        file.write_all(b"\n");
+        file.write_all(&memory[offset..offset + len])?;
+        file.write_all(b"\n")?;
 
         // Write variable headers
         for (key, var_header) in &self.var_headers_hash {
             let line = format!("{:32}{}\n", key, var_header);
 
-            file.write_all(line.as_bytes());
+            file.write_all(line.as_bytes())?;
         }
 
         Ok(())
+    }
+
+    pub fn shutdown(&mut self) {
+        self.is_initialized = false;
+
+        unsafe /* Close OS handles safely */ {
+            if let Some(handle) = self.data_valid_event.take() {
+                let _ = CloseHandle(handle);
+            }
+            if let Some(ptr) = self.address_space {
+                let addr = Memory::MEMORY_MAPPED_VIEW_ADDRESS { Value: ptr };
+                let _ = Memory::UnmapViewOfFile(addr);
+            }
+            if let Some(handle) = self.shared_mem_handle {
+                let _ = CloseHandle(handle);
+            }
+        }
+        self.data_valid_event = None;
+        self.address_space = None;
+        self.shared_mem_handle = None;
+
+        self.last_session_info_update = 0;
+        self.shared_mem = None;
+        self.header = None;
+        self.var_headers.clear();
+        self.var_headers_hash.clear();
+        self.var_headers_names = None;
+        self.var_buffer_latest = None;
+        self.session_info_hash.clear();
+        self.broadcast_msg_id = None;
+        self.test_file = None;
     }
 }
 
 impl Drop for IRSDK {
     fn drop(&mut self) {
-        unsafe {
-            if let Some(ptr) = self.address_space {
-                let addr = MEMORY_MAPPED_VIEW_ADDRESS { Value: ptr };
-
-                UnmapViewOfFile(addr);
-            }
-
-            if let Some(handle) = self.shared_mem_handle {
-                CloseHandle(handle);
-            }
-
-            if let Some(handle) = self.data_valid_event {
-                CloseHandle(handle);
-            }
-        }
+        self.shutdown();
     }
 }

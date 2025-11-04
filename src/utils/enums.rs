@@ -88,3 +88,5 @@ pub enum SessionState {
     Checkered = 5,
     CoolDown = 6,
 }
+
+pub enum IracingVars {}

@@ -1,6 +1,8 @@
+use crate::sdk::memory::var_buffer::VarBuffer;
+
 use std::{fmt, sync::Arc};
 
-use crate::sdk::memory::var_buffer::VarBuffer;
+const I32_SIZE: usize = (i32::BITS / 8) as usize;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Header {
@@ -31,60 +33,63 @@ impl Header {
 
     fn read_i32(&self, offset: usize) -> i32 {
         let bytes = &self.shared_mem[offset..offset + 4];
-        i32::from_le_bytes(bytes.try_into().unwrap())
+        i32::from_le_bytes(
+            bytes
+                .try_into()
+                .expect("Failed to convert bytes to little endian i32"),
+        )
     }
 
     pub fn version(&self) -> i32 {
-        self.read_i32(0)
+        self.read_i32(0 * I32_SIZE)
     }
 
     pub fn status(&self) -> i32 {
-        self.read_i32(4)
+        self.read_i32(4 * I32_SIZE)
     }
 
     pub fn tick_rate(&self) -> i32 {
-        self.read_i32(8)
+        self.read_i32(8 * I32_SIZE)
     }
 
     pub fn session_info_update(&self) -> i32 {
-        self.read_i32(12)
+        self.read_i32(12 * I32_SIZE)
     }
 
     pub fn session_info_len(&self) -> i32 {
-        self.read_i32(16)
+        self.read_i32(16 * I32_SIZE)
     }
 
     pub fn session_info_offset(&self) -> i32 {
-        self.read_i32(20)
+        self.read_i32(20 * I32_SIZE)
     }
 
     pub fn num_vars(&self) -> i32 {
-        self.read_i32(24)
+        self.read_i32(24 * I32_SIZE)
     }
 
     pub fn var_header_offset(&self) -> i32 {
-        self.read_i32(28)
+        self.read_i32(28 * I32_SIZE)
     }
 
     pub fn num_buf(&self) -> i32 {
-        self.read_i32(32)
+        self.read_i32(32 * I32_SIZE)
     }
 
     pub fn buf_len(&self) -> i32 {
-        self.read_i32(36)
+        self.read_i32(36 * I32_SIZE)
     }
 
     pub fn var_buffers(&self) -> Vec<VarBuffer> {
         let num_buf = self.num_buf().max(0) as usize;
         let buf_len = self.buf_len().max(0) as usize;
-        let mut buffers = Vec::with_capacity(num_buf);
 
-        for i in 0..num_buf {
-            let offset = 48 + i * 16;
-            let vb = VarBuffer::new(self.shared_mem.clone(), buf_len, offset);
-            buffers.push(vb);
-        }
+        (0..num_buf)
+            .map(|i| {
+                let offset = 48 + i * 16;
 
-        buffers
+                VarBuffer::new(self.shared_mem.clone(), buf_len, offset)
+            })
+            .collect()
     }
 }
