@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 bitflags = "2.9.4"
 byteorder = "1.5.0"
+clap = "4.5.51"
 memmap2 = "0.9.9"
 reqwest = "0.12.24"
 serde = "1.0.228"
