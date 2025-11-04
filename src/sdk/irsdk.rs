@@ -79,12 +79,13 @@ impl IRSDK {
     ) -> Result<(), IRSDKError> {
         match test_file {
             Some(file) => {
-                let file = File::open(file).map_err(|e| IRSDKError::Io(e))?;
+                let file =
+                    File::open(file).map_err(|_| IRSDKError::Io("Failed to open test file."))?;
 
                 let mmap = unsafe {
                     MmapOptions::new()
                         .map(&file)
-                        .map_err(|_| IRSDKError::FailedToMapView("Failed to map file"))?
+                        .map_err(|_| IRSDKError::FailedToMapView("Failed to map file to memory."))?
                 };
 
                 self.shared_mem = Some(Arc::from(mmap.as_ref()));
@@ -121,37 +122,17 @@ impl IRSDK {
 
         if let Some(path) = dump_path {
             if let Some(shared_mem) = &self.shared_mem {
-                let mut file = File::create(path).map_err(|e| IRSDKError::Io(e))?;
+                let mut file = File::create(path)
+                    .map_err(|_| IRSDKError::Io("Failed to create dump file."))?;
 
-                file.write_all(shared_mem).map_err(|e| IRSDKError::Io(e))?;
+                file.write_all(shared_mem)
+                    .map_err(|_| IRSDKError::Io("Failed to write to dump file"))?;
             }
         }
 
         self.is_initialized = true;
 
         Ok(())
-    }
-
-    pub fn shutdown(&mut self) {
-        self.is_initialized = false;
-        self.last_session_info_update = 0;
-        self.shared_mem_handle = None;
-        self.shared_mem = None;
-        self.header = None;
-
-        // Close OS handles safely
-        if let Some(handle) = self.data_valid_event.take() {
-            unsafe { CloseHandle(handle).unwrap() };
-        }
-
-        self.address_space = None;
-        self.var_headers.clear();
-        self.var_headers_hash.clear();
-        self.var_headers_names = None;
-        self.var_buffer_latest = None;
-        self.session_info_hash.clear();
-        self.broadcast_msg_id = None;
-        self.test_file = None;
     }
 
     fn load_meta_data(&mut self) -> Result<(), IRSDKError> {
@@ -183,7 +164,7 @@ impl IRSDK {
         self.shared_mem = Some(shared_ptr.clone());
         self.header = Some(Header::new(shared_ptr.clone()));
 
-        let header = self.header.as_ref().unwrap();
+        let header = self.header.as_ref().expect("Failed to get header.");
 
         // if header.status() != StatusField::StatusConnected as i32 {
         //     unsafe {
@@ -227,6 +208,20 @@ impl IRSDK {
         }
 
         Ok(())
+    }
+
+    pub fn wait_for_valid_data_event(&self) -> Result<(), IRSDKError> {
+        let handle = self.data_valid_event.ok_or(IRSDKError::InvalidHandle)?;
+
+        unsafe {
+            let wait_result = Threading::WaitForSingleObject(handle, 32);
+
+            if wait_result == WAIT_OBJECT_0 {
+                Ok(())
+            } else {
+                Err(IRSDKError::Timeout)
+            }
+        }
     }
 
     pub fn get_item(&self, key: &str) -> Result<VarData, Box<dyn error::Error>> {
@@ -280,7 +275,7 @@ impl IRSDK {
             IRacingVarType::Int => {
                 let int = memory[base..base + count * 4]
                     .chunks_exact(4)
-                    .map(|b| i32::from_le_bytes(b.try_into().unwrap()))
+                    .map(|b| i32::from_le_bytes(b.try_into().unwrap())) /* Unwrap is safe here Since chunks_exact(4) guarantees the size*/
                     .collect();
 
                 VarData::Int(int)
@@ -362,33 +357,20 @@ impl IRSDK {
         Ok(self.broadcast.as_ref().unwrap())
     }
 
-    pub fn wait_for_valid_data_event(&self) -> Result<(), IRSDKError> {
-        let handle = self.data_valid_event.ok_or(IRSDKError::InvalidHandle)?;
-
-        unsafe {
-            let wait_result = Threading::WaitForSingleObject(handle, 32);
-
-            if wait_result == WAIT_OBJECT_0 {
-                Ok(())
-            } else {
-                Err(IRSDKError::Timeout)
-            }
-        }
-    }
-
     fn is_connected(&mut self) -> bool {
         let Some(header) = &self.header else {
             return false;
         };
 
+        let session_num_key = "SessionNum";
         let status = header.status();
         let connected = StatusField::StatusConnected as i32;
-        let has_session_num = self.var_headers_hash.contains_key("SessionNum");
+        let has_session_num = self.var_headers_hash.contains_key(session_num_key);
 
         self.workaround_connected_state = match (self.workaround_connected_state, status) {
             (0, s) if s != connected => 1,
             (1, _) if !has_session_num || self.test_file.is_some() => 2,
-            (2, _) if self.var_headers_hash.contains_key("SessionNum") => 3,
+            (2, _) if self.var_headers_hash.contains_key(session_num_key) => 3,
             (_, s) if s == connected => 0,
             (state, _) => state,
         };
@@ -412,7 +394,8 @@ impl IRSDK {
             return Err("".into());
         }
 
-        let mut file = File::create(path).map_err(|e| IRSDKError::Io(e))?;
+        let mut file =
+            File::create(path).map_err(|_| IRSDKError::Io("Failed to create parse to file."))?;
 
         let memory = self.shared_mem.as_ref().ok_or("No memory found")?;
         let header = self
@@ -436,24 +419,41 @@ impl IRSDK {
 
         Ok(())
     }
+
+    pub fn shutdown(&mut self) {
+        self.is_initialized = false;
+
+        unsafe /* Close OS handles safely */ {
+            if let Some(handle) = self.data_valid_event.take() {
+                let _ = CloseHandle(handle);
+            }
+            if let Some(ptr) = self.address_space {
+                let addr = Memory::MEMORY_MAPPED_VIEW_ADDRESS { Value: ptr };
+                let _ = Memory::UnmapViewOfFile(addr);
+            }
+            if let Some(handle) = self.shared_mem_handle {
+                let _ = CloseHandle(handle);
+            }
+        }
+        self.data_valid_event = None;
+        self.address_space = None;
+        self.shared_mem_handle = None;
+
+        self.last_session_info_update = 0;
+        self.shared_mem = None;
+        self.header = None;
+        self.var_headers.clear();
+        self.var_headers_hash.clear();
+        self.var_headers_names = None;
+        self.var_buffer_latest = None;
+        self.session_info_hash.clear();
+        self.broadcast_msg_id = None;
+        self.test_file = None;
+    }
 }
 
 impl Drop for IRSDK {
     fn drop(&mut self) {
-        unsafe {
-            if let Some(ptr) = self.address_space {
-                let addr = Memory::MEMORY_MAPPED_VIEW_ADDRESS { Value: ptr };
-
-                let _ = Memory::UnmapViewOfFile(addr);
-            }
-
-            if let Some(handle) = self.shared_mem_handle {
-                let _ = CloseHandle(handle);
-            }
-
-            if let Some(handle) = self.data_valid_event {
-                let _ = CloseHandle(handle);
-            }
-        }
+        self.shutdown();
     }
 }

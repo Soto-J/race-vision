@@ -1,8 +1,6 @@
-#![allow(unused)]
-
 use std::{
     error,
-    fmt::{self, write},
+    fmt::{self},
 };
 
 #[derive(Debug)]
@@ -17,7 +15,7 @@ pub enum IRSDKError {
     NotConnected,
     Timeout,
     NotWindows,
-    Io(std::io::Error),
+    Io(&'static str),
     Other(&'static str),
 }
 
@@ -33,18 +31,11 @@ impl fmt::Display for IRSDKError {
             IRSDKError::Timeout => write!(f, "Timed out waiting for valid data event"),
             IRSDKError::NotConnected => write!(f, "iRacing is not connected"),
             IRSDKError::InvalidSharedMemory(msg) => write!(f, "Invalid shared memory structure"),
-            IRSDKError::Io(e) => write!(f, "IO error: {}", e),
+            IRSDKError::Io(msg) => write!(f, "IO error: {}", msg),
             IRSDKError::Other(msg) => write!(f, "{}", msg),
             IRSDKError::ItemNotFound => write!(f, "Item not found"),
-            
         }
     }
 }
 
 impl error::Error for IRSDKError {}
-
-impl From<std::io::Error> for IRSDKError {
-    fn from(err: std::io::Error) -> Self {
-        IRSDKError::Io(err)
-    }
-}

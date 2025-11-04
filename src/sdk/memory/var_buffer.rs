@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use std::sync::Arc;
 
 #[repr(C)]
@@ -47,8 +45,15 @@ impl VarBuffer {
         let buff_offset = self.buff_offset() as usize;
         let end = buff_offset + self.buf_len;
 
-        println!("DEBUG freeze: tick={}, offset={}, buff_offset={}, buf_len={}, end={}, shared_mem.len()={}",
-                 tick, self.offset, buff_offset, self.buf_len, end, self.shared_mem.len());
+        println!(
+            "DEBUG freeze: tick={}, offset={}, buff_offset={}, buf_len={}, end={}, shared_mem.len()={}",
+            tick,
+            self.offset,
+            buff_offset,
+            self.buf_len,
+            end,
+            self.shared_mem.len()
+        );
 
         let memory = self.shared_mem[buff_offset..end].to_vec();
         self.frozen_memory = Some(memory);
