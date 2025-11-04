@@ -45,7 +45,7 @@ impl VarBuffer {
         let buff_offset = self.buff_offset() as usize;
         let end = buff_offset + self.buf_len;
 
-        println!(
+        tracing::debug!(
             "DEBUG freeze: tick={}, offset={}, buff_offset={}, buf_len={}, end={}, shared_mem.len()={}",
             tick,
             self.offset,
