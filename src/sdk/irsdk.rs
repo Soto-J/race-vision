@@ -83,9 +83,9 @@ impl IRSDK {
                     File::open(file).map_err(|_| IRSDKError::Io("Failed to open test file."))?;
 
                 let mmap = unsafe {
-                    MmapOptions::new()
-                        .map(&file)
-                        .map_err(|_| IRSDKError::FailedToMapView("Failed to map file to memory."))?
+                    MmapOptions::new().map(&file).map_err(|_| {
+                        IRSDKError::FailedToMapView("Failed to map test file to memory.")
+                    })?
                 };
 
                 self.shared_mem = Some(Arc::from(mmap.as_ref()));
@@ -110,12 +110,9 @@ impl IRSDK {
                 }
                 .map_err(|_| IRSDKError::InvalidHandle)?;
 
-                // possibly use invalidhandle
                 self.data_valid_event = Some(handle);
 
-                // Retry waiting for data with a timeout - iRacing needs to be actively running
                 self.wait_for_valid_data_event()?;
-
                 self.load_meta_data()?;
             }
         };
