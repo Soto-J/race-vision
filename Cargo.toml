@@ -10,7 +10,7 @@ clap = "4.5.51"
 memmap2 = "0.9.9"
 reqwest = "0.12.24"
 serde = "1.0.228"
-serde_yaml = "0.9.34"
+serde_yaml = "0.9.33"
 tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.41"
 
