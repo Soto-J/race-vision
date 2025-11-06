@@ -1,6 +1,6 @@
 use race_vision::{
     sdk::{helpers::check_sim_status, irsdk::IRSDK},
-    utils::{constants::telemtry_vars::TelemetryVars, enums::VarData},
+    utils::{constants::telemetry_vars::TelemetryVars, enums::VarData},
 };
 
 use std::{error, time::Duration};

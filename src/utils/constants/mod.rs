@@ -1,6 +1,6 @@
 pub mod flags;
 pub mod size;
-pub mod telemtry_vars;
+pub mod telemetry_vars;
 
 pub const DATA_VALID_EVENT_NAME: &str = "Local\\IRSDKDataValidEvent";
 pub const MEM_MAP_FILE: &str = "Local\\IRSDKMemMapFileName";

@@ -35,11 +35,11 @@ bitflags! {
         const CAUTION_WAVING   = 0x8000;
 
         // drivers black flags
-        const BLACK      = 0x010000;
-        const DISQUALIFY = 0x020000;
-        const SERVICIBLE = 0x040000; // car is allowed service (not a flag)
-        const FURLED     = 0x080000;
-        const REPAIR     = 0x100000;
+        const BLACK       = 0x010000;
+        const DISQUALIFY  = 0x020000;
+        const SERVICEABLE = 0x040000; // car is allowed service (not a flag)
+        const FURLED      = 0x080000;
+        const REPAIR      = 0x100000;
 
         // start lights
         const START_HIDDEN = 0x10000000;
