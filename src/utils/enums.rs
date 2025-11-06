@@ -36,6 +36,10 @@ pub enum VarData {
     Doubles(Vec<f64>),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum StatusField {
+    StatusConnected = 1,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrkLoc {
@@ -89,4 +93,53 @@ pub enum SessionState {
     CoolDown = 6,
 }
 
-pub enum IracingVars {}
+pub enum CsMode {
+    AtIncident = -3,
+    AtLeader = -2,
+    AtExciting = -1,
+}
+
+pub enum PitSvStatus {
+    // status
+    None = 0,
+    InProgress = 1,
+    Complete = 2,
+
+    // errors
+    TooFarLeft = 100,
+    TooFarRight = 101,
+    TooFarForward = 102,
+    TooFarBack = 103,
+    BadAngle = 104,
+    CantFixThat = 105,
+}
+
+pub enum PaceMode {
+    SingleFileStart = 0,
+    DoubleFileStart = 1,
+    SingleFileRestart = 2,
+    DoubleFileRestart = 3,
+    NotPacing = 4,
+}
+
+pub enum CarLeftRight {
+    Off = 0,
+    Clear = 1,        // no cars around us.
+    CarLeft = 2,      // there is a car to our left.
+    CarRight = 3,     // there is a car to our right.
+    CarLeftRight = 4, // there are cars on each side.
+    TwoCarsLeft = 5,  // there are two cars to our left.
+    TwoCarsRight = 6, // there are two cars to our right.
+}
+
+// You can call this any time
+pub enum TrackWetness {
+    Unknown = 0,
+    Dry = 1,
+    MostlyDry = 2,
+    VeryLightlyWet = 3,
+    LightlyWet = 4,
+    ModeratelyWet = 5,
+    VeryWet = 6,
+    ExtremelyWet = 7,
+}

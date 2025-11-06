@@ -1,4 +1,4 @@
-use crate::{sdk::memory::var_buffer::VarBuffer, utils::constants::I32_SIZE};
+use crate::{sdk::memory::var_buffer::VarBuffer, utils::constants::size::ByteSize};
 
 use std::{fmt, sync::Arc};
 
@@ -39,43 +39,43 @@ impl Header {
     }
 
     pub fn version(&self) -> i32 {
-        self.read_i32(0 * I32_SIZE)
+        self.read_i32(0 * ByteSize::I32)
     }
 
     pub fn status(&self) -> i32 {
-        self.read_i32(1 * I32_SIZE)
+        self.read_i32(1 * ByteSize::I32)
     }
 
     pub fn tick_rate(&self) -> i32 {
-        self.read_i32(2 * I32_SIZE)
+        self.read_i32(2 * ByteSize::I32)
     }
 
     pub fn session_info_update(&self) -> i32 {
-        self.read_i32(3 * I32_SIZE)
+        self.read_i32(3 * ByteSize::I32)
     }
 
     pub fn session_info_len(&self) -> i32 {
-        self.read_i32(4 * I32_SIZE)
+        self.read_i32(4 * ByteSize::I32)
     }
 
     pub fn session_info_offset(&self) -> i32 {
-        self.read_i32(5 * I32_SIZE)
+        self.read_i32(5 * ByteSize::I32)
     }
 
     pub fn num_vars(&self) -> i32 {
-        self.read_i32(6 * I32_SIZE)
+        self.read_i32(6 * ByteSize::I32)
     }
 
     pub fn var_header_offset(&self) -> i32 {
-        self.read_i32(7 * I32_SIZE)
+        self.read_i32(7 * ByteSize::I32)
     }
 
     pub fn num_buf(&self) -> i32 {
-        self.read_i32(8 * I32_SIZE)
+        self.read_i32(8 * ByteSize::I32)
     }
 
     pub fn buf_len(&self) -> i32 {
-        self.read_i32(9 * I32_SIZE)
+        self.read_i32(9 * ByteSize::I32)
     }
 
     pub fn var_buffers(&self) -> Vec<VarBuffer> {
