@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DiskSubHeader {

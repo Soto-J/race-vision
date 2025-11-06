@@ -1,6 +1,6 @@
 use race_vision::{
     sdk::{helpers::check_sim_status, irsdk::IRSDK},
-    utils::enums::VarData,
+    utils::{enums::VarData, telemtry_vars::TelemetryVars},
 };
 
 use std::{error, time::Duration};
@@ -9,16 +9,13 @@ use tokio::{self, time};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn error::Error>> {
     let telemetry_vars = vec![
-        "Speed",              // Current speed
-        "RPM",                // Engine RPM
-        "Gear",               // Current gear
-        "Throttle",           // Throttle position (0-1)
-        "Brake",              // Brake position (0-1)
-        "SteeringWheelAngle", // Steering angle
-        "LapDistPct",         // Current lap distance percentage
-        "SessionTime",        // Session time
-        "FuelLevel",          // Fuel level
-        "WaterTemp",          // Water temperature
+        TelemetryVars::SESSION_TIME,
+        TelemetryVars::BRAKE,
+        TelemetryVars::THROTTLE,
+        TelemetryVars::SPEED,
+        TelemetryVars::RPM,
+        TelemetryVars::GEAR,
+        TelemetryVars::STEERING_WHEEL_ANGLE,
     ];
 
     let mut irsdk = IRSDK::default();
@@ -37,7 +34,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         // another one in next line of code could change
         // to the next iracing internal tick_count
         // and you will get incosistent data
-        irsdk.freeze_var_buffer_latest()?;
+        irsdk.freeze_latest_var_buffer()?;
 
         for var_name in telemetry_vars.iter() {
             match irsdk.get_item(var_name) {

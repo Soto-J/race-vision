@@ -10,7 +10,8 @@ pub enum IRSDKError {
     FailedToMapView(&'static str),
     InvalidHandle,
 
-    // ThreadJoinFailed,
+    InvalidVarHeader(&'static str),
+    InvalidVarType(i32),
     ItemNotFound,
     NotConnected,
     Timeout,
@@ -20,7 +21,7 @@ pub enum IRSDKError {
 }
 
 impl fmt::Display for IRSDKError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             IRSDKError::NotWindows => write!(f, "This functionality is only available on Windows"),
             IRSDKError::FailedToOpenMapping(msg) => {
@@ -28,9 +29,13 @@ impl fmt::Display for IRSDKError {
             }
             IRSDKError::FailedToMapView(msg) => write!(f, "Failed to map view of file: {}", msg),
             IRSDKError::InvalidHandle => write!(f, "Invalid handle"),
+            IRSDKError::InvalidVarHeader(msg) => write!(f, "Invalid Var Header: {}", msg),
+            IRSDKError::InvalidVarType(var_type) => write!(f, "Invalid variable type: {}", var_type),
             IRSDKError::Timeout => write!(f, "Timed out waiting for valid data event"),
             IRSDKError::NotConnected => write!(f, "iRacing is not connected"),
-            IRSDKError::InvalidSharedMemory(msg) => write!(f, "Invalid shared memory structure"),
+            IRSDKError::InvalidSharedMemory(msg) => {
+                write!(f, "Invalid shared memory structure: {}", msg)
+            }
             IRSDKError::Io(msg) => write!(f, "IO error: {}", msg),
             IRSDKError::Other(msg) => write!(f, "{}", msg),
             IRSDKError::ItemNotFound => write!(f, "Item not found"),

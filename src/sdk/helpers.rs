@@ -1,21 +1,10 @@
 use crate::{
     sdk::error::IRSDKError,
-    utils::constants::{
-        DATA_VALID_EVENT_NAME, MEM_MAP_FILE, MEM_MAP_FILE_SIZE, SIM_STATUS_URL, SYNCHRONIZE_ACCESS,
-    },
+    utils::constants::{MEM_MAP_FILE, MEM_MAP_FILE_SIZE, SIM_STATUS_URL},
 };
 
-use std::{
-    error,
-    ffi::{CString, OsStr},
-    fs::File,
-    io::Write,
-    os::windows::ffi::OsStrExt,
-    path::Path,
-    sync::Arc,
-};
+use std::{error, ffi::CString};
 
-use windows::Win32::System::Threading::{OpenEventW, SYNCHRONIZATION_ACCESS_RIGHTS};
 #[cfg(windows)]
 use windows::{
     Win32::{
@@ -24,7 +13,7 @@ use windows::{
             FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile, OpenFileMappingA,
         },
     },
-    core::{PCSTR, PCWSTR},
+    core::PCSTR,
 };
 
 pub async fn check_sim_status() -> Result<(), reqwest::Error> {
@@ -55,15 +44,14 @@ pub fn map_to_address(
     let address_space =
         unsafe { MapViewOfFile(mem_handle.clone(), FILE_MAP_READ, 0, 0, MEM_MAP_FILE_SIZE) };
 
-    let base_ptr = address_space.Value as *const u8;
+    let mapping_view_ptr = address_space.Value as *const u8;
 
-    if base_ptr.is_null() {
+    if mapping_view_ptr.is_null() {
         let _ = unsafe { CloseHandle(mem_handle.clone()) };
         return Err(IRSDKError::FailedToMapView(
             "Map view of file returned null pointer",
         ));
     }
 
-    // Return the raw pointer - we'll create Arc<[u8]> on-demand for live reads
-    Ok((base_ptr, address_space))
+    Ok((mapping_view_ptr, address_space))
 }

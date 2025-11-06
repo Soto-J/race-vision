@@ -33,7 +33,7 @@ impl TestApp {
 
         let shared_mem = self
             .irsdk
-            .shared_mem
+            .shared_mem_snapshot
             .as_ref()
             .ok_or("No shared memory found")?;
 

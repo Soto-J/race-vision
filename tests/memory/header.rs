@@ -36,8 +36,8 @@ async fn test_header_version_reads_correctly_with_test_file() {
         .await
         .expect("Failed to start up");
 
-    let shared_mem = irsdk.shared_mem.as_ref().unwrap();
-    let version_bytes = &shared_mem[0..4];
+    let memory_snapshot = irsdk.shared_mem_snapshot.as_ref().unwrap();
+    let version_bytes = &memory_snapshot[0..4];
     let version = i32::from_le_bytes(version_bytes.try_into().unwrap());
 
     assert_eq!(version, 2);
