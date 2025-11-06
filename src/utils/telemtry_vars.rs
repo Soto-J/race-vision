@@ -1,6 +1,6 @@
-pub struct TelemtryVars;
+pub struct TelemetryVars;
 
-impl TelemtryVars {
+impl TelemetryVars {
     /* Environmental */
     pub const AIR_DENSITY: &'static str = "AirDensity";
     pub const AIR_PRESSURE: &'static str = "AirPressure";

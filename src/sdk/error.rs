@@ -29,7 +29,7 @@ impl fmt::Display for IRSDKError {
             }
             IRSDKError::FailedToMapView(msg) => write!(f, "Failed to map view of file: {}", msg),
             IRSDKError::InvalidHandle => write!(f, "Invalid handle"),
-            IRSDKError::InvalidVarHeader(msg) => write!(f, "Invlid Var Header: {}", msg),
+            IRSDKError::InvalidVarHeader(msg) => write!(f, "Invalid Var Header: {}", msg),
             IRSDKError::InvalidVarType(var_type) => write!(f, "Invalid variable type: {}", var_type),
             IRSDKError::Timeout => write!(f, "Timed out waiting for valid data event"),
             IRSDKError::NotConnected => write!(f, "iRacing is not connected"),

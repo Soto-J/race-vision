@@ -1,6 +1,6 @@
 use race_vision::{
     sdk::{helpers::check_sim_status, irsdk::IRSDK},
-    utils::{enums::VarData, telemtry_vars::TelemtryVars},
+    utils::{enums::VarData, telemtry_vars::TelemetryVars},
 };
 
 use std::{error, time::Duration};
@@ -9,13 +9,13 @@ use tokio::{self, time};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn error::Error>> {
     let telemetry_vars = vec![
-        TelemtryVars::SESSION_TIME,
-        TelemtryVars::BRAKE,
-        TelemtryVars::THROTTLE,
-        TelemtryVars::SPEED,
-        TelemtryVars::RPM,
-        TelemtryVars::GEAR,
-        TelemtryVars::STEERING_WHEEL_ANGLE,
+        TelemetryVars::SESSION_TIME,
+        TelemetryVars::BRAKE,
+        TelemetryVars::THROTTLE,
+        TelemetryVars::SPEED,
+        TelemetryVars::RPM,
+        TelemetryVars::GEAR,
+        TelemetryVars::STEERING_WHEEL_ANGLE,
     ];
 
     let mut irsdk = IRSDK::default();

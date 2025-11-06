@@ -411,7 +411,7 @@ impl IRSDK {
         self.is_initialized = false;
 
         /* Close OS handles safely */
-        /* Take guarentees the field becomes None*/
+        /* Take guarantees the field becomes None*/
         unsafe {
             if let Some(handle) = self.data_valid_event.take() {
                 let _ = CloseHandle(handle);
