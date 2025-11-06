@@ -420,7 +420,8 @@ impl TelemetryVars {
     pub const STEERING_WHEEL_PCT_SMOOTHING: &'static str = "SteeringWheelPctSmoothing";
     pub const STEERING_WHEEL_PCT_TORQUE: &'static str = "SteeringWheelPctTorque";
     pub const STEERING_WHEEL_PCT_TORQUE_SIGN: &'static str = "SteeringWheelPctTorqueSign";
-    pub const STEERING_WHEEL_PCT_TORQUE_SIGN_STOPS: &'static str = "SteeringWheelPctTorqueSignStops";
+    pub const STEERING_WHEEL_PCT_TORQUE_SIGN_STOPS: &'static str =
+        "SteeringWheelPctTorqueSignStops";
     pub const STEERING_WHEEL_PEAK_FORCE_NM: &'static str = "SteeringWheelPeakForceNm";
     pub const STEERING_WHEEL_TORQUE: &'static str = "SteeringWheelTorque";
     pub const STEERING_WHEEL_TORQUE_ST: &'static str = "SteeringWheelTorque_ST";

@@ -2,24 +2,21 @@ use crate::{
     sdk::{
         broadcast::Broadcast,
         error::IRSDKError,
-        helpers::{check_sim_status, map_to_address},
+        helpers::{check_sim_status, map_to_address, slice_var_bytes},
         memory::{header::Header, var_buffer::VarBuffer, var_header::VarHeader},
-        status::StatusField,
     },
     utils::{
-        constants::{self},
-        enums::{IRacingVarType, VarData},
+        constants::{self, size},
+        enums::{IRacingVarType, StatusField, VarData},
     },
 };
 
 use memmap2::MmapOptions;
-use windows::Win32::System::Memory::UnmapViewOfFile;
 
 #[cfg(windows)]
 use std::{
     collections::HashMap,
-    error::{self},
-    ffi::{self},
+    error, ffi,
     fs::File,
     io::{self, Write},
     os::windows::ffi::OsStrExt,
@@ -30,10 +27,7 @@ use std::{
 use windows::{
     Win32::{
         Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0},
-        System::{
-            Memory::{self},
-            Threading::{self},
-        },
+        System::{Memory, Threading},
     },
     core::{PCSTR, PCWSTR},
 };
@@ -155,7 +149,7 @@ impl IRSDK {
 
         // Create initial shared_mem_snapshot from pointer
         let shared_ptr: Arc<[u8]> = unsafe {
-            let slice = std::slice::from_raw_parts(mapping_view_ptr, constants::MEM_MAP_FILE_SIZE);
+            let slice = std::slice::from_raw_parts(mapping_view_ptr, size::MEM_MAP_FILE_SIZE);
             Arc::from(slice)
         };
 
@@ -179,8 +173,8 @@ impl IRSDK {
         let base_offset = header.var_header_offset().max(0) as usize;
 
         for i in 0..num_vars {
-            let offset = base_offset + i * constants::VAR_HEADER_SIZE;
-            let end = offset + constants::VAR_HEADER_SIZE;
+            let offset = base_offset + i * size::VAR_HEADER_SIZE;
+            let end = offset + size::VAR_HEADER_SIZE;
 
             if end > shared_ptr.len() {
                 break;
@@ -222,45 +216,29 @@ impl IRSDK {
             .get(key)
             .ok_or(IRSDKError::ItemNotFound)?;
 
-        let buffer = self
+        let latest_buffer = self
             .latest_var_buffer
             .as_ref()
             .ok_or(IRSDKError::InvalidSharedMemory("Buffer not found"))?;
 
-        let memory = buffer.get_memory();
-
         // When memory is frozen, buff_offset() returns 0, so we need to use the variable offset directly
         // When not frozen, we need to account for the buffer offset in shared memory
-        let base = var_header.offset as usize;
-        let count = var_header.count as usize;
-
-        let var_type = IRacingVarType::try_from(var_header.var_type)
-            .map_err(|_| IRSDKError::InvalidVarType(var_header.var_type))?;
-
-        // Calculate the total size needed for bounds checking
-        let size_per_element = match var_type {
-            IRacingVarType::Char | IRacingVarType::Bool => 1,
-            IRacingVarType::Int | IRacingVarType::Bitfield | IRacingVarType::Float => 4,
-            IRacingVarType::Double => 8,
-        };
-
-        let end = base + count * size_per_element;
-
-        if end > memory.len() {
-            return Err(IRSDKError::InvalidSharedMemory(
-                "Variable data range exceeds buffer size",
-            ));
-        }
+        let (bytes, var_type) = slice_var_bytes(
+            latest_buffer.get_memory(),
+            var_header.offset as usize,
+            var_header.count as usize,
+            var_header.var_type,
+        )?;
 
         let value = match var_type {
-            IRacingVarType::Char => VarData::Chars(memory[base..base + count].to_vec()),
+            IRacingVarType::Char => VarData::Chars(bytes.to_vec()),
             IRacingVarType::Bool => {
-                let bools = memory[base..base + count].iter().map(|&b| b != 0).collect();
+                let bools = bytes.iter().map(|&b| b != 0).collect();
 
                 VarData::Bools(bools)
             }
             IRacingVarType::Int => {
-                let int = memory[base..base + count * 4]
+                let int = bytes
                     .chunks_exact(4)
                     .map(|b| i32::from_le_bytes(b.try_into().unwrap())) /* Unwrap is safe here Since chunks_exact(4) guarantees the size*/
                     .collect();
@@ -268,24 +246,27 @@ impl IRSDK {
                 VarData::Int(int)
             }
             IRacingVarType::Bitfield => {
-                let bitfields = memory[base..base + count * 4]
+                let bitfields = bytes
                     .chunks_exact(4)
                     .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
                     .collect();
+
                 VarData::Bitfields(bitfields)
             }
             IRacingVarType::Float => {
-                let floats = memory[base..base + count * 4]
+                let floats = bytes
                     .chunks_exact(4)
                     .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
                     .collect();
+
                 VarData::Floats(floats)
             }
             IRacingVarType::Double => {
-                let doubles = memory[base..base + count * 8]
+                let doubles = bytes
                     .chunks_exact(8)
                     .map(|b| f64::from_le_bytes(b.try_into().unwrap()))
                     .collect();
+
                 VarData::Doubles(doubles)
             }
         };
@@ -307,7 +288,7 @@ impl IRSDK {
         /* Create a fresh Arc<[u8]> from the mapped pointer to get live data */
         if let Some(ptr) = self.mapping_view_ptr {
             let fresh_shared_mem_snapshot: Arc<[u8]> = unsafe {
-                let slice = std::slice::from_raw_parts(ptr, constants::MEM_MAP_FILE_SIZE);
+                let slice = std::slice::from_raw_parts(ptr, size::MEM_MAP_FILE_SIZE);
                 Arc::from(slice)
             };
 

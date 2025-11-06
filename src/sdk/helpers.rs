@@ -1,6 +1,9 @@
 use crate::{
     sdk::error::IRSDKError,
-    utils::constants::{MEM_MAP_FILE, MEM_MAP_FILE_SIZE, SIM_STATUS_URL},
+    utils::{
+        constants::{MEM_MAP_FILE, SIM_STATUS_URL, size},
+        enums::IRacingVarType,
+    },
 };
 
 use std::{error, ffi::CString};
@@ -41,8 +44,15 @@ pub fn map_to_address(
     mem_handle: HANDLE,
 ) -> Result<(*const u8, MEMORY_MAPPED_VIEW_ADDRESS), IRSDKError> {
     // Map it into our address space
-    let address_space =
-        unsafe { MapViewOfFile(mem_handle.clone(), FILE_MAP_READ, 0, 0, MEM_MAP_FILE_SIZE) };
+    let address_space = unsafe {
+        MapViewOfFile(
+            mem_handle.clone(),
+            FILE_MAP_READ,
+            0,
+            0,
+            size::MEM_MAP_FILE_SIZE,
+        )
+    };
 
     let mapping_view_ptr = address_space.Value as *const u8;
 
@@ -54,4 +64,37 @@ pub fn map_to_address(
     }
 
     Ok((mapping_view_ptr, address_space))
+}
+
+pub fn slice_var_bytes<'a>(
+    memory: &'a [u8],
+    offset: usize,
+    count: usize,
+    var_type: i32,
+) -> Result<(&'a [u8], IRacingVarType), IRSDKError> {
+    let var_type =
+        IRacingVarType::try_from(var_type).map_err(|_| IRSDKError::InvalidVarType(var_type))?;
+
+    // Calculate the total size needed for bounds checking
+    let size_per_element = match var_type {
+        IRacingVarType::Char | IRacingVarType::Bool => 1,
+        IRacingVarType::Int | IRacingVarType::Bitfield | IRacingVarType::Float => 4,
+        IRacingVarType::Double => 8,
+    };
+
+    let byte_len = count
+        .checked_mul(size_per_element)
+        .ok_or_else(|| IRSDKError::InvalidSharedMemory("Size calculation overflowed"))?;
+
+    let end_offset = offset
+        .checked_add(byte_len)
+        .ok_or_else(|| IRSDKError::InvalidSharedMemory("Offset calculation overflowed"))?;
+
+    if end_offset > memory.len() {
+        return Err(IRSDKError::InvalidSharedMemory(
+            "Variable data range exceeds buffer size",
+        ));
+    }
+
+    Ok((&memory[offset..end_offset], var_type))
 }
