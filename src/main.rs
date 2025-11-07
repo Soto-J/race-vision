@@ -1,5 +1,5 @@
 use race_vision::{
-    sdk::{helpers::check_sim_status, irsdk::IRSDK},
+    client::{IracingClient, helpers::check_sim_status},
     utils::{constants::telemetry_vars::TelemetryVars, enums::VarData},
 };
 
@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         TelemetryVars::STEERING_WHEEL_ANGLE,
     ];
 
-    let mut irsdk = IRSDK::default();
+    let mut irsdk = IracingClient::default();
 
     println!("Connecting to iRacing...");
 
@@ -55,35 +55,35 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 
 fn format_telemetry_value(value: &VarData) -> String {
     match value {
-        VarData::Floats(vals) => {
+        VarData::F32(vals) => {
             if vals.len() == 1 {
                 format!("{:.2}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        VarData::Doubles(vals) => {
+        VarData::F64(vals) => {
             if vals.len() == 1 {
                 format!("{:.2}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        VarData::Int(vals) => {
+        VarData::I32(vals) => {
             if vals.len() == 1 {
                 format!("{}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        VarData::Bools(vals) => {
+        VarData::Bool(vals) => {
             if vals.len() == 1 {
                 format!("{}", vals[0])
             } else {
                 format!("{:?}", vals)
             }
         }
-        VarData::Bitfields(vals) => format!("{:?}", vals),
-        VarData::Chars(vals) => String::from_utf8_lossy(vals).to_string(),
+        VarData::Bitfield(vals) => format!("{:?}", vals),
+        VarData::Chars8(vals) => String::from_utf8_lossy(vals).to_string(),
     }
 }

@@ -1,43 +1,21 @@
 use crate::{
-    sdk::error::IRSDKError,
+    client::error::IRSDKError,
     utils::{
-        constants::{MEM_MAP_FILE, SIM_STATUS_URL, size},
+        constants::{SIM_STATUS_URL, size},
         enums::IRacingVarType,
     },
 };
 
-use std::{error, ffi::CString};
-
 #[cfg(windows)]
-use windows::{
-    Win32::{
-        Foundation::{CloseHandle, HANDLE},
-        System::Memory::{
-            FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile, OpenFileMappingA,
-        },
-    },
-    core::PCSTR,
+use windows::Win32::{
+    Foundation::{CloseHandle, HANDLE},
+    System::Memory::{FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile},
 };
 
 pub async fn check_sim_status() -> Result<(), reqwest::Error> {
     let response = reqwest::get(SIM_STATUS_URL).await?;
     println!("Sim Status: {:?}", response.status());
     Ok(())
-}
-
-pub fn open_memory_mapped_file() -> Result<HANDLE, Box<dyn error::Error>> {
-    // Create a null-terminated string for the Windows API
-    let mem_map_name = CString::new(MEM_MAP_FILE)?;
-
-    let handle = unsafe {
-        OpenFileMappingA(
-            FILE_MAP_READ.0,
-            false,
-            PCSTR(mem_map_name.as_ptr() as *const u8),
-        )
-    }?;
-
-    Ok(handle)
 }
 
 pub fn map_to_address(
@@ -77,9 +55,9 @@ pub fn slice_var_bytes<'a>(
 
     // Calculate the total size needed for bounds checking
     let size_per_element = match var_type {
-        IRacingVarType::Char | IRacingVarType::Bool => 1,
-        IRacingVarType::Int | IRacingVarType::Bitfield | IRacingVarType::Float => 4,
-        IRacingVarType::Double => 8,
+        IRacingVarType::Char8 | IRacingVarType::Bool => 1,
+        IRacingVarType::I32 | IRacingVarType::Bitfield | IRacingVarType::F32 => 4,
+        IRacingVarType::F64 => 8,
     };
 
     let byte_len = count
