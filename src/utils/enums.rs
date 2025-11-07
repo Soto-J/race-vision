@@ -1,12 +1,12 @@
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IRacingVarType {
-    Char = 0,
+    Char8 = 0,
     Bool = 1,
-    Int = 2,
+    I32 = 2,
     Bitfield = 3,
-    Float = 4,
-    Double = 5,
+    F32 = 4,
+    F64 = 5,
 }
 
 impl TryFrom<i32> for IRacingVarType {
@@ -14,12 +14,12 @@ impl TryFrom<i32> for IRacingVarType {
 
     fn try_from(var_type: i32) -> Result<Self, Self::Error> {
         match var_type {
-            0 => Ok(Self::Char),
+            0 => Ok(Self::Char8),
             1 => Ok(Self::Bool),
-            2 => Ok(Self::Int),
+            2 => Ok(Self::I32),
             3 => Ok(Self::Bitfield),
-            4 => Ok(Self::Float),
-            5 => Ok(Self::Double),
+            4 => Ok(Self::F32),
+            5 => Ok(Self::F64),
             _ => Err(format!("Unknown variable type: {}", var_type)),
         }
     }
@@ -28,12 +28,12 @@ impl TryFrom<i32> for IRacingVarType {
 // Enum to represent telemetry values
 #[derive(Debug, Clone, PartialEq)]
 pub enum VarData {
-    Chars(Vec<u8>),
-    Bools(Vec<bool>),
-    Int(Vec<i32>),
-    Bitfields(Vec<u32>),
-    Floats(Vec<f32>),
-    Doubles(Vec<f64>),
+    Chars8(Vec<u8>),
+    Bool(Vec<bool>),
+    I32(Vec<i32>),
+    Bitfield(Vec<u32>),
+    F32(Vec<f32>),
+    F64(Vec<f64>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

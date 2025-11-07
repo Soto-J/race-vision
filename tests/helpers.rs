@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use race_vision::sdk::irsdk::IRSDK;
+use race_vision::client::IracingClient;
 use std::{
     env,
     error::{self, Error},
@@ -11,28 +11,28 @@ use std::{
 };
 
 pub struct TestApp {
-    pub irsdk: IRSDK,
+    pub client: IracingClient,
 }
 
 impl TestApp {
     pub fn new() -> Self {
-        let irsdk = IRSDK::default();
+        let client = IracingClient::default();
 
-        Self { irsdk }
+        Self { client }
     }
 
     pub async fn init(&mut self) -> Result<(), Box<dyn Error>> {
-        self.irsdk.start_up(None, None).await?;
+        self.client.start_up(None, None).await?;
         Ok(())
     }
 
     pub fn create_test_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn error::Error>> {
-        if !self.irsdk.is_initialized {
+        if !self.client.is_initialized {
             return Err("irsdk not initialized".into());
         }
 
         let shared_mem = self
-            .irsdk
+            .client
             .shared_mem_snapshot
             .as_ref()
             .ok_or("No shared memory found")?;
@@ -49,7 +49,7 @@ impl TestApp {
 async fn test_create_test_file() {
     let mut app = TestApp::new();
 
-    app.irsdk.start_up(None, None).await.unwrap();
+    app.client.start_up(None, None).await.unwrap();
 
     let mut path = env::current_dir().unwrap();
     path.push("tests/test_irsdk.bin");
@@ -72,7 +72,7 @@ mod test {
 
         println!("Exists? {}", test_file_path.exists());
 
-        let response = app.irsdk.start_up(Some(test_file_path), None).await;
+        let response = app.client.start_up(Some(test_file_path), None).await;
 
         match &response {
             Ok(_) => println!("Startup succeeded"),

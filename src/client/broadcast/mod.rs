@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 #[cfg(windows)]
-use crate::sdk::broadcast::enums::{
+use crate::client::broadcast::enums::{
     BroadcastMsg, ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode,
     RpySrchMode, RpyStateMode, TelemCommandMode, VideoCaptureMode,
 };
@@ -21,6 +21,8 @@ use windows::{
     },
     core::PCWSTR,
 };
+
+pub mod enums;
 
 #[cfg(windows)]
 #[derive(Debug)]

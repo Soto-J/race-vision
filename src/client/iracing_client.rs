@@ -1,5 +1,5 @@
 use crate::{
-    sdk::{
+    client::{
         broadcast::Broadcast,
         error::IRSDKError,
         helpers::{check_sim_status, map_to_address, slice_var_bytes},
@@ -34,7 +34,7 @@ use windows::{
 
 #[repr(C)]
 #[derive(Debug, Default)]
-pub struct IRSDK {
+pub struct IracingClient {
     // memory/handle fields (Windows-specific will use raw pointers)
     #[cfg(windows)]
     file_mapping_handle: Option<HANDLE>,
@@ -66,7 +66,7 @@ pub struct IRSDK {
     pub broadcast: Option<Broadcast>,
 }
 
-impl IRSDK {
+impl IracingClient {
     pub async fn start_up(
         &mut self,
         test_file: Option<PathBuf>,
@@ -231,19 +231,19 @@ impl IRSDK {
         )?;
 
         let value = match var_type {
-            IRacingVarType::Char => VarData::Chars(bytes.to_vec()),
+            IRacingVarType::Char8 => VarData::Chars8(bytes.to_vec()),
             IRacingVarType::Bool => {
                 let bools = bytes.iter().map(|&b| b != 0).collect();
 
-                VarData::Bools(bools)
+                VarData::Bool(bools)
             }
-            IRacingVarType::Int => {
+            IRacingVarType::I32 => {
                 let int = bytes
                     .chunks_exact(4)
                     .map(|b| i32::from_le_bytes(b.try_into().unwrap())) /* Unwrap is safe here Since chunks_exact(4) guarantees the size*/
                     .collect();
 
-                VarData::Int(int)
+                VarData::I32(int)
             }
             IRacingVarType::Bitfield => {
                 let bitfields = bytes
@@ -251,23 +251,23 @@ impl IRSDK {
                     .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
                     .collect();
 
-                VarData::Bitfields(bitfields)
+                VarData::Bitfield(bitfields)
             }
-            IRacingVarType::Float => {
+            IRacingVarType::F32 => {
                 let floats = bytes
                     .chunks_exact(4)
                     .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
                     .collect();
 
-                VarData::Floats(floats)
+                VarData::F32(floats)
             }
-            IRacingVarType::Double => {
+            IRacingVarType::F64 => {
                 let doubles = bytes
                     .chunks_exact(8)
                     .map(|b| f64::from_le_bytes(b.try_into().unwrap()))
                     .collect();
 
-                VarData::Doubles(doubles)
+                VarData::F64(doubles)
             }
         };
 
@@ -422,7 +422,7 @@ impl IRSDK {
     }
 }
 
-impl Drop for IRSDK {
+impl Drop for IracingClient {
     fn drop(&mut self) {
         self.shutdown();
     }

@@ -1,9 +1,9 @@
 mod tests {
-    use race_vision::sdk::irsdk::IRSDK;
+    use race_vision::client::IracingClient;
 
     #[tokio::test]
     async fn irsdk_start_up_should_return_200() {
-        let mut irsdk = IRSDK::default();
+        let mut irsdk = IracingClient::default();
         let response = irsdk.start_up(None, None).await;
 
         assert!(response.is_ok(), "start_up should succeed.")
@@ -22,7 +22,7 @@ mod tests {
 
     #[tokio::test]
     async fn list_all_available_variables() {
-        let mut irsdk = IRSDK::default();
+        let mut irsdk = IracingClient::default();
 
         irsdk
             .start_up(None, None)
@@ -47,7 +47,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_data_valid_event() {
-        let mut sdk = IRSDK::default();
+        let mut sdk = IracingClient::default();
 
         sdk.start_up(None, None)
             .await
