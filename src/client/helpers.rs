@@ -37,7 +37,7 @@ pub fn map_to_address(
     if mapping_view_ptr.is_null() {
         let _ = unsafe { CloseHandle(mem_handle.clone()) };
         return Err(IRSDKError::FailedToMapView(
-            "Map view of file returned null pointer",
+            "Map view of file returned null pointer".to_owned(),
         ));
     }
 
@@ -62,15 +62,19 @@ pub fn slice_var_bytes<'a>(
 
     let byte_len = count
         .checked_mul(size_per_element)
-        .ok_or_else(|| IRSDKError::InvalidSharedMemory("Size calculation overflowed"))?;
+        .ok_or(IRSDKError::InvalidSharedMemory(
+            "Size calculation overflowed".to_owned(),
+        ))?;
 
     let end_offset = offset
         .checked_add(byte_len)
-        .ok_or_else(|| IRSDKError::InvalidSharedMemory("Offset calculation overflowed"))?;
+        .ok_or(IRSDKError::InvalidSharedMemory(
+            "Offset calculation overflowed".to_owned(),
+        ))?;
 
     if end_offset > memory.len() {
         return Err(IRSDKError::InvalidSharedMemory(
-            "Variable data range exceeds buffer size",
+            "Variable data range exceeds buffer size".to_owned(),
         ));
     }
 
