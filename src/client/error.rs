@@ -1,46 +1,38 @@
-use std::{
-    error,
-    fmt::{self},
-};
+use color_eyre::eyre;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum IRSDKError {
-    FailedToOpenMapping(&'static str),
-    InvalidSharedMemory(&'static str),
-    FailedToMapView(&'static str),
+    #[error("Invalid Shared Memory: {0}")]
+    InvalidSharedMemory(String),
+    #[error("Failed to map memory to view: {0}")]
+    FailedToMapView(String),
+    #[error("Invalid Handle")]
     InvalidHandle,
 
-    InvalidVarHeader(&'static str),
+    #[error("Invalid Var Header: {0}")]
+    InvalidVarHeader(String),
+    #[error("Invalid Var Type: {0} (unknown or unsupported IRSDK var type)")]
     InvalidVarType(i32),
+
+    #[error("Item Not Found")]
     ItemNotFound,
+    #[error("Not Connected")]
     NotConnected,
+    #[error("Time out")]
     Timeout,
-    NotWindows,
-    Io(&'static str),
-    Other(&'static str),
+    #[error("Unexpected Error")]
+    UnexpectedError(#[source] eyre::Report),
 }
 
-impl fmt::Display for IRSDKError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IRSDKError::NotWindows => write!(f, "This functionality is only available on Windows"),
-            IRSDKError::FailedToOpenMapping(msg) => {
-                write!(f, "Failed to open file mapping: {}", msg)
-            }
-            IRSDKError::FailedToMapView(msg) => write!(f, "Failed to map view of file: {}", msg),
-            IRSDKError::InvalidHandle => write!(f, "Invalid handle"),
-            IRSDKError::InvalidVarHeader(msg) => write!(f, "Invalid Var Header: {}", msg),
-            IRSDKError::InvalidVarType(var_type) => write!(f, "Invalid variable type: {}", var_type),
-            IRSDKError::Timeout => write!(f, "Timed out waiting for valid data event"),
-            IRSDKError::NotConnected => write!(f, "iRacing is not connected"),
-            IRSDKError::InvalidSharedMemory(msg) => {
-                write!(f, "Invalid shared memory structure: {}", msg)
-            }
-            IRSDKError::Io(msg) => write!(f, "IO error: {}", msg),
-            IRSDKError::Other(msg) => write!(f, "{}", msg),
-            IRSDKError::ItemNotFound => write!(f, "Item not found"),
-        }
-    }
-}
+fn log_error_chain(e: &(dyn std::error::Error + 'static)) {
+    // tracing::error!("{:?}", eyre::Report::new(e));
 
-impl error::Error for IRSDKError {}
+    tracing::error!(
+        "-----------------------------------------------------------------------------------\n\
+         Error: {}\n\
+         {:#?}\n\
+         -----------------------------------------------------------------------------------",
+        e,
+        e
+    );
+}

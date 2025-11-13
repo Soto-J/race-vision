@@ -2,26 +2,24 @@ use crate::{
     client::{
         broadcast::Broadcast,
         error::IRSDKError,
-        helpers::{check_sim_status, map_to_address, slice_var_bytes},
+        helpers::{check_sim_status, slice_var_bytes},
         memory::{header::Header, var_buffer::VarBuffer, var_header::VarHeader},
+        session_state::SessionState,
     },
     utils::{
         constants::{self, size},
-        enums::{IRacingVarType, StatusField, VarData},
+        enums::{IRacingVarType, VarData},
     },
 };
 
+use color_eyre::eyre::{self};
 use memmap2::MmapOptions;
+use windows::Win32::System::Memory::{FILE_MAP_READ, MapViewOfFile};
 
 #[cfg(windows)]
 use std::{
-    collections::HashMap,
-    error, ffi,
-    fs::File,
-    io::{self, Write},
-    os::windows::ffi::OsStrExt,
-    path::PathBuf,
-    sync::Arc,
+    collections::HashMap, error, ffi, fs::File, io::Write, os::windows::ffi::OsStrExt,
+    path::PathBuf, sync::Arc,
 };
 #[cfg(windows)]
 use windows::{
@@ -50,15 +48,11 @@ pub struct IracingClient {
     // Variable header caching
     pub header: Option<Header>,
     pub var_headers: Vec<VarHeader>,
-    pub var_header_names: Option<Vec<String>>,
+    pub var_header_names: Vec<String>,
     pub var_headers_hash: HashMap<String, VarHeader>,
     pub latest_var_buffer: Option<VarBuffer>,
 
-    // Session and state
-    pub last_session_info_update: u64,
-    pub session_info_hash: HashMap<String, VarHeader>,
-    pub broadcast_msg_id: Option<u32>,
-    pub workaround_connected_state: u16,
+    pub session_state: SessionState,
 
     pub is_initialized: bool,
     pub test_file: Option<File>,
@@ -74,14 +68,13 @@ impl IracingClient {
     ) -> Result<(), IRSDKError> {
         match test_file {
             Some(file) => {
-                let file =
-                    File::open(file).map_err(|_| IRSDKError::Io("Failed to open test file."))?;
+                let file = File::open(file).map_err(|_| {
+                    IRSDKError::UnexpectedError(eyre::eyre!("Failed to open test file."))
+                })?;
 
-                let mmap = unsafe {
-                    MmapOptions::new().map(&file).map_err(|_| {
-                        IRSDKError::FailedToMapView("Failed to map test file to memory.")
-                    })?
-                };
+                let mmap = unsafe { MmapOptions::new().map(&file) }.map_err(|e| {
+                    IRSDKError::FailedToMapView(format!("Failed to map test file to memory: {}", e))
+                })?;
 
                 self.shared_mem_snapshot = Some(Arc::from(mmap.as_ref()));
             }
@@ -96,6 +89,21 @@ impl IracingClient {
                     .chain(Some(0))
                     .collect();
 
+                /*  Opens the iRacing "data valid" Windows event.
+                ///
+                /// This event is signaled by iRacing every time telemetry updates.
+                /// We request only `SYNCHRONIZE` access so the client can *wait* on
+                /// the event (e.g. via `WaitForSingleObject`) but not modify it.
+                ///
+                /// # Safety
+                /// This calls the raw Windows API `OpenEventW` and uses a raw UTF-16
+                /// string pointer. The caller must ensure:
+                /// - `wide_name` is a valid, null-terminated UTF-16 buffer
+                /// - the event name matches an existing iRacing event
+                /// - the returned handle is closed when no longer needed
+                ///
+                /// Returns a `HANDLE` which may be invalid if the event does not exist.
+                 */
                 let handle: HANDLE = unsafe {
                     Threading::OpenEventW(
                         Threading::SYNCHRONIZATION_ACCESS_RIGHTS(constants::SYNCHRONIZE_ACCESS), // This requests permission to wait on the event.
@@ -107,18 +115,19 @@ impl IracingClient {
 
                 self.data_valid_event = Some(handle);
 
-                self.wait_for_valid_data_event()?;
                 self.load_meta_data()?;
             }
         };
 
         if let Some(path) = dump_path {
             if let Some(shared_mem_snapshot) = &self.shared_mem_snapshot {
-                let mut file = File::create(path)
-                    .map_err(|_| IRSDKError::Io("Failed to create dump file."))?;
+                let mut file = File::create(path).map_err(|_| {
+                    IRSDKError::UnexpectedError(eyre::eyre!("Failed to create dump file."))
+                })?;
 
-                file.write_all(shared_mem_snapshot)
-                    .map_err(|_| IRSDKError::Io("Failed to write to dump file"))?;
+                file.write_all(shared_mem_snapshot).map_err(|_| {
+                    IRSDKError::UnexpectedError(eyre::eyre!("Failed to write to dump file"))
+                })?;
             }
         }
 
@@ -128,8 +137,17 @@ impl IracingClient {
     }
 
     fn load_meta_data(&mut self) -> Result<(), IRSDKError> {
+        self.wait_for_valid_data_event()?;
+        self.open_memory_map()?;
+        self.parse_headers()?;
+
+        Ok(())
+    }
+
+    // opens a handle to a memory-mapped file and maps it into the process's address space
+    fn open_memory_map(&mut self) -> eyre::Result<(), IRSDKError> {
         let mmap_name = ffi::CString::new(constants::MEM_MAP_FILE)
-            .map_err(|_| IRSDKError::Other("Failed to create C String"))?;
+            .map_err(|_| IRSDKError::UnexpectedError(eyre::eyre!("Failed to create C String")))?;
 
         let handle = unsafe {
             Memory::OpenFileMappingA(
@@ -138,14 +156,26 @@ impl IracingClient {
                 PCSTR(mmap_name.as_ptr() as *const u8),
             )
         }
-        .map_err(|_| IRSDKError::FailedToMapView("Failed to map view"))?;
+        .map_err(|e| IRSDKError::FailedToMapView(format!("Failed to open map view: {e}")))?;
 
-        let (mapping_view_ptr, mapping_view) = map_to_address(handle)?;
+        // Map memory to address
+        let memory_map_view =
+            unsafe { MapViewOfFile(handle.clone(), FILE_MAP_READ, 0, 0, size::MEM_MAP_FILE_SIZE) };
+
+        let mapping_view_ptr = memory_map_view.Value as *const u8;
+
+        if mapping_view_ptr.is_null() {
+            let _ = unsafe { CloseHandle(handle.clone()) };
+
+            return Err(IRSDKError::FailedToMapView(
+                "Map view of file returned null pointer".to_owned(),
+            ));
+        }
 
         // Store the raw pointer and address space
         self.file_mapping_handle = Some(handle);
         self.mapping_view_ptr = Some(mapping_view_ptr);
-        self.mapping_view = Some(mapping_view.Value as *mut ffi::c_void);
+        self.mapping_view = Some(memory_map_view.Value as *mut ffi::c_void);
 
         // Create initial shared_mem_snapshot from pointer
         let shared_ptr: Arc<[u8]> = unsafe {
@@ -153,12 +183,26 @@ impl IracingClient {
             Arc::from(slice)
         };
 
-        self.shared_mem_snapshot = Some(shared_ptr.clone());
-        self.header = Some(Header::new(shared_ptr.clone()));
+        self.shared_mem_snapshot = Some(shared_ptr);
+
+        Ok(())
+    }
+
+    fn parse_headers(&mut self) -> Result<(), IRSDKError> {
+        let memory = self
+            .shared_mem_snapshot
+            .as_ref()
+            .ok_or(IRSDKError::InvalidSharedMemory(
+                "Iracing shared memory not found".to_owned(),
+            ))?;
+
+        // load header
+        self.header = Some(Header::new(memory.clone()));
 
         let header = self.header.as_ref().expect("Failed to get header.");
 
         let mut buffers = header.var_buffers();
+
         buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
 
         // update to latest buffer
@@ -176,15 +220,16 @@ impl IracingClient {
             let offset = base_offset + i * size::VAR_HEADER_SIZE;
             let end = offset + size::VAR_HEADER_SIZE;
 
-            if end > shared_ptr.len() {
+            if end > memory.len() {
                 break;
             }
 
-            let var_header = VarHeader::from_bytes(&shared_ptr[offset..end])
-                .ok_or(IRSDKError::InvalidVarHeader("Failed to create var header"))?;
+            let var_header = VarHeader::from_bytes(&memory[offset..end]).ok_or(
+                IRSDKError::InvalidVarHeader("Failed to create var header".to_owned()),
+            )?;
 
             let var_name = var_header.name_str().ok_or(IRSDKError::InvalidVarHeader(
-                "Failed to get var header name",
+                "Failed to get var header name".to_owned(),
             ))?;
 
             self.var_headers_hash
@@ -216,10 +261,12 @@ impl IracingClient {
             .get(key)
             .ok_or(IRSDKError::ItemNotFound)?;
 
-        let latest_buffer = self
-            .latest_var_buffer
-            .as_ref()
-            .ok_or(IRSDKError::InvalidSharedMemory("Buffer not found"))?;
+        let latest_buffer =
+            self.latest_var_buffer
+                .as_ref()
+                .ok_or(IRSDKError::InvalidSharedMemory(
+                    "Buffer not found".to_owned(),
+                ))?;
 
         // When memory is frozen, buff_offset() returns 0, so we need to use the variable offset directly
         // When not frozen, we need to account for the buffer offset in shared memory
@@ -296,10 +343,9 @@ impl IracingClient {
             self.header = Some(Header::new(fresh_shared_mem_snapshot));
         }
 
-        let header = self
-            .header
-            .as_ref()
-            .ok_or_else(|| IRSDKError::FailedToMapView("Failed to open map view"))?;
+        let header = self.header.as_ref().ok_or(IRSDKError::FailedToMapView(
+            "Failed to open map view".to_owned(),
+        ))?;
 
         let mut buffers = header.var_buffers();
 
@@ -309,45 +355,14 @@ impl IracingClient {
         let mut latest = buffers
             .into_iter()
             .next()
-            .ok_or(IRSDKError::InvalidSharedMemory("Buffers not found"))?;
+            .ok_or(IRSDKError::InvalidSharedMemory(
+                "Buffers not found".to_owned(),
+            ))?;
 
         latest.freeze();
         self.latest_var_buffer = Some(latest);
 
         Ok(())
-    }
-
-    fn is_connected(&mut self) -> bool {
-        let Some(header) = &self.header else {
-            return false;
-        };
-
-        let session_num_key = "SessionNum";
-        let status = header.status();
-        let connected = StatusField::StatusConnected as i32;
-        let has_session_num = self.var_headers_hash.contains_key(session_num_key);
-
-        self.workaround_connected_state = match (self.workaround_connected_state, status) {
-            (0, status) if status != connected => 1,
-            (1, _) if !has_session_num || self.test_file.is_some() => 2,
-            (2, _) if self.var_headers_hash.contains_key(session_num_key) => 3,
-            (_, status) if status == connected => 0,
-            (state, _) => state,
-        };
-
-        let is_status_connected = status == connected;
-        let is_workaround_connected = self.workaround_connected_state == 3;
-        let has_data_source = self.test_file.is_some() || self.data_valid_event.is_some();
-
-        has_data_source && (is_status_connected || is_workaround_connected)
-    }
-
-    pub fn broadcast(&mut self) -> Result<&Broadcast, io::Error> {
-        if self.broadcast.is_none() {
-            self.broadcast = Some(Broadcast::new()?);
-        }
-
-        Ok(self.broadcast.as_ref().unwrap())
     }
 
     pub fn session_info_update(&self) -> Option<i32> {
@@ -362,14 +377,14 @@ impl IracingClient {
             return Err("".into());
         }
 
-        let mut file =
-            File::create(path).map_err(|_| IRSDKError::Io("Failed to create parse to file."))?;
+        let mut file = File::create(path).map_err(|e| {
+            IRSDKError::UnexpectedError(eyre::eyre!("Failed to create parse to file: {e}"))
+        })?;
 
         let memory = self.shared_mem_snapshot.as_ref().ok_or("No memory found")?;
-        let header = self
-            .header
-            .as_ref()
-            .ok_or(IRSDKError::InvalidSharedMemory("Header not found"))?;
+        let header = self.header.as_ref().ok_or(IRSDKError::InvalidSharedMemory(
+            "Header not found".to_owned(),
+        ))?;
 
         let offset = header.session_info_offset() as usize;
         let len = header.session_info_len() as usize;
@@ -409,15 +424,12 @@ impl IracingClient {
         self.mapping_view = None;
         self.file_mapping_handle = None;
 
-        self.last_session_info_update = 0;
         self.shared_mem_snapshot = None;
         self.header = None;
         self.var_headers.clear();
         self.var_headers_hash.clear();
-        self.var_header_names = None;
+        self.var_header_names.clear();
         self.latest_var_buffer = None;
-        self.session_info_hash.clear();
-        self.broadcast_msg_id = None;
         self.test_file = None;
     }
 }
