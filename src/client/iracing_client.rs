@@ -423,7 +423,7 @@ impl IracingClient {
         self.data_valid_event = None;
         self.mapping_view = None;
         self.file_mapping_handle = None;
-
+        self.session_state = SessionState::default();
         self.shared_mem_snapshot = None;
         self.header = None;
         self.var_headers.clear();
