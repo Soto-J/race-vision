@@ -22,12 +22,7 @@ pub struct VarCache {
 
 impl VarCache {
     pub fn parse_headers(&mut self, memory_snapshot: &Arc<[u8]>) -> eyre::Result<()> {
-        self.header = Some(Header::new(memory_snapshot.clone()));
-
-        let header = self
-            .header
-            .as_ref()
-            .ok_or_else(|| eyre!("Failed to get header"))?;
+        let header = Header::new(memory_snapshot.clone());
 
         // update to latest buffer
         let mut buffers = header.var_buffers();
@@ -41,6 +36,8 @@ impl VarCache {
             header.var_header_offset().max(0) as usize,
         )?;
 
+        self.header = Some(header);
+        
         Ok(())
     }
 
