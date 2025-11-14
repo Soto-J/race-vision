@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 
     let mut irsdk = IracingClient::default();
 
-    println!("Connecting to iRacing...");
+    tracing::debug!("Connecting to iRacing...");
 
     irsdk.start_up(None, None).await?;
 

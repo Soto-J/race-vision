@@ -1,4 +1,4 @@
-use crate::{client::memory::var_buffer::VarBuffer, utils::constants::size::ByteSize};
+use crate::{client::telemetry::var_buffer::VarBuffer, utils::constants::size::ByteSize};
 
 use std::{fmt, sync::Arc};
 

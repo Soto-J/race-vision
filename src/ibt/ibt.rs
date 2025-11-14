@@ -1,4 +1,7 @@
-use crate::client::memory::{disk_sub_header::DiskSubHeader, header::Header, var_header::VarHeader};
+use crate::client::telemetry::{
+    disk_sub_header::DiskSubHeader,
+    models::{Header, VarHeader},
+};
 
 use std::{collections::HashMap, fs::File, sync::Arc};
 

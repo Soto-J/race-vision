@@ -1,5 +1,5 @@
 use crate::{
-    client::memory::{header::Header, var_header::VarHeader},
+    client::telemetry::models::{Header, VarHeader},
     utils::enums::StatusField,
 };
 
