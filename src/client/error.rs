@@ -6,21 +6,35 @@ pub enum IRSDKError {
     InvalidSharedMemory(String),
     #[error("Failed to map memory to view: {0}")]
     FailedToMapView(String),
-    #[error("Invalid Handle")]
-    InvalidHandle,
+    #[error("Invalid Handle: {0}")]
+    InvalidHandle(String),
+
+    // VarCache errors
+    #[error("Header not found")]
+    HeaderNotFound,
+
+    // MMap errors
+    #[error("View PTR not found")]
+    ViewPTRNotFound,
+    #[error("View Address not found")]
+    ViewAddressNotFound,
+    #[error("Memory Snapshot not found")]
+    SnapshotNotFound,
+    #[error("Data Valid Event not found")]
+    DataValidEventNotFound,
 
     #[error("Invalid Var Header: {0}")]
     InvalidVarHeader(String),
     #[error("Invalid Var Type: {0} (unknown or unsupported IRSDK var type)")]
     InvalidVarType(i32),
 
-    #[error("Item Not Found")]
+    #[error("Item not found")]
     ItemNotFound,
-    #[error("Not Connected")]
+    #[error("Not connected")]
     NotConnected,
     #[error("Time out")]
     Timeout,
-    #[error("Unexpected Error")]
+    #[error("Unexpected error")]
     UnexpectedError(#[source] eyre::Report),
 }
 
