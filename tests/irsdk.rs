@@ -29,7 +29,7 @@ mod tests {
             .await
             .expect("Failed to start IRSDK");
 
-        let var_headers = &irsdk.var_headers;
+        let var_headers = &irsdk.cache.var_headers;
 
         println!("\n===== Available Variables ({}) =====", var_headers.len());
 
@@ -54,6 +54,7 @@ mod tests {
             .expect("Failed to start IRSDK");
 
         let data = sdk
+            .mmap
             .data_valid_event
             .expect("Failed to get data valid event");
 

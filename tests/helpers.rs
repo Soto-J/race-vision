@@ -33,7 +33,8 @@ impl TestApp {
 
         let shared_mem = self
             .client
-            .shared_mem_snapshot
+            .mmap
+            .snapshot
             .as_ref()
             .ok_or("No shared memory found")?;
 

@@ -7,7 +7,7 @@ use crate::{
         telemetry::{MemoryMap, VarCache, models::Header},
     },
     utils::{
-        constants::size,
+        constants::size::{self, ByteSize},
         enums::{IRacingVarType, VarData},
     },
 };
@@ -49,9 +49,7 @@ impl IracingClient {
             }
 
             None => {
-                check_sim_status()
-                    .await
-                    .map_err(|_| IRSDKError::NotConnected)?;
+                check_sim_status().await?;
 
                 self.mmap.load_live_data()?;
 
@@ -119,7 +117,7 @@ impl IracingClient {
             }
             IRacingVarType::I32 => {
                 let int = bytes
-                    .chunks_exact(4)
+                    .chunks_exact(ByteSize::I32)
                     .map(|b| i32::from_le_bytes(b.try_into().unwrap())) /* Unwrap is safe here Since chunks_exact(4) guarantees the size*/
                     .collect();
 
@@ -127,7 +125,7 @@ impl IracingClient {
             }
             IRacingVarType::Bitfield => {
                 let bitfields = bytes
-                    .chunks_exact(4)
+                    .chunks_exact(ByteSize::I32)
                     .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
                     .collect();
 
@@ -135,7 +133,7 @@ impl IracingClient {
             }
             IRacingVarType::F32 => {
                 let floats = bytes
-                    .chunks_exact(4)
+                    .chunks_exact(ByteSize::F32)
                     .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
                     .collect();
 
@@ -143,7 +141,7 @@ impl IracingClient {
             }
             IRacingVarType::F64 => {
                 let doubles = bytes
-                    .chunks_exact(8)
+                    .chunks_exact(ByteSize::F64)
                     .map(|b| f64::from_le_bytes(b.try_into().unwrap()))
                     .collect();
 
@@ -161,7 +159,7 @@ impl IracingClient {
     }
 
     // Get all buffers and find the most recent one (highest tick_count)
-    pub fn freeze_latest_var_buffer(&mut self) -> eyre::Result<()> {
+    pub fn update_latest_var_buffer(&mut self) -> eyre::Result<()> {
         let latest_var_buffer = self
             .cache
             .latest_var_buffer

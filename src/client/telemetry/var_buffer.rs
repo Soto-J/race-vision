@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use crate::utils::constants::size::ByteSize;
 
-use crate::utils::constants::size;
+use std::sync::Arc;
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -31,7 +31,7 @@ impl VarBuffer {
     }
 
     pub fn tick_count(&self) -> i32 {
-        self.read_i32(0 * size::I32_SIZE)
+        self.read_i32(0 * ByteSize::I32)
     }
 
     pub fn buff_offset(&self) -> i32 {
@@ -39,7 +39,7 @@ impl VarBuffer {
             return 0;
         }
 
-        self.read_i32(1 * size::I32_SIZE)
+        self.read_i32(1 * ByteSize::I32)
     }
 
     pub fn freeze(&mut self) {

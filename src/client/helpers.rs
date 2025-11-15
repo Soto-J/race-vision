@@ -1,47 +1,17 @@
 use crate::{
     client::error::IRSDKError,
-    utils::{
-        constants::{SIM_STATUS_URL, size},
-        enums::IRacingVarType,
-    },
+    utils::{constants::SIM_STATUS_URL, enums::IRacingVarType},
 };
 
-#[cfg(windows)]
-use windows::Win32::{
-    Foundation::{CloseHandle, HANDLE},
-    System::Memory::{FILE_MAP_READ, MEMORY_MAPPED_VIEW_ADDRESS, MapViewOfFile},
-};
+use color_eyre::eyre::{self, eyre};
 
-pub async fn check_sim_status() -> Result<(), reqwest::Error> {
-    let response = reqwest::get(SIM_STATUS_URL).await?;
+pub async fn check_sim_status() -> eyre::Result<()> {
+    let response = reqwest::get(SIM_STATUS_URL)
+        .await
+        .map_err(|_| eyre!(IRSDKError::NotConnected))?;
+
     println!("Sim Status: {:?}", response.status());
     Ok(())
-}
-
-pub fn map_to_address(
-    mem_handle: HANDLE,
-) -> Result<(*const u8, MEMORY_MAPPED_VIEW_ADDRESS), IRSDKError> {
-    // Map it into our address space
-    let address_space = unsafe {
-        MapViewOfFile(
-            mem_handle.clone(),
-            FILE_MAP_READ,
-            0,
-            0,
-            size::MEM_MAP_FILE_SIZE,
-        )
-    };
-
-    let mapping_view_ptr = address_space.Value as *const u8;
-
-    if mapping_view_ptr.is_null() {
-        let _ = unsafe { CloseHandle(mem_handle.clone()) };
-        return Err(IRSDKError::FailedToMapView(
-            "Map view of file returned null pointer".to_owned(),
-        ));
-    }
-
-    Ok((mapping_view_ptr, address_space))
 }
 
 pub fn slice_var_bytes<'a>(

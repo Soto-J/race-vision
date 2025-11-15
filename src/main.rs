@@ -1,13 +1,13 @@
+use color_eyre::eyre;
 use race_vision::{
     client::{IracingClient, helpers::check_sim_status},
     utils::{constants::telemetry_vars::TelemetryVars, enums::VarData},
 };
-
-use std::{error, time::Duration};
+use std::time::Duration;
 use tokio::{self, time};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn error::Error>> {
+async fn main() -> eyre::Result<()> {
     let telemetry_vars = vec![
         TelemetryVars::SESSION_TIME,
         TelemetryVars::BRAKE,
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         // another one in next line of code could change
         // to the next iracing internal tick_count
         // and you will get incosistent data
-        irsdk.freeze_latest_var_buffer()?;
+        irsdk.update_latest_var_buffer()?;
 
         for var_name in telemetry_vars.iter() {
             match irsdk.get_item(var_name) {
