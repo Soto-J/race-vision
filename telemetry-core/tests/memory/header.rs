@@ -1,4 +1,4 @@
-use race_vision::client::IracingClient;
+use telemetry_core::client::IracingClient;
 
 // Individual Field Tests (10 tests)
 

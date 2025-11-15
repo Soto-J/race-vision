@@ -1,5 +1,5 @@
 mod tests {
-    use race_vision::client::IracingClient;
+    use telemetry_core::client::IracingClient;
 
     #[tokio::test]
     async fn irsdk_start_up_should_return_200() {
