@@ -3,14 +3,11 @@ use crate::{
     utils::{constants::SIM_STATUS_URL, enums::IRacingVarType},
 };
 
-use color_eyre::eyre::{self, eyre};
+use color_eyre::eyre::{self, Ok, eyre};
 
 pub async fn check_sim_status() -> eyre::Result<()> {
-    let response = reqwest::get(SIM_STATUS_URL)
-        .await
-        .map_err(|_| eyre!(IRSDKError::NotConnected))?;
-
-    println!("Sim Status: {:?}", response.status());
+    let res = reqwest::get(SIM_STATUS_URL).await?;
+    println!("Sim Status: {:?}", res.status());
     Ok(())
 }
 
@@ -19,7 +16,7 @@ pub fn slice_var_bytes<'a>(
     offset: usize,
     count: usize,
     var_type: i32,
-) -> Result<(&'a [u8], IRacingVarType), IRSDKError> {
+) -> eyre::Result<(&'a [u8], IRacingVarType)> {
     let var_type =
         IRacingVarType::try_from(var_type).map_err(|_| IRSDKError::InvalidVarType(var_type))?;
 
@@ -43,9 +40,9 @@ pub fn slice_var_bytes<'a>(
         ))?;
 
     if end_offset > memory.len() {
-        return Err(IRSDKError::InvalidSharedMemory(
+        return Err(eyre!(IRSDKError::InvalidSharedMemory(
             "Variable data range exceeds buffer size".to_owned(),
-        ));
+        )));
     }
 
     Ok((&memory[offset..end_offset], var_type))
