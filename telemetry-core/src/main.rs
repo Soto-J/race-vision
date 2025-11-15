@@ -1,8 +1,9 @@
-use color_eyre::eyre;
-use race_vision::{
+use telemetry_core::{
     client::{IracingClient, helpers::check_sim_status},
     utils::{constants::telemetry_vars::TelemetryVars, enums::VarData},
 };
+
+use color_eyre::eyre;
 use std::time::Duration;
 use tokio::{self, time};
 

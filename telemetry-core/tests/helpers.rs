@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use race_vision::client::IracingClient;
+use telemetry_core::client::IracingClient;
 use std::{
     env,
     error::{self, Error},
