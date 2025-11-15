@@ -11,7 +11,7 @@ async fn test_header_reads_correctly() {
         .await
         .expect("Failed to start up");
 
-    let header = client.header.as_ref().expect("No headers found");
+    let header = client.cache.header.as_ref().expect("No headers found");
 
     dbg!(header.version(), header.num_vars(), header.buf_len());
     assert_eq!(header.version(), 2);
@@ -36,7 +36,7 @@ async fn test_header_version_reads_correctly_with_test_file() {
         .await
         .expect("Failed to start up");
 
-    let memory_snapshot = client.shared_mem_snapshot.as_ref().unwrap();
+    let memory_snapshot = client.mmap.snapshot.as_ref().unwrap();
     let version_bytes = &memory_snapshot[0..4];
     let version = i32::from_le_bytes(version_bytes.try_into().unwrap());
 

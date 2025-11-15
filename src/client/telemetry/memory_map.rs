@@ -32,22 +32,22 @@ pub struct MemoryMap {
 }
 
 impl MemoryMap {
+    /*  Opens the iRacing "data valid" Windows event.
+    ///
+    /// This event is signaled by iRacing every time telemetry updates.
+    /// We request only `SYNCHRONIZE` access so the client can *wait* on
+    /// the event (e.g. via `WaitForSingleObject`) but not modify it.
+    ///
+    /// # Safety
+    /// This calls the raw Windows API `OpenEventW` and uses a raw UTF-16
+    /// string pointer. The caller must ensure:
+    /// - `wide_name` is a valid, null-terminated UTF-16 buffer
+    /// - the event name matches an existing iRacing event
+    /// - the returned handle is closed when no longer needed
+    ///
+    /// Returns a `HANDLE` which may be invalid if the event does not exist.
+     */
     pub fn load_live_data(&mut self) -> eyre::Result<()> {
-        /*  Opens the iRacing "data valid" Windows event.
-        ///
-        /// This event is signaled by iRacing every time telemetry updates.
-        /// We request only `SYNCHRONIZE` access so the client can *wait* on
-        /// the event (e.g. via `WaitForSingleObject`) but not modify it.
-        ///
-        /// # Safety
-        /// This calls the raw Windows API `OpenEventW` and uses a raw UTF-16
-        /// string pointer. The caller must ensure:
-        /// - `wide_name` is a valid, null-terminated UTF-16 buffer
-        /// - the event name matches an existing iRacing event
-        /// - the returned handle is closed when no longer needed
-        ///
-        /// Returns a `HANDLE` which may be invalid if the event does not exist.
-         */
         let wide_name: Vec<u16> = ffi::OsStr::new(constants::DATA_VALID_EVENT_NAME)
             .encode_wide()
             .chain(Some(0))
@@ -131,10 +131,8 @@ impl MemoryMap {
 
         Ok(())
     }
-}
 
-impl Drop for MemoryMap {
-    fn drop(&mut self) {
+    fn shutdown(&mut self) {
         /* Close OS handles safely */
         /* Take guarantees the field becomes None*/
         unsafe {
@@ -151,5 +149,11 @@ impl Drop for MemoryMap {
                 let _ = CloseHandle(handle);
             }
         }
+    }
+}
+
+impl Drop for MemoryMap {
+    fn drop(&mut self) {
+        self.shutdown();
     }
 }
