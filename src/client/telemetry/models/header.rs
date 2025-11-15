@@ -1,4 +1,7 @@
-use crate::{client::telemetry::var_buffer::VarBuffer, utils::constants::size::ByteSize};
+use crate::{
+    client::telemetry::var_buffer::VarBuffer,
+    utils::constants::size::{ByteSize, VAR_BUF_SIZE},
+};
 
 use std::{fmt, sync::Arc};
 
@@ -84,7 +87,7 @@ impl Header {
 
         (0..num_buf)
             .map(|i| {
-                let offset = 48 + i * 16;
+                let offset = (10 * ByteSize::I32 + ByteSize::PADDING) + (i * VAR_BUF_SIZE);
 
                 VarBuffer::new(self.shared_mem.clone(), buf_len, offset)
             })

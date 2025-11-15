@@ -152,12 +152,6 @@ impl IracingClient {
         Ok(value)
     }
 
-    pub fn unfreeze_latest_var_buffer(&mut self) {
-        if let Some(var_buffer) = &mut self.cache.latest_var_buffer {
-            var_buffer.unfreeze();
-        }
-    }
-
     // Get all buffers and find the most recent one (highest tick_count)
     pub fn update_latest_var_buffer(&mut self) -> eyre::Result<()> {
         let latest_var_buffer = self
