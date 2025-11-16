@@ -4,7 +4,7 @@ mod tests {
     #[tokio::test]
     async fn irsdk_start_up_should_return_200() {
         let mut irsdk = IracingClient::default();
-        let response = irsdk.start_up(None, None).await;
+        let response = irsdk.start_up().await;
 
         assert!(response.is_ok(), "start_up should succeed.")
     }
@@ -24,10 +24,7 @@ mod tests {
     async fn list_all_available_variables() {
         let mut irsdk = IracingClient::default();
 
-        irsdk
-            .start_up(None, None)
-            .await
-            .expect("Failed to start IRSDK");
+        irsdk.start_up().await.expect("Failed to start IRSDK");
 
         let var_headers = &irsdk.cache.var_headers;
 
@@ -49,9 +46,7 @@ mod tests {
     async fn test_data_valid_event() {
         let mut sdk = IracingClient::default();
 
-        sdk.start_up(None, None)
-            .await
-            .expect("Failed to start IRSDK");
+        sdk.start_up().await.expect("Failed to start IRSDK");
 
         let data = sdk
             .mmap

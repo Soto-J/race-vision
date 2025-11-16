@@ -13,8 +13,7 @@ use crate::{
 };
 
 use color_eyre::eyre::{self, ContextCompat, Ok, eyre};
-use memmap2::MmapOptions;
-use std::{fs::File, io::Write, path::PathBuf, sync::Arc};
+use std::{fs::File, sync::Arc};
 
 #[repr(C)]
 #[derive(Debug, Default)]
@@ -30,54 +29,18 @@ pub struct IracingClient {
 }
 
 impl IracingClient {
-    pub async fn start_up(
-        &mut self,
-        test_file: Option<PathBuf>,
-        dump_path: Option<PathBuf>,
-    ) -> eyre::Result<()> {
-        match test_file {
-            Some(file) => {
-                let file = File::open(file).map_err(|e| {
-                    IRSDKError::UnexpectedError(eyre::eyre!("Failed to open test file: {}", e))
-                })?;
+    pub async fn start_up(&mut self) -> eyre::Result<()> {
+        check_sim_status().await?;
 
-                let mmap = unsafe { MmapOptions::new().map(&file) }.map_err(|e| {
-                    IRSDKError::FailedToMapView(format!("Failed to map test file to memory: {}", e))
-                })?;
+        self.mmap.load_live_data()?;
 
-                self.mmap.snapshot = Some(Arc::from(mmap.as_ref()));
-            }
+        let snap_shot = self
+            .mmap
+            .snapshot
+            .as_ref()
+            .ok_or_else(|| eyre!(IRSDKError::SnapshotNotFound))?;
 
-            None => {
-                check_sim_status().await?;
-
-                self.mmap.load_live_data()?;
-
-                let snap_shot = self
-                    .mmap
-                    .snapshot
-                    .as_ref()
-                    .ok_or_else(|| eyre!(IRSDKError::SnapshotNotFound))?;
-
-                self.cache.parse_headers(snap_shot)?;
-            }
-        };
-
-        if let Some(path) = dump_path {
-            let snapshot = self
-                .mmap
-                .snapshot
-                .as_ref()
-                .ok_or_else(|| eyre!(IRSDKError::SnapshotNotFound))?;
-
-            let mut file = File::create(path).map_err(|_| {
-                IRSDKError::UnexpectedError(eyre::eyre!("Failed to create dump file."))
-            })?;
-
-            file.write_all(snapshot).map_err(|_| {
-                IRSDKError::UnexpectedError(eyre::eyre!("Failed to write to dump file"))
-            })?;
-        }
+        self.cache.parse_headers(snap_shot)?;
 
         self.is_initialized = true;
 
@@ -207,46 +170,6 @@ impl IracingClient {
             Some(header) => Some(header.session_info_update()),
             None => None,
         }
-    }
-
-    pub fn parse_to(&self, path: String) -> eyre::Result<()> {
-        if !self.is_initialized {
-            return Err(eyre!(""));
-        }
-
-        let mut file = File::create(path).map_err(|e| {
-            IRSDKError::UnexpectedError(eyre::eyre!("Failed to create parse to file: {e}"))
-        })?;
-
-        let memory = self
-            .mmap
-            .snapshot
-            .as_ref()
-            .ok_or_else(|| IRSDKError::SnapshotNotFound)?;
-
-        let header = self
-            .cache
-            .header
-            .as_ref()
-            .ok_or(IRSDKError::InvalidSharedMemory(
-                "Header not found".to_owned(),
-            ))?;
-
-        let offset = header.session_info_offset() as usize;
-        let len = header.session_info_len() as usize;
-
-        /* Write session info YAML */
-        file.write_all(&memory[offset..offset + len])?;
-        file.write_all(b"\n")?;
-
-        /* Write variable headers */
-        for (key, var_header) in &self.cache.var_headers_hash {
-            let line = format!("{:32}{}\n", key, var_header);
-
-            file.write_all(line.as_bytes())?;
-        }
-
-        Ok(())
     }
 
     pub fn shutdown(&mut self) {
