@@ -22,11 +22,13 @@ pub enum IRSDKError {
     SnapshotNotFound,
     #[error("Data Valid Event not found")]
     DataValidEventNotFound,
+    #[error("Var Header not found")]
+    VarHeaderNotFound,
 
     #[error("Invalid Var Header: {0}")]
     InvalidVarHeader(String),
     #[error("Invalid Var Type: {0} (unknown or unsupported IRSDK var type)")]
-    InvalidVarType(i32),
+    InvalidVarKind(i32),
 
     #[error("Item not found")]
     ItemNotFound,

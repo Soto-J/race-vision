@@ -1,6 +1,6 @@
 use crate::{
     client::telemetry::models::{Header, VarHeader},
-    utils::enums::StatusField,
+    utils::{constants::telemetry_vars::TelemetryVars, enums::StatusField},
 };
 
 use std::{collections::HashMap, fs::File};
@@ -26,15 +26,14 @@ impl SessionState {
             return false;
         };
 
-        let session_num_key = "SessionNum";
         let status = header.status();
         let connected = StatusField::StatusConnected as i32;
-        let has_session_num = var_headers_hash.contains_key(session_num_key);
+        let has_session_num = var_headers_hash.contains_key(TelemetryVars::SESSION_NUM);
 
         self.workaround_connected_state = match (self.workaround_connected_state, status) {
             (0, status) if status != connected => 1,
             (1, _) if !has_session_num || test_file.is_some() => 2,
-            (2, _) if var_headers_hash.contains_key(session_num_key) => 3,
+            (2, _) if var_headers_hash.contains_key(TelemetryVars::SESSION_NUM) => 3,
             (_, status) if status == connected => 0,
             (state, _) => state,
         };

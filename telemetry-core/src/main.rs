@@ -1,6 +1,7 @@
 use telemetry_core::{
-    client::{IracingClient, helpers::check_sim_status},
-    utils::{constants::telemetry_vars::TelemetryVars, enums::VarData},
+    check_sim_status,
+    client::IracingClient,
+    utils::{constants::telemetry_vars::TelemetryVars, enums::var_types::TelemetryValue},
 };
 
 use color_eyre::eyre;
@@ -40,7 +41,7 @@ async fn main() -> eyre::Result<()> {
         for var_name in telemetry_vars.iter() {
             match irsdk.get_item(var_name) {
                 Ok(value) => {
-                    let formatted_value = format_telemetry_value(&value);
+                    let formatted_value = TelemetryValue::format(&value);
                     println!("{:20} : {}", var_name, formatted_value);
                 }
                 Err(e) => {
@@ -49,42 +50,7 @@ async fn main() -> eyre::Result<()> {
             }
         }
 
-        time::sleep(Duration::from_millis(1000)).await;
+        time::sleep(Duration::from_millis(500)).await;
         print!("----")
-    }
-}
-
-fn format_telemetry_value(value: &VarData) -> String {
-    match value {
-        VarData::F32(vals) => {
-            if vals.len() == 1 {
-                format!("{:.2}", vals[0])
-            } else {
-                format!("{:?}", vals)
-            }
-        }
-        VarData::F64(vals) => {
-            if vals.len() == 1 {
-                format!("{:.2}", vals[0])
-            } else {
-                format!("{:?}", vals)
-            }
-        }
-        VarData::I32(vals) => {
-            if vals.len() == 1 {
-                format!("{}", vals[0])
-            } else {
-                format!("{:?}", vals)
-            }
-        }
-        VarData::Bool(vals) => {
-            if vals.len() == 1 {
-                format!("{}", vals[0])
-            } else {
-                format!("{:?}", vals)
-            }
-        }
-        VarData::Bitfield(vals) => format!("{:?}", vals),
-        VarData::Chars8(vals) => String::from_utf8_lossy(vals).to_string(),
     }
 }

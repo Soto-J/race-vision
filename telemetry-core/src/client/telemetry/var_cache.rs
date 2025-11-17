@@ -1,4 +1,4 @@
-use color_eyre::eyre::{self, eyre};
+use color_eyre::eyre::{self, Ok, eyre};
 
 use crate::{
     client::{
@@ -8,7 +8,10 @@ use crate::{
             models::{Header, VarHeader},
         },
     },
-    utils::constants::size,
+    utils::{
+        constants::size,
+        enums::var_types::{TelemetryValue, VarKind},
+    },
 };
 use std::{collections::HashMap, sync::Arc};
 
@@ -21,6 +24,54 @@ pub struct VarCache {
 }
 
 impl VarCache {
+    pub fn get_value(&self, key: &str) -> eyre::Result<TelemetryValue> {
+        let var_header = self
+            .var_headers_hash
+            .get(key)
+            .ok_or(IRSDKError::VarHeaderNotFound)?;
+
+        let var_kind = VarKind::try_from(var_header.var_type)
+            .map_err(|e| IRSDKError::UnexpectedError(eyre!(e)))?;
+
+        let size_per_element = match var_kind {
+            VarKind::Char8 | VarKind::Bool => 1,
+            VarKind::I32 | VarKind::Bitfield | VarKind::F32 => 4,
+            VarKind::F64 => 8,
+        };
+
+        let count = var_header.count as usize;
+
+        let byte_len =
+            count
+                .checked_mul(size_per_element)
+                .ok_or(IRSDKError::InvalidSharedMemory(
+                    "Size calculation overflowed".to_owned(),
+                ))?;
+
+        let offset = var_header.offset as usize;
+
+        let end_offset = offset
+            .checked_add(byte_len)
+            .ok_or(IRSDKError::InvalidSharedMemory(
+                "Offset calculation overflowed".to_owned(),
+            ))?;
+
+        let latest_buffer = self
+            .latest_var_buffer
+            .as_ref()
+            .ok_or(IRSDKError::InvalidSharedMemory("Buffer not found".into()))?;
+
+        let snapshot = latest_buffer.get_memory();
+
+        if end_offset > snapshot.len() {
+            return Err(eyre!(IRSDKError::InvalidSharedMemory(
+                "Variable data range exceeds buffer size".to_owned(),
+            )));
+        }
+
+        var_kind.parse_to_value(&snapshot[offset..end_offset])
+    }
+
     pub fn parse_headers(&mut self, memory_snapshot: &Arc<[u8]>) -> eyre::Result<()> {
         let header = Header::new(memory_snapshot.clone());
 
@@ -37,7 +88,7 @@ impl VarCache {
         )?;
 
         self.header = Some(header);
-        
+
         Ok(())
     }
 
