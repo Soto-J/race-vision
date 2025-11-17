@@ -6,10 +6,7 @@ use telemetry_core::client::IracingClient;
 async fn test_header_reads_correctly() {
     let mut client = IracingClient::default();
 
-    client
-        .start_up(None, None)
-        .await
-        .expect("Failed to start up");
+    client.start_up().await.expect("Failed to start up");
 
     let header = client.cache.header.as_ref().expect("No headers found");
 
@@ -17,30 +14,6 @@ async fn test_header_reads_correctly() {
     assert_eq!(header.version(), 2);
     assert!(header.num_vars() > 0);
     assert!(header.buf_len() > 0);
-
-    client.shutdown()
-}
-
-#[tokio::test]
-async fn test_header_version_reads_correctly_with_test_file() {
-    let mut client = IracingClient::default();
-
-    let mut test_file_path = std::env::current_dir().unwrap();
-    test_file_path.push("tests");
-    test_file_path.push("test_irsdk.bin");
-
-    assert!(test_file_path.exists(), "Test file does not exist!");
-
-    client
-        .start_up(Some(test_file_path), None)
-        .await
-        .expect("Failed to start up");
-
-    let memory_snapshot = client.mmap.snapshot.as_ref().unwrap();
-    let version_bytes = &memory_snapshot[0..4];
-    let version = i32::from_le_bytes(version_bytes.try_into().unwrap());
-
-    assert_eq!(version, 2);
 
     client.shutdown()
 }
