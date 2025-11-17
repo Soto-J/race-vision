@@ -52,7 +52,7 @@ impl TestApp {
         let mmap = unsafe { MmapOptions::new().map(&file) }?;
         let snapshot = Arc::from(mmap.as_ref());
 
-        client.cache.parse_headers(&snapshot);
+        client.cache.parse_headers(&snapshot)?;
         client.mmap.snapshot = Some(snapshot);
 
         client.is_initialized = true;
@@ -131,7 +131,8 @@ mod test {
 
         println!("Exists? {}", test_file_path.exists());
 
-        app.use_test_file(test_file_path);
+        app.use_test_file(test_file_path)
+            .expect("Failed to use test file");
 
         let response = app.client.start_up().await;
 

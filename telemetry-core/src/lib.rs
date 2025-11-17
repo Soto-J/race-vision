@@ -4,6 +4,7 @@ pub mod ibt;
 pub mod utils;
 
 pub use client::{IracingClient, error::IRSDKError};
+use color_eyre::eyre::{self, Ok};
 pub use utils::enums::VarData;
 
 pub struct Reader {
@@ -17,10 +18,16 @@ impl Reader {
         }
     }
 
-    pub async fn init(&mut self) {
-        self.ir_client
-            .start_up()
-            .await
-            .expect("Failed to start telemetry-core client.");
+    pub async fn init(&mut self) -> eyre::Result<()> {
+        self.ir_client.start_up().await?;
+        Ok(())
+    }
+
+    pub fn get_item(&self, key: &str) -> eyre::Result<VarData> {
+        self.ir_client.get_item(key)
+    }
+
+    pub fn update_latest_var_buffer(&mut self) -> eyre::Result<()> {
+        todo!()
     }
 }
