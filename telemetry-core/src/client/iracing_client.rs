@@ -13,13 +13,12 @@ use crate::{
 };
 
 use color_eyre::eyre::{self, ContextCompat, Ok, eyre};
-use std::{fs::File, sync::Arc};
+use std::sync::Arc;
 
 #[repr(C)]
 #[derive(Debug, Default)]
 pub struct IracingClient {
     pub is_initialized: bool,
-    pub test_file: Option<File>,
     pub parse_yaml_async: bool,
 
     pub mmap: MemoryMap,

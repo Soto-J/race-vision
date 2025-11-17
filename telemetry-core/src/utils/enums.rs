@@ -1,3 +1,5 @@
+use color_eyre::eyre;
+
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IRacingVarType {
@@ -8,6 +10,22 @@ pub enum IRacingVarType {
     F32 = 4,
     F64 = 5,
 }
+
+// todo!()
+// impl IRacingVarType {
+//     fn parse_bytes(&self, bytes: &[u8], count: usize) -> eyre::Result<VarData> {
+//         match self {
+//             IRacingVarType::Char8 => Ok(VarData::Chars8(bytes.to_vec())),
+//             IRacingVarType::Bool => Ok(VarData::Bool(bytes.iter().map(|&b| b != 0).collect())),
+//             IRacingVarType::I32 => parse_chunks::<i32>(bytes).map(VarData::I32),
+//             IRacingVarType::Bitfield => parse_chunks::<u32>(bytes).map(VarData::Bitfield),
+//             IRacingVarType::F32 => parse_chunks::<f32>(bytes).map(VarData::F32),
+//             IRacingVarType::F64 => parse_chunks::<f64>(bytes).map(VarData::F64),
+//         }
+//     }
+// }
+
+// fn parse_chunks<T: FromBytes>(bytes: &[u8]) -> eyre::Result<Vec<T>> { todo!() }
 
 impl TryFrom<i32> for IRacingVarType {
     type Error = String;
