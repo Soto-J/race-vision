@@ -1,6 +1,6 @@
 use crate::{
     client::telemetry::models::{Header, VarHeader},
-    utils::{constants::telemetry_vars::TelemetryVars, enums::StatusField},
+    utils::constants::telemetry_vars::TelemetryVars,
 };
 
 use std::{collections::HashMap, fs::File};
@@ -64,4 +64,9 @@ enum WorkaroundState {
     ObservedDisconnected, // We (observed) a status that was NOT connected.
     WaitingForSessionNum,
     WorkaroundConfirmed,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum StatusField {
+    StatusConnected = 1,
 }

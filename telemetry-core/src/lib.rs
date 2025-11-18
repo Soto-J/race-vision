@@ -1,8 +1,9 @@
-use crate::utils::{constants::SIM_STATUS_URL, enums::var_types::TelemetryValue};
+use crate::utils::constants::SIM_STATUS_URL;
 pub use client::{IracingClient, error::IRSDKError};
 use color_eyre::eyre::{self, Ok};
 
 pub mod client;
+pub mod domain;
 pub mod dto;
 pub mod ibt;
 pub mod utils;

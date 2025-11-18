@@ -1,5 +1,8 @@
 use color_eyre::eyre::{self, Ok, eyre};
+
+#[cfg(windows)]
 use std::{ffi, os::windows::ffi::OsStrExt, sync::Arc};
+#[cfg(windows)]
 use windows::{
     Win32::{
         Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0},

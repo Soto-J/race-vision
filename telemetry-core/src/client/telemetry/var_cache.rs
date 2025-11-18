@@ -4,14 +4,10 @@ use crate::{
     client::{
         error::IRSDKError,
         telemetry::{
-            VarBuffer,
-            models::{Header, VarHeader},
+            TelemetryValue, VarBuffer, VarKind, models::{Header, VarHeader}
         },
     },
-    utils::{
-        constants::size,
-        enums::var_types::{TelemetryValue, VarKind},
-    },
+    utils::constants::size,
 };
 use std::{collections::HashMap, sync::Arc};
 
