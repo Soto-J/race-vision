@@ -27,7 +27,7 @@ pub enum IRSDKError {
 
     #[error("Invalid Var Header: {0}")]
     InvalidVarHeader(String),
-    #[error("Invalid Var Type: {0} (unknown or unsupported IRSDK var type)")]
+    #[error("Invalid Var Kind: {0} (unknown or unsupported IRSDK var kind)")]
     InvalidVarKind(i32),
 
     #[error("Item not found")]

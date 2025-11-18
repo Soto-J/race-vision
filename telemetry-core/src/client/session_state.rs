@@ -5,13 +5,13 @@ use crate::{
 
 use std::{collections::HashMap, fs::File};
 
+#[derive(Debug, Default, Clone)]
 #[repr(C)]
-#[derive(Debug, Default)]
 pub struct SessionState {
     pub last_session_info_update: u64,
     pub session_info_hash: HashMap<String, VarHeader>,
     pub broadcast_msg_id: Option<u32>,
-    pub workaround_connected_state: u16,
+    pub workaround_state: WorkaroundState,
 }
 
 impl SessionState {
@@ -30,18 +30,38 @@ impl SessionState {
         let connected = StatusField::StatusConnected as i32;
         let has_session_num = var_headers_hash.contains_key(TelemetryVars::SESSION_NUM);
 
-        self.workaround_connected_state = match (self.workaround_connected_state, status) {
-            (0, status) if status != connected => 1,
-            (1, _) if !has_session_num || test_file.is_some() => 2,
-            (2, _) if var_headers_hash.contains_key(TelemetryVars::SESSION_NUM) => 3,
-            (_, status) if status == connected => 0,
+        self.workaround_state = match (self.workaround_state, status) {
+            (WorkaroundState::Idle, status) if status != connected => {
+                WorkaroundState::ObservedDisconnected
+            }
+            (WorkaroundState::ObservedDisconnected, _)
+                if !has_session_num || test_file.is_some() =>
+            {
+                WorkaroundState::WaitingForSessionNum
+            }
+            (WorkaroundState::WaitingForSessionNum, _)
+                if var_headers_hash.contains_key(TelemetryVars::SESSION_NUM) =>
+            {
+                WorkaroundState::WorkaroundConfirmed
+            }
+            (_, status) if status == connected => WorkaroundState::Idle,
             (state, _) => state,
         };
 
-        let is_status_connected = status == connected;
-        let is_workaround_connected = self.workaround_connected_state == 3;
+        let status_is_connected = status == connected;
+        let is_workaround_connected = self.workaround_state == WorkaroundState::WorkaroundConfirmed;
+
         let has_data_source = test_file.is_some() || has_data_valid_event;
 
-        has_data_source && (is_status_connected || is_workaround_connected)
+        has_data_source && (status_is_connected || is_workaround_connected)
     }
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+enum WorkaroundState {
+    #[default]
+    Idle,
+    ObservedDisconnected, // We (observed) a status that was NOT connected.
+    WaitingForSessionNum,
+    WorkaroundConfirmed,
 }

@@ -106,7 +106,7 @@ impl IracingClient {
         }
     }
 
-    pub fn shut_down(&mut self) {
+    fn shut_down(&mut self) {
         self.is_initialized = false;
 
         self.broadcast = None;

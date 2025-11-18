@@ -33,7 +33,7 @@ impl VarCache {
         let var_kind = VarKind::try_from(var_header.var_type)
             .map_err(|e| IRSDKError::UnexpectedError(eyre!(e)))?;
 
-        let size_per_element = match var_kind {
+        let bytes_per_element = match var_kind {
             VarKind::Char8 | VarKind::Bool => 1,
             VarKind::I32 | VarKind::Bitfield | VarKind::F32 => 4,
             VarKind::F64 => 8,
@@ -43,7 +43,7 @@ impl VarCache {
 
         let byte_len =
             count
-                .checked_mul(size_per_element)
+                .checked_mul(bytes_per_element)
                 .ok_or(IRSDKError::InvalidSharedMemory(
                     "Size calculation overflowed".to_owned(),
                 ))?;
@@ -64,9 +64,10 @@ impl VarCache {
         let snapshot = latest_buffer.get_memory();
 
         if end_offset > snapshot.len() {
-            return Err(eyre!(IRSDKError::InvalidSharedMemory(
-                "Variable data range exceeds buffer size".to_owned(),
-            )));
+            return Err(eyre!(IRSDKError::InvalidSharedMemory(format!(
+                "Variable data range exceeds buffer size: End Offset {end_offset}, Snapshot lenagth: {}",
+                snapshot.len()
+            ),)));
         }
 
         var_kind.parse_to_value(&snapshot[offset..end_offset])
