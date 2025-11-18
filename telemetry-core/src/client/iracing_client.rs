@@ -1,14 +1,14 @@
 use crate::{
+    check_sim_status,
     client::{
         broadcast::Broadcast,
         error::IRSDKError,
-        helpers::{check_sim_status, slice_var_bytes},
         session_state::SessionState,
         telemetry::{MemoryMap, VarCache, models::Header},
     },
     utils::{
-        constants::size::{self, ByteSize},
-        enums::{IRacingVarType, VarData},
+        constants::size::{self},
+        enums::var_types::TelemetryValue,
     },
 };
 
@@ -19,7 +19,6 @@ use std::sync::Arc;
 #[derive(Debug, Default)]
 pub struct IracingClient {
     pub is_initialized: bool,
-    pub parse_yaml_async: bool,
 
     pub mmap: MemoryMap,
     pub cache: VarCache,
@@ -46,72 +45,8 @@ impl IracingClient {
         Ok(())
     }
 
-    pub fn get_item(&self, key: &str) -> eyre::Result<VarData> {
-        let var_header = self
-            .cache
-            .var_headers_hash
-            .get(key)
-            .ok_or(IRSDKError::ItemNotFound)?;
-
-        let latest_buffer =
-            self.cache
-                .latest_var_buffer
-                .as_ref()
-                .ok_or(IRSDKError::InvalidSharedMemory(
-                    "Buffer not found".to_owned(),
-                ))?;
-
-        // When memory is frozen, buff_offset() returns 0, so we need to use the variable offset directly
-        // When not frozen, we need to account for the buffer offset in shared memory
-        let (bytes, var_type) = slice_var_bytes(
-            latest_buffer.get_memory(),
-            var_header.offset as usize,
-            var_header.count as usize,
-            var_header.var_type,
-        )?;
-
-        let value = match var_type {
-            IRacingVarType::Char8 => VarData::Chars8(bytes.to_vec()),
-            IRacingVarType::Bool => {
-                let bools = bytes.iter().map(|&b| b != 0).collect();
-
-                VarData::Bool(bools)
-            }
-            IRacingVarType::I32 => {
-                let int = bytes
-                    .chunks_exact(ByteSize::I32)
-                    .map(|b| i32::from_le_bytes(b.try_into().unwrap())) /* Unwrap is safe here Since chunks_exact(4) guarantees the size*/
-                    .collect();
-
-                VarData::I32(int)
-            }
-            IRacingVarType::Bitfield => {
-                let bitfields = bytes
-                    .chunks_exact(ByteSize::I32)
-                    .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
-                    .collect();
-
-                VarData::Bitfield(bitfields)
-            }
-            IRacingVarType::F32 => {
-                let floats = bytes
-                    .chunks_exact(ByteSize::F32)
-                    .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
-                    .collect();
-
-                VarData::F32(floats)
-            }
-            IRacingVarType::F64 => {
-                let doubles = bytes
-                    .chunks_exact(ByteSize::F64)
-                    .map(|b| f64::from_le_bytes(b.try_into().unwrap()))
-                    .collect();
-
-                VarData::F64(doubles)
-            }
-        };
-
-        Ok(value)
+    pub fn get_item(&self, key: &str) -> eyre::Result<TelemetryValue> {
+        self.cache.get_value(key)
     }
 
     // Get all buffers and find the most recent one (highest tick_count)
@@ -171,7 +106,7 @@ impl IracingClient {
         }
     }
 
-    pub fn shutdown(&mut self) {
+    fn shut_down(&mut self) {
         self.is_initialized = false;
 
         self.broadcast = None;
@@ -180,6 +115,6 @@ impl IracingClient {
 
 impl Drop for IracingClient {
     fn drop(&mut self) {
-        self.shutdown();
+        self.shut_down();
     }
 }
