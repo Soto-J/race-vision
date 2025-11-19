@@ -14,8 +14,6 @@ async fn test_header_reads_correctly() {
     assert_eq!(header.version(), 2);
     assert!(header.num_vars() > 0);
     assert!(header.buf_len() > 0);
-
-    client.shut_down()
 }
 
 #[tokio::test]
