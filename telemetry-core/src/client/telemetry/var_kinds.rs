@@ -1,4 +1,5 @@
 use color_eyre::eyre::{self, eyre};
+use serde::{Deserialize, Serialize};
 
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -45,7 +46,7 @@ where
 impl TryFrom<i32> for VarKind {
     type Error = String;
 
-    fn try_from(var_type: i32) -> Result<Self, Self::Error> {
+    fn try_from(var_type: i32) -> eyre::Result<Self, Self::Error> {
         match var_type {
             0 => Ok(Self::Char8),
             1 => Ok(Self::Bool),
@@ -58,7 +59,7 @@ impl TryFrom<i32> for VarKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TelemetryValue {
     Chars8(Vec<u8>),
     Bool(Vec<bool>),

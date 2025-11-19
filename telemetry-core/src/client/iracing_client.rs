@@ -4,12 +4,9 @@ use crate::{
         broadcast::Broadcast,
         error::IRSDKError,
         session_state::SessionState,
-        telemetry::{MemoryMap, VarCache, models::Header},
+        telemetry::{MemoryMap, TelemetryValue, VarCache, models::Header},
     },
-    utils::{
-        constants::size::{self},
-        enums::var_types::TelemetryValue,
-    },
+    utils::constants::size::{self},
 };
 
 use color_eyre::eyre::{self, ContextCompat, Ok, eyre};
@@ -45,7 +42,7 @@ impl IracingClient {
         Ok(())
     }
 
-    pub fn get_item(&self, key: &str) -> eyre::Result<TelemetryValue> {
+    pub fn read_value(&self, key: &str) -> eyre::Result<TelemetryValue> {
         self.cache.get_value(key)
     }
 

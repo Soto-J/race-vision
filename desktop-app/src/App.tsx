@@ -13,9 +13,8 @@ function App() {
   }
 
   return (
-    <main className="container">
+    <main className="h-screen  w-screen">
       <h1>Welcome to Tauri + React</h1>
-
       <div className="row">
         <a href="https://vite.dev" target="_blank">
           <img src="/vite.svg" className="logo vite" alt="Vite logo" />
@@ -34,6 +33,7 @@ function App() {
         onSubmit={(e) => {
           e.preventDefault();
           greet();
+          console.log("yurr");
         }}
       >
         <input
@@ -43,7 +43,7 @@ function App() {
         />
         <button type="submit">Greet</button>
       </form>
-      <p>{greetMsg}</p>
+      <p>{greetMsg}d</p>
     </main>
   );
 }

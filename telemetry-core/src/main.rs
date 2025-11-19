@@ -1,7 +1,7 @@
 use telemetry_core::{
     check_sim_status,
-    client::IracingClient,
-    utils::{constants::telemetry_vars::TelemetryVars, enums::var_types::TelemetryValue},
+    client::{IracingClient, telemetry::TelemetryValue},
+    utils::constants::telemetry_vars::TelemetryVars,
 };
 
 use color_eyre::eyre;
@@ -39,7 +39,7 @@ async fn main() -> eyre::Result<()> {
         irsdk.update_latest_var_buffer()?;
 
         for var_name in telemetry_vars.iter() {
-            match irsdk.get_item(var_name) {
+            match irsdk.read_value(var_name) {
                 Ok(value) => {
                     let formatted_value = TelemetryValue::format(&value);
                     println!("{:20} : {}", var_name, formatted_value);

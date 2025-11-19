@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::utils::constants::size::VAR_HEADER_SIZE;
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VarHeader {
@@ -16,7 +18,7 @@ pub struct VarHeader {
 
 impl VarHeader {
     pub fn from_bytes(buf: &[u8]) -> Option<Self> {
-        if buf.len() < 144 {
+        if buf.len() < VAR_HEADER_SIZE {
             return None;
         }
 

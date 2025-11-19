@@ -11,7 +11,7 @@ pub struct SessionState {
     pub last_session_info_update: u64,
     pub session_info_hash: HashMap<String, VarHeader>,
     pub broadcast_msg_id: Option<u32>,
-    pub workaround_state: WorkaroundState,
+    workaround_state: WorkaroundState,
 }
 
 impl SessionState {
