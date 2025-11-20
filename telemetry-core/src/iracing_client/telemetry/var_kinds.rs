@@ -1,8 +1,8 @@
 use color_eyre::eyre::{self, eyre};
 use serde::{Deserialize, Serialize};
 
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
 pub enum VarKind {
     Char8 = 0,
     Bool = 1,

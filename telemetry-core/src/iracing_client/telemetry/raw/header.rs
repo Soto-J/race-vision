@@ -1,5 +1,5 @@
 use crate::{
-    iracing_client::telemetry::var_buffer::VarBuffer,
+    iracing_client::telemetry::VarBuffer,
     utils::constants::size::{ByteSize, VAR_BUF_SIZE},
 };
 

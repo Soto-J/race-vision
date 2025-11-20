@@ -1,14 +1,15 @@
-use color_eyre::eyre::{self, Ok, eyre};
-
 use crate::{
     iracing_client::{
         error::IRSDKError,
         telemetry::{
-            TelemetryValue, VarBuffer, VarKind, raw::{Header, VarHeader}
+            TelemetryValue, VarBuffer, VarKind,
+            raw::{Header, VarHeader},
         },
     },
     utils::constants::size,
 };
+
+use color_eyre::eyre::{self, Ok, eyre};
 use std::{collections::HashMap, sync::Arc};
 
 #[derive(Debug, Default)]

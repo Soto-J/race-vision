@@ -2,8 +2,8 @@ use crate::utils::constants::size::ByteSize;
 
 use std::sync::Arc;
 
-#[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(C)]
 pub struct VarBuffer {
     shared_mem: Arc<[u8]>,
     buf_len: usize,

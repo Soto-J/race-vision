@@ -1,3 +1,8 @@
+use crate::{
+    iracing_client::error::IRSDKError,
+    utils::constants::{self, size},
+};
+
 use color_eyre::eyre::{self, Ok, eyre};
 
 #[cfg(windows)]
@@ -12,11 +17,6 @@ use windows::{
         },
     },
     core::{PCSTR, PCWSTR},
-};
-
-use crate::{
-    iracing_client::error::IRSDKError,
-    utils::constants::{self, size},
 };
 
 #[repr(C)]

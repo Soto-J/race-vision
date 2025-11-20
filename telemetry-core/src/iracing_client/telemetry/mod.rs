@@ -5,6 +5,6 @@ pub mod var_cache;
 pub mod var_kinds;
 
 pub use memory_map::MemoryMap;
-pub use var_buffer::VarBuffer;
+pub use var_buffer::*;
 pub use var_cache::VarCache;
 pub use var_kinds::*;
