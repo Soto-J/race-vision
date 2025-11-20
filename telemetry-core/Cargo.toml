@@ -18,6 +18,7 @@ thiserror = "2.0.17"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.1", features = ["env-filter", "ansi"] }
 color-eyre = "0.6.5"
+async-trait = "0.1.89"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [
