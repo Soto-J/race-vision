@@ -1,12 +1,14 @@
 use crate::{
-    check_sim_status,
     client::{
         broadcast::Broadcast,
         error::IRSDKError,
         session_state::SessionState,
         telemetry::{MemoryMap, TelemetryValue, VarCache, models::Header},
     },
-    utils::constants::size::{self},
+    utils::constants::{
+        SIM_STATUS_URL,
+        size::{self},
+    },
 };
 
 use color_eyre::eyre::{self, ContextCompat, Ok, eyre};
@@ -114,4 +116,13 @@ impl Drop for IracingClient {
     fn drop(&mut self) {
         self.shut_down();
     }
+}
+
+unsafe impl Send for IracingClient {}
+unsafe impl Sync for IracingClient {}
+
+pub async fn check_sim_status() -> eyre::Result<()> {
+    let res = reqwest::get(SIM_STATUS_URL).await?;
+    println!("Sim Status: {:?}", res.status());
+    Ok(())
 }

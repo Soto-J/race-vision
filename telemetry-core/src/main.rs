@@ -1,6 +1,5 @@
 use telemetry_core::{
-    check_sim_status,
-    client::{IracingClient, telemetry::TelemetryValue},
+    client::{IracingClient, check_sim_status, telemetry::TelemetryValue},
     utils::constants::telemetry_vars::TelemetryVars,
 };
 

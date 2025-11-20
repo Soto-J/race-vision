@@ -1,12 +1,15 @@
 use tauri::State;
-use telemetry_core::{client::telemetry::TelemetryValue, AppState};
+use telemetry_core::{client::telemetry::TelemetryValue, IracingProvider};
 
 #[tauri::command]
-fn get_value(key: String, state: State<AppState>) -> Result<TelemetryValue, String> {
-    state.read_value(&key).map_err(|e| e.to_string())
+async fn read_value(
+    key: String,
+    // '_ Borrow the state for the duration of this command handler
+    state: State<'_, IracingProvider>,
+) -> Result<TelemetryValue, String> {
+    state.read_value(&key).await.map_err(|e| e.to_string())
 }
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -15,9 +18,9 @@ fn greet(name: &str) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .manage(AppState::new())
+        .manage(IracingProvider::new())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, get_value])
+        .invoke_handler(tauri::generate_handler![greet, read_value])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
