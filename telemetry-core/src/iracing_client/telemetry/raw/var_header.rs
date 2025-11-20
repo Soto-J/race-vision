@@ -2,8 +2,8 @@ use std::fmt;
 
 use crate::utils::constants::size::VAR_HEADER_SIZE;
 
-#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
 pub struct VarHeader {
     pub var_type: i32,
     pub offset: i32,

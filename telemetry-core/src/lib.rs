@@ -1,24 +1,24 @@
-use crate::client::{IracingClient, telemetry::TelemetryValue};
+use crate::iracing_client::{Client, telemetry::TelemetryValue};
 
 use color_eyre::eyre::{self, Ok};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-pub mod client;
 pub mod domain;
 pub mod dto;
 pub mod ibt;
+pub mod iracing_client;
 pub mod utils;
 
 #[derive(Debug, Clone)]
 pub struct IracingProvider {
-    ir_client: Arc<RwLock<IracingClient>>,
+    ir_client: Arc<RwLock<Client>>,
 }
 
 impl IracingProvider {
     pub fn new() -> eyre::Result<Self> {
         Ok(Self {
-            ir_client: Arc::new(RwLock::new(IracingClient::default())),
+            ir_client: Arc::new(RwLock::new(Client::default())),
         })
     }
 

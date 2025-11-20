@@ -1,3 +1,8 @@
+use crate::{
+    iracing_client::error::IRSDKError,
+    utils::constants::{self, size},
+};
+
 use color_eyre::eyre::{self, Ok, eyre};
 
 #[cfg(windows)]
@@ -12,11 +17,6 @@ use windows::{
         },
     },
     core::{PCSTR, PCWSTR},
-};
-
-use crate::{
-    client::error::IRSDKError,
-    utils::constants::{self, size},
 };
 
 #[repr(C)]
@@ -72,8 +72,6 @@ impl MemoryMap {
 
         Ok(())
     }
-
-    pub fn load_test_file() {}
 
     pub fn wait_for_valid_data_event(&self) -> eyre::Result<()> {
         let handle = self

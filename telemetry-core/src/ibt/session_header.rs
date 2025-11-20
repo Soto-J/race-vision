@@ -1,6 +1,6 @@
-#[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct DiskSubHeader {
+#[repr(C)]
+pub struct SessionHeader {
     pub session_start_date: u64,
     pub session_start_time: f64,
     pub session_end_time: f64,
@@ -8,7 +8,7 @@ pub struct DiskSubHeader {
     pub session_record_count: i32,
 }
 
-impl DiskSubHeader {
+impl SessionHeader {
     pub async fn from_bytes(buf: &[u8]) -> Option<Self> {
         if buf.len() < 32 {
             return None;

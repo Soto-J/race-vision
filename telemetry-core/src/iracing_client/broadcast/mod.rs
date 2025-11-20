@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 #[cfg(windows)]
-use crate::client::broadcast::enums::{
+use crate::iracing_client::broadcast::enums::{
     BroadcastMsg, ChatCommandMode, FFBCommandMode, PitCommandMode, ReloadTexturesMode, RpyPosMode,
     RpySrchMode, RpyStateMode, TelemCommandMode, VideoCaptureMode,
 };

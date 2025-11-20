@@ -1,9 +1,9 @@
 mod tests {
-    use telemetry_core::client::IracingClient;
+    use telemetry_core::iracing_client::Client;
 
     #[tokio::test]
     async fn irsdk_start_up_should_return_200() {
-        let mut irsdk = IracingClient::default();
+        let mut irsdk = Client::default();
         let response = irsdk.start_up().await;
 
         assert!(response.is_ok(), "start_up should succeed.")
@@ -22,7 +22,7 @@ mod tests {
 
     #[tokio::test]
     async fn list_all_available_variables() {
-        let mut irsdk = IracingClient::default();
+        let mut irsdk = Client::default();
 
         irsdk.start_up().await.expect("Failed to start IRSDK");
 
@@ -44,7 +44,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_data_valid_event() {
-        let mut sdk = IracingClient::default();
+        let mut sdk = Client::default();
 
         sdk.start_up().await.expect("Failed to start IRSDK");
 

@@ -1,10 +1,10 @@
-use telemetry_core::client::IracingClient;
+use telemetry_core::iracing_client::Client;
 
 // Individual Field Tests (10 tests)
 
 #[tokio::test]
 async fn test_header_reads_correctly() {
-    let mut client = IracingClient::default();
+    let mut client = Client::default();
 
     client.start_up().await.expect("Failed to start up");
 

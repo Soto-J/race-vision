@@ -1,9 +1,9 @@
 use crate::{
-    client::{
+    iracing_client::{
         broadcast::Broadcast,
         error::IRSDKError,
         session_state::SessionState,
-        telemetry::{MemoryMap, TelemetryValue, VarCache, models::Header},
+        telemetry::{MemoryMap, TelemetryValue, VarCache, raw::Header},
     },
     utils::constants::{
         SIM_STATUS_URL,
@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 #[repr(C)]
 #[derive(Debug, Default)]
-pub struct IracingClient {
+pub struct Client {
     pub is_initialized: bool,
 
     pub mmap: MemoryMap,
@@ -25,7 +25,7 @@ pub struct IracingClient {
     pub broadcast: Option<Broadcast>,
 }
 
-impl IracingClient {
+impl Client {
     pub async fn start_up(&mut self) -> eyre::Result<()> {
         check_sim_status().await?;
 
@@ -112,14 +112,14 @@ impl IracingClient {
     }
 }
 
-impl Drop for IracingClient {
+impl Drop for Client {
     fn drop(&mut self) {
         self.shut_down();
     }
 }
 
-unsafe impl Send for IracingClient {}
-unsafe impl Sync for IracingClient {}
+unsafe impl Send for Client {}
+unsafe impl Sync for Client {}
 
 pub async fn check_sim_status() -> eyre::Result<()> {
     let res = reqwest::get(SIM_STATUS_URL).await?;
