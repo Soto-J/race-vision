@@ -11,18 +11,18 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use telemetry_core::client::IracingClient;
+use telemetry_core::iracing_client::Client;
 
 #[cfg(test)]
 pub struct TestApp {
-    pub client: IracingClient,
+    pub client: Client,
 }
 
 #[cfg(test)]
 impl TestApp {
     pub fn new() -> eyre::Result<Self> {
         Ok(Self {
-            client: IracingClient::default(),
+            client: Client::default(),
         })
     }
 
@@ -46,7 +46,7 @@ impl TestApp {
     }
 
     pub fn use_test_file<P: AsRef<Path>>(&self, test_file: P) -> eyre::Result<Self> {
-        let mut client = IracingClient::default();
+        let mut client = Client::default();
 
         let file = File::open(test_file)?;
         let mmap = unsafe { MmapOptions::new().map(&file) }?;

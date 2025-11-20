@@ -1,5 +1,5 @@
 use tauri::State;
-use telemetry_core::{client::telemetry::TelemetryValue, IracingProvider};
+use telemetry_core::{iracing_client::telemetry::TelemetryValue, IracingProvider};
 
 #[tauri::command]
 async fn read_value(

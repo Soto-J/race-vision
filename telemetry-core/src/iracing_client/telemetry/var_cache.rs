@@ -1,10 +1,10 @@
 use color_eyre::eyre::{self, Ok, eyre};
 
 use crate::{
-    client::{
+    iracing_client::{
         error::IRSDKError,
         telemetry::{
-            TelemetryValue, VarBuffer, VarKind, models::{Header, VarHeader}
+            TelemetryValue, VarBuffer, VarKind, raw::{Header, VarHeader}
         },
     },
     utils::constants::size,

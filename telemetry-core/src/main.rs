@@ -1,5 +1,5 @@
 use telemetry_core::{
-    client::{IracingClient, check_sim_status, telemetry::TelemetryValue},
+    iracing_client::{Client, check_sim_status, telemetry::TelemetryValue},
     utils::constants::telemetry_vars::TelemetryVars,
 };
 
@@ -19,7 +19,7 @@ async fn main() -> eyre::Result<()> {
         TelemetryVars::STEERING_WHEEL_ANGLE,
     ];
 
-    let mut irsdk = IracingClient::default();
+    let mut irsdk = Client::default();
 
     tracing::debug!("Connecting to iRacing...");
 

@@ -15,7 +15,7 @@ use windows::{
 };
 
 use crate::{
-    client::error::IRSDKError,
+    iracing_client::error::IRSDKError,
     utils::constants::{self, size},
 };
 
@@ -72,8 +72,6 @@ impl MemoryMap {
 
         Ok(())
     }
-
-    pub fn load_test_file() {}
 
     pub fn wait_for_valid_data_event(&self) -> eyre::Result<()> {
         let handle = self

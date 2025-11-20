@@ -1,5 +1,5 @@
 use crate::{
-    client::telemetry::models::{Header, VarHeader},
+    iracing_client::telemetry::raw::{Header, VarHeader},
     utils::constants::telemetry_vars::TelemetryVars,
 };
 
