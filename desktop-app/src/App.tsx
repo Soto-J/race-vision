@@ -1,39 +1,62 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
+import { useEffect, useState } from "react";
+
 import { invoke } from "@tauri-apps/api/core";
+
+import { formatSessionTime } from "./lib/format";
+
+import { TelemetryValueSchema } from "./lib/types";
+
 import "./App.css";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
+  const [sessionTime, setSessionTime] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        await read_value();
+      } catch (error) {
+        console.error("Error reading value:", error);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     setGreetMsg(await invoke("greet", { name }));
   }
 
+  async function read_value() {
+    try {
+      const value = TelemetryValueSchema.parse(
+        await invoke("read_value", {
+          key: "SessionTime",
+        })
+      );
+
+      console.log("Value: ", value);
+
+      if ("F64" in value) {
+        setSessionTime(String(value.F64[0]));
+      }
+    } catch (error) {
+      console.error("Failed to read session time:", error);
+    }
+  }
+
   return (
     <main className="h-screen  w-screen">
-      <h1>Welcome to Tauri + React</h1>
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+      <h1>Session Time: {formatSessionTime(sessionTime)}</h1>
 
       <form
         className="row"
         onSubmit={(e) => {
           e.preventDefault();
           greet();
-          console.log("yurr");
         }}
       >
         <input
@@ -43,7 +66,7 @@ function App() {
         />
         <button type="submit">Greet</button>
       </form>
-      <p>{greetMsg}d</p>
+      <p>{greetMsg}</p>
     </main>
   );
 }

@@ -25,7 +25,7 @@ impl VarBuffer {
 
     fn read_i32(&self, rel_offset: usize) -> i32 {
         let abs = self.offset + rel_offset;
-        let bytes = &self.shared_mem[abs..abs + 4];
+        let bytes = &self.shared_mem[abs..abs + ByteSize::I32];
 
         i32::from_le_bytes(bytes.try_into().unwrap())
     }
@@ -43,19 +43,9 @@ impl VarBuffer {
     }
 
     pub fn freeze(&mut self) {
-        let tick = self.tick_count();
         let buff_offset = self.buff_offset() as usize;
         let end = buff_offset + self.buf_len;
 
-        tracing::debug!(
-            "DEBUG freeze: tick={}, offset={}, buff_offset={}, buf_len={}, end={}, shared_mem.len()={}",
-            tick,
-            self.offset,
-            buff_offset,
-            self.buf_len,
-            end,
-            self.shared_mem.len()
-        );
 
         let memory = self.shared_mem[buff_offset..end].to_vec();
         self.frozen_memory = Some(memory);

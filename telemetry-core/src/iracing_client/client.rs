@@ -26,7 +26,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn start_up(&mut self) -> eyre::Result<()> {
+    pub async fn init(&mut self) -> eyre::Result<()> {
         check_sim_status().await?;
 
         self.mmap.load_live_data()?;
@@ -44,8 +44,16 @@ impl Client {
         Ok(())
     }
 
-    pub fn read_value(&self, key: &str) -> eyre::Result<TelemetryValue> {
-        self.cache.get_value(key)
+    pub async fn run(&mut self) -> eyre::Result<()> {
+        self.init().await?;
+
+        loop {
+            if let Err(e) = self.update_latest_var_buffer() {
+                return Err(eyre!("Telemetry update error: {}", e));
+            }
+
+            tokio::time::sleep(std::time::Duration::from_millis(16)).await;
+        }
     }
 
     // Get all buffers and find the most recent one (highest tick_count)
@@ -96,6 +104,10 @@ impl Client {
         self.cache.latest_var_buffer = Some(latest);
 
         Ok(())
+    }
+
+    pub fn read_value(&self, key: &str) -> eyre::Result<TelemetryValue> {
+        self.cache.get_value(key)
     }
 
     pub fn session_info_update(&self) -> Option<i32> {

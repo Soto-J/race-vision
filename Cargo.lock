@@ -823,6 +823,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "telemetry-core",
+ "tokio",
 ]
 
 [[package]]
