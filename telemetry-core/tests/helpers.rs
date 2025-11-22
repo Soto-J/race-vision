@@ -99,7 +99,7 @@ impl TestApp {
     }
 
     pub async fn init(&mut self) -> eyre::Result<()> {
-        self.client.start_up().await?;
+        self.client.init().await?;
         Ok(())
     }
 }
@@ -111,7 +111,7 @@ mod test {
     async fn test_create_test_file() {
         let mut app = TestApp::new().expect("Failed to create test app");
 
-        app.client.start_up().await.expect("Client start up failed");
+        app.client.init().await.expect("Client start up failed");
 
         let mut path = env::current_dir().unwrap();
         path.push("tests/test_irsdk.bin");
@@ -134,7 +134,7 @@ mod test {
         app.use_test_file(test_file_path)
             .expect("Failed to use test file");
 
-        let response = app.client.start_up().await;
+        let response = app.client.init().await;
 
         assert!(response.is_ok(), "Failed to start up with test file")
     }

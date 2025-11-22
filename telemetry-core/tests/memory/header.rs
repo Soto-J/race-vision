@@ -6,7 +6,7 @@ use telemetry_core::iracing_client::Client;
 async fn test_header_reads_correctly() {
     let mut client = Client::default();
 
-    client.start_up().await.expect("Failed to start up");
+    client.init().await.expect("Failed to start up");
 
     let header = client.cache.header.as_ref().expect("No headers found");
 

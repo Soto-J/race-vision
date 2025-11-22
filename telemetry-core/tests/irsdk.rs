@@ -4,49 +4,41 @@ mod tests {
     #[tokio::test]
     async fn irsdk_start_up_should_return_200() {
         let mut irsdk = Client::default();
-        let response = irsdk.start_up().await;
+        let response = irsdk.init().await;
 
         assert!(response.is_ok(), "start_up should succeed.")
     }
-
-    // #[tokio::test]
-    // async fn fails_when_iracing_closed() {
-    //     let mut irsdk = IRSDK::default();
-    //     let response = irsdk.start_up(None, None).await;
-
-    //     assert!(
-    //         response.is_err(),
-    //         "start_up should fail when iRacing is not running"
-    //     )
-    // }
 
     #[tokio::test]
     async fn list_all_available_variables() {
         let mut irsdk = Client::default();
 
-        irsdk.start_up().await.expect("Failed to start IRSDK");
+        irsdk.init().await.expect("Failed to start IRSDK");
 
-        let var_headers = &irsdk.cache.var_headers;
+        let var_headers_hash = &irsdk.cache.var_headers_hash;
 
-        println!("\n===== Available Variables ({}) =====", var_headers.len());
+        println!(
+            "\n===== Available Variables ({}) =====",
+            var_headers_hash.len()
+        );
 
-        for (i, name) in var_headers.iter().enumerate() {
+        for (i, name) in var_headers_hash.iter().enumerate() {
             if i < 50 {
                 println!(
                     "\t{}:\t{}",
                     i + 1,
-                    name.name_str().expect("Failed to get name_str")
+                    name.1.name_str().expect("Failed to get name_str")
                 );
             }
         }
-        println!("  ... and {} more", var_headers.len() - 20);
+        println!("  ... and {} more", var_headers_hash.len() - 20);
     }
 
     #[tokio::test]
     async fn test_data_valid_event() {
         let mut sdk = Client::default();
 
-        sdk.start_up().await.expect("Failed to start IRSDK");
+        sdk.init().await.expect("Failed to start IRSDK");
 
         let data = sdk
             .mmap

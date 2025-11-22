@@ -23,7 +23,7 @@ async fn main() -> eyre::Result<()> {
 
     tracing::debug!("Connecting to iRacing...");
 
-    irsdk.start_up().await?;
+    irsdk.init().await?;
 
     loop {
         check_sim_status().await?;

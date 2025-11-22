@@ -25,8 +25,16 @@ impl IracingProvider {
     pub async fn init(&self) -> eyre::Result<()> {
         let mut client = self.ir_client.write().await;
 
-        client.start_up().await?;
+        client.init().await?;
         Ok(())
+    }
+
+    pub async fn update(&self) {
+        let mut client = self.ir_client.write().await;
+
+        if let Err(e) = client.update_latest_var_buffer() {
+            eprintln!("Telemetry update error: {e}");
+        }
     }
 
     pub async fn read_value(&self, key: &str) -> eyre::Result<TelemetryValue> {
