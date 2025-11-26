@@ -1,9 +1,9 @@
 use crate::{
-    iracing_client::error::IRSDKError,
+    domain::iracing_errors::{ClientError, MMapError},
     utils::constants::{self, size},
 };
 
-use color_eyre::eyre::{self, Ok, eyre};
+use color_eyre::eyre::{Context, eyre};
 
 #[cfg(windows)]
 use std::{ffi, os::windows::ffi::OsStrExt, sync::Arc};
@@ -50,7 +50,7 @@ impl MemoryMap {
     ///
     /// Returns a `HANDLE` which may be invalid if the event does not exist.
      */
-    pub fn load_live_data(&mut self) -> eyre::Result<()> {
+    pub fn load_live_data(&mut self) -> Result<(), ClientError> {
         let wide_name: Vec<u16> = ffi::OsStr::new(constants::DATA_VALID_EVENT_NAME)
             .encode_wide()
             .chain(Some(0))
@@ -63,7 +63,7 @@ impl MemoryMap {
                 PCWSTR(wide_name.as_ptr()),
             )
         }
-        .map_err(|e| eyre!(IRSDKError::InvalidHandle(e.to_string())))?;
+        .map_err(|e| MMapError::OpenEventFailed(e.to_string()))?;
 
         self.data_valid_event = Some(handle);
 
@@ -73,10 +73,10 @@ impl MemoryMap {
         Ok(())
     }
 
-    pub fn wait_for_valid_data_event(&self) -> eyre::Result<()> {
+    pub fn wait_for_valid_data_event(&self) -> Result<(), ClientError> {
         let handle = self
             .data_valid_event
-            .ok_or_else(|| IRSDKError::DataValidEventNotFound)?;
+            .ok_or_else(|| MMapError::DataValidEventNotFound)?;
 
         unsafe {
             let wait_result = Threading::WaitForSingleObject(handle, 32);
@@ -84,15 +84,16 @@ impl MemoryMap {
             if wait_result == WAIT_OBJECT_0 {
                 Ok(())
             } else {
-                Err(eyre::eyre!(IRSDKError::Timeout))
+                Err(ClientError::Timeout.into())
             }
         }
     }
 
     // opens a handle to a memory-mapped file and maps it into the process's address space
-    pub fn open_memory_map(&mut self) -> eyre::Result<()> {
+    pub fn open_memory_map(&mut self) -> Result<(), ClientError> {
         let mmap_name = ffi::CString::new(constants::MEM_MAP_FILE)
-            .map_err(|_| IRSDKError::UnexpectedError(eyre::eyre!("Failed to create C String")))?;
+            .wrap_err("Failed to create C String")
+            .map_err(|e| ClientError::UnexpectedError(eyre!(e)))?;
 
         let handle = unsafe {
             Memory::OpenFileMappingA(
@@ -101,20 +102,17 @@ impl MemoryMap {
                 PCSTR(mmap_name.as_ptr() as *const u8),
             )
         }
-        .map_err(|e| IRSDKError::FailedToMapView(format!("Failed to open map view: {e}")))?;
+        .map_err(|e| MMapError::OpenFileMappingFailed(e.to_string()))?;
 
-        // Map memory to address
+        // Map view
         let memory_map_view =
             unsafe { MapViewOfFile(handle.clone(), FILE_MAP_READ, 0, 0, size::MEM_MAP_FILE_SIZE) };
 
         let mapping_view_ptr = memory_map_view.Value as *const u8;
-
         if mapping_view_ptr.is_null() {
-            let _ = unsafe { CloseHandle(handle.clone()) };
+            let _ = unsafe { CloseHandle(handle) };
 
-            return Err(eyre::eyre!(IRSDKError::FailedToMapView(
-                "Map view of file returned null pointer".to_owned(),
-            )));
+            return Err(MMapError::MapViewReturnedNull.into());
         }
 
         // Store the raw pointer and address space

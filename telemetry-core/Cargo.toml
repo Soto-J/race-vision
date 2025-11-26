@@ -4,21 +4,33 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bitflags = "2.9.4"
-byteorder = "1.5.0"
-memmap2 = "0.9.9"
-reqwest = "0.12.24"
+# Async runtime
 tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
+async-trait = "0.1.89"
 
+# HTTP client
+reqwest = "0.12.24"
+
+# Memory and data handling
+memmap2 = "0.9.9"
+byteorder = "1.5.0"
+bitflags = "2.9.4"
+
+# Serialization
 serde = "1.0.228"
 serde_yaml = "0.9.33"
 
+# CLI and error handling
 clap = "4.5.51"
 thiserror = "2.0.17"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.1", features = ["env-filter", "ansi"] }
 color-eyre = "0.6.5"
-async-trait = "0.1.89"
+
+# Logging and tracing
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.18", features = [
+  "registry",
+  "env-filter",
+] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

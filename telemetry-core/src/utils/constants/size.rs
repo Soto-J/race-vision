@@ -1,7 +1,11 @@
 pub const MEM_MAP_FILE_SIZE: usize = 1164 * 1024;
 
+// Header
+pub const HEADER_OFFSET: usize = 10 * ByteSize::I32 + ByteSize::PADDING;
 pub const HEADER_PADDING: usize = ByteSize::I64;
-pub const VAR_BUF_SIZE: usize = 4 * ByteSize::I32;
+
+// Var Header
+pub const VAR_BUF_OFFSET: usize = 4 * ByteSize::I32;
 pub const VAR_HEADER_SIZE: usize = 144;
 
 pub struct ByteSize;

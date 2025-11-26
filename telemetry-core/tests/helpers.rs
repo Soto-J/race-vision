@@ -1,17 +1,7 @@
-#![allow(unused)]
-
 #[cfg(test)]
-use color_eyre::eyre::{self, ContextCompat, Ok, eyre};
 use memmap2::MmapOptions;
-use std::{
-    env,
-    error::{self, Error},
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
-use telemetry_core::iracing_client::Client;
+use std::{env, fs::File, io::Write, path::Path, sync::Arc};
+use telemetry_core::{domain::iracing_errors::ClientError, iracing_client::Client};
 
 #[cfg(test)]
 pub struct TestApp {
@@ -20,15 +10,17 @@ pub struct TestApp {
 
 #[cfg(test)]
 impl TestApp {
-    pub fn new() -> eyre::Result<Self> {
+    pub fn new() -> Result<Self, ClientError> {
         Ok(Self {
             client: Client::default(),
         })
     }
 
-    pub fn create_test_file<P: AsRef<Path>>(&self, path: P) -> eyre::Result<()> {
+    pub fn create_test_file<P: AsRef<Path>>(&self, path: P) -> Result<(), ClientError> {
+        use telemetry_core::domain::iracing_errors::SharedMemoryError;
+
         if !self.client.is_initialized {
-            return Err(eyre!("irsdk not initialized"));
+            return Err(ClientError::NotConnected);
         }
 
         let snapshot = self
@@ -36,7 +28,7 @@ impl TestApp {
             .mmap
             .snapshot
             .as_ref()
-            .ok_or(eyre!("No shared memory found"))?;
+            .ok_or(SharedMemoryError::InvalidSharedMemory("Memory not found"))?;
 
         let mut file = File::create(path)?;
 
@@ -45,11 +37,14 @@ impl TestApp {
         Ok(())
     }
 
-    pub fn use_test_file<P: AsRef<Path>>(&self, test_file: P) -> eyre::Result<Self> {
+    pub fn use_test_file<P: AsRef<Path>>(&self, test_file: P) -> Result<Self, ClientError> {
+        use telemetry_core::domain::iracing_errors::MMapError;
+
         let mut client = Client::default();
 
         let file = File::open(test_file)?;
-        let mmap = unsafe { MmapOptions::new().map(&file) }?;
+        let mmap = unsafe { MmapOptions::new().map(&file) }
+            .map_err(|e| MMapError::OpenFileMappingFailed(e.to_string()))?;
         let snapshot = Arc::from(mmap.as_ref());
 
         client.cache.parse_headers(&snapshot)?;
@@ -60,11 +55,11 @@ impl TestApp {
         Ok(Self { client })
     }
 
-    pub fn write_debug_file<P: AsRef<Path>>(&self, path: P) -> eyre::Result<()> {
-        if !self.client.is_initialized {
-            use color_eyre::eyre::eyre;
+    pub fn write_debug_file<P: AsRef<Path>>(&self, path: P) -> Result<(), ClientError> {
+        use telemetry_core::domain::iracing_errors::{MMapError, ResolverError};
 
-            return Err(eyre!("IRSDK client not initialized"));
+        if !self.client.is_initialized {
+            return Err(ClientError::NotConnected);
         }
 
         let mut file = File::create(path)?;
@@ -74,14 +69,14 @@ impl TestApp {
             .mmap
             .snapshot
             .as_ref()
-            .ok_or_else(|| eyre!("Snapshot not found"))?;
+            .ok_or_else(|| MMapError::SnapshotNotFound)?;
 
         let header = self
             .client
             .cache
             .header
             .as_ref()
-            .ok_or_else(|| eyre!("Header not found"))?;
+            .ok_or_else(|| ResolverError::HeaderNotFound)?;
 
         let offset = header.session_info_offset() as usize;
         let len = header.session_info_len() as usize;
@@ -90,15 +85,10 @@ impl TestApp {
         file.write_all(&memory[offset..offset + len])?;
         file.write_all(b"\n\n")?;
 
-        /* Write Var Headers */
-        for (name, var_header) in &self.client.cache.var_headers_hash {
-            writeln!(file, "{:32}{}", name, var_header)?;
-        }
-
         Ok(())
     }
 
-    pub async fn init(&mut self) -> eyre::Result<()> {
+    pub async fn init(&mut self) -> Result<(), ClientError> {
         self.client.init().await?;
         Ok(())
     }

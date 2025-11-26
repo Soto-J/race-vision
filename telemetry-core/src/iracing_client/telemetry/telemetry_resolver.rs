@@ -1,0 +1,100 @@
+use color_eyre::eyre::eyre;
+
+use crate::{
+    domain::iracing_errors::{ClientError, ResolverError, SharedMemoryError},
+    iracing_client::telemetry::{
+        TelemetryValue, VarBuffer, VarKind,
+        raw::{Header, VarHeader},
+    },
+    utils::constants::size,
+};
+
+use std::{collections::HashMap, sync::Arc};
+
+#[derive(Debug, Default)]
+pub struct TelemetryResolver {
+    pub header: Option<Header>,
+    pub var_headers_hash: HashMap<String, VarHeader>,
+    pub latest_var_buffer: Option<VarBuffer>,
+}
+
+impl TelemetryResolver {
+    pub fn get_value(&self, key: &str) -> Result<TelemetryValue, ClientError> {
+        let var_header = self
+            .var_headers_hash
+            .get(key)
+            .ok_or(ResolverError::VarHeaderNotFound)?;
+
+        let var_kind = VarKind::try_from(var_header.var_type)
+            .map_err(|e| ClientError::UnexpectedError(eyre!(e)))?;
+
+        let bytes_per_element = match var_kind {
+            VarKind::Char8 | VarKind::Bool => 1,
+            VarKind::I32 | VarKind::Bitfield | VarKind::F32 => 4,
+            VarKind::F64 => 8,
+        };
+
+        let count = var_header.count as usize;
+
+        let byte_len = count
+            .checked_mul(bytes_per_element)
+            .ok_or(SharedMemoryError::SizeOverflow)?;
+
+        let offset = var_header.offset as usize;
+
+        let end_offset =
+            offset
+                .checked_add(byte_len)
+                .ok_or(SharedMemoryError::InvalidSharedMemory(
+                    "Offset calculation overflowed",
+                ))?;
+
+        let latest_buffer = self
+            .latest_var_buffer
+            .as_ref()
+            .ok_or(SharedMemoryError::BufferNotFound)?;
+
+        let snapshot = latest_buffer.get_memory();
+
+        if end_offset > snapshot.len() {
+            return Err(SharedMemoryError::SliceOutOfBounds {
+                start: offset,
+                end: end_offset,
+                mem_len: snapshot.len(),
+            }
+            .into());
+        }
+
+        let value = var_kind.parse_to_value(&snapshot[offset..end_offset])?;
+
+        Ok(value)
+    }
+
+    pub fn parse_headers(&mut self, memory_snapshot: &Arc<[u8]>) -> Result<(), ClientError> {
+        let header = Header::parse(memory_snapshot.clone())?;
+
+        // update to latest buffer
+        let mut buffers = header.var_buffers()?;
+        buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
+
+        self.latest_var_buffer = buffers.get(1).cloned().or_else(|| buffers.get(0).cloned());
+
+        let num_of_vars = header.num_vars().max(0) as usize;
+        let base_offset = header.var_header_offset().max(0) as usize;
+
+        self.header = Some(header);
+
+        for i in 0..num_of_vars {
+            let offset = base_offset + i * size::VAR_HEADER_SIZE;
+            let end = offset + size::VAR_HEADER_SIZE;
+
+            let var_header = VarHeader::from_bytes(&memory_snapshot[offset..end])?;
+
+            let var_name = var_header.name_str()?.to_owned();
+
+            self.var_headers_hash.insert(var_name, var_header);
+        }
+
+        Ok(())
+    }
+}
