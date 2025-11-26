@@ -1,14 +1,14 @@
 use telemetry_core::{
+    domain::iracing_errors::ClientError,
     iracing_client::{Client, check_sim_status, telemetry::TelemetryValue},
     utils::constants::telemetry_vars::TelemetryVars,
 };
 
-use color_eyre::eyre;
 use std::time::Duration;
-use tokio::{self, time};
+use tokio::time;
 
 #[tokio::main]
-async fn main() -> eyre::Result<()> {
+async fn main() -> Result<(), ClientError> {
     let telemetry_vars = vec![
         TelemetryVars::SESSION_TIME,
         TelemetryVars::BRAKE,

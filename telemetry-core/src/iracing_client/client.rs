@@ -1,9 +1,9 @@
 use crate::{
+    domain::iracing_errors::{ClientError, MMapError, ResolverError},
     iracing_client::{
         broadcast::Broadcast,
-        error::IRSDKError,
         session_state::SessionState,
-        telemetry::{MemoryMap, TelemetryValue, VarCache, raw::Header},
+        telemetry::{MemoryMap, TelemetryResolver, TelemetryValue, raw::Header},
     },
     utils::constants::{
         SIM_STATUS_URL,
@@ -11,7 +11,7 @@ use crate::{
     },
 };
 
-use color_eyre::eyre::{self, ContextCompat, Ok, eyre};
+use color_eyre::eyre::{ContextCompat, Ok, Result, eyre};
 use std::sync::Arc;
 
 #[repr(C)]
@@ -20,13 +20,13 @@ pub struct Client {
     pub is_initialized: bool,
 
     pub mmap: MemoryMap,
-    pub cache: VarCache,
+    pub cache: TelemetryResolver,
     pub session_state: SessionState,
     pub broadcast: Option<Broadcast>,
 }
 
 impl Client {
-    pub async fn init(&mut self) -> eyre::Result<()> {
+    pub async fn init(&mut self) -> Result<()> {
         check_sim_status().await?;
 
         self.mmap.load_live_data()?;
@@ -35,7 +35,7 @@ impl Client {
             .mmap
             .snapshot
             .as_ref()
-            .ok_or_else(|| eyre!(IRSDKError::SnapshotNotFound))?;
+            .ok_or_else(|| MMapError::SnapshotNotFound)?;
 
         self.cache.parse_headers(snap_shot)?;
 
@@ -44,7 +44,7 @@ impl Client {
         Ok(())
     }
 
-    pub async fn run(&mut self) -> eyre::Result<()> {
+    pub async fn run(&mut self) -> Result<()> {
         self.init().await?;
 
         loop {
@@ -57,7 +57,7 @@ impl Client {
     }
 
     // Get all buffers and find the most recent one (highest tick_count)
-    pub fn update_latest_var_buffer(&mut self) -> eyre::Result<()> {
+    pub fn update_latest_var_buffer(&mut self) -> Result<()> {
         let latest_var_buffer = self
             .cache
             .latest_var_buffer
@@ -71,7 +71,7 @@ impl Client {
         let view_ptr: *const u8 = self
             .mmap
             .view_ptr
-            .ok_or_else(|| eyre!(IRSDKError::ViewPTRNotFound))?;
+            .ok_or_else(|| MMapError::ViewPtrNotFound)?;
 
         let fresh_snapshot: Arc<[u8]> = unsafe {
             let slice = std::slice::from_raw_parts(view_ptr, size::MEM_MAP_FILE_SIZE);
@@ -80,22 +80,22 @@ impl Client {
 
         /* Create a fresh Arc<[u8]> from the mapped pointer to get live data */
         self.mmap.snapshot = Some(fresh_snapshot.clone());
-        self.cache.header = Some(Header::new(fresh_snapshot));
+        self.cache.header = Some(Header::parse(fresh_snapshot)?);
 
         let header = self
             .cache
             .header
             .as_ref()
-            .ok_or_else(|| eyre!(IRSDKError::HeaderNotFound))?;
+            .ok_or_else(|| ResolverError::HeaderNotFound)?;
 
-        let mut buffers = header.var_buffers();
+        let mut buffers = header.var_buffers()?;
 
         buffers.sort_by(|a, b| b.tick_count().cmp(&a.tick_count()));
 
         let mut latest = buffers
             .into_iter()
             .next()
-            .wrap_err(IRSDKError::UnexpectedError(eyre!(
+            .wrap_err(ClientError::UnexpectedError(eyre!(
                 "Failed to retrieve latest var buffer"
             )))?;
 
@@ -106,7 +106,7 @@ impl Client {
         Ok(())
     }
 
-    pub fn read_value(&self, key: &str) -> eyre::Result<TelemetryValue> {
+    pub fn read_value(&self, key: &str) -> Result<TelemetryValue, ClientError> {
         self.cache.get_value(key)
     }
 
@@ -133,7 +133,7 @@ impl Drop for Client {
 unsafe impl Send for Client {}
 unsafe impl Sync for Client {}
 
-pub async fn check_sim_status() -> eyre::Result<()> {
+pub async fn check_sim_status() -> Result<()> {
     let res = reqwest::get(SIM_STATUS_URL).await?;
     println!("Sim Status: {:?}", res.status());
     Ok(())

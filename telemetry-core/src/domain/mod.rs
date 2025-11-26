@@ -1,4 +1,5 @@
 pub mod camera;
+pub mod iracing_errors;
 pub mod pit;
 pub mod session;
 pub mod track;
