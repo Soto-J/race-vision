@@ -22,10 +22,18 @@ impl VarBuffer {
         buf_len: usize,
         offset: usize,
     ) -> Result<Self, ClientError> {
-        if offset + buf_len > shared_mem.len() {
+        // Prevent offset + buf_len from overflowing usize.
+        let end = offset
+            .checked_add(buf_len)
+            .ok_or(SharedMemoryError::OffsetOverflow {
+                offset,
+                len: buf_len,
+            })?;
+
+        if end > shared_mem.len() {
             return Err(SharedMemoryError::SliceOutOfBounds {
                 start: offset,
-                end: offset + buf_len,
+                end,
                 mem_len: shared_mem.len(),
             }
             .into());

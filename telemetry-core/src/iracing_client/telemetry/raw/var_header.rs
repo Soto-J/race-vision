@@ -45,7 +45,7 @@ impl VarHeader {
 
         if offset < 0 {
             return Err(ResolverError::InvalidVarHeader(format!(
-                "offset cannot be negative {}",
+                "offset must be positive {}",
                 offset
             ))
             .into());
@@ -53,7 +53,7 @@ impl VarHeader {
 
         if count <= 0 {
             return Err(ResolverError::InvalidVarHeader(format!(
-                "count cannot be negative: {}",
+                "count must be positive: {}",
                 count
             ))
             .into());
