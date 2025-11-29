@@ -1,4 +1,5 @@
-use color_eyre::eyre::{self, eyre};
+use crate::domain::iracing_errors::ParseError;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -13,7 +14,7 @@ pub enum VarKind {
 }
 
 impl VarKind {
-    pub fn parse_to_value(&self, bytes: &[u8]) -> eyre::Result<TelemetryValue> {
+    pub fn parse_to_value(&self, bytes: &[u8]) -> Result<TelemetryValue, ParseError> {
         match self {
             VarKind::Char8 => Ok(TelemetryValue::Chars8(bytes.to_vec())),
             VarKind::Bool => Ok(TelemetryValue::Bool(
@@ -27,7 +28,7 @@ impl VarKind {
     }
 }
 
-fn parse_le_chunks<T, const N: usize>(bytes: &[u8]) -> eyre::Result<Vec<T>>
+fn parse_le_chunks<T, const N: usize>(bytes: &[u8]) -> Result<Vec<T>, ParseError>
 where
     T: FromLeBytes<N>,
 {
@@ -36,7 +37,7 @@ where
         .map(|chunk| {
             let array: [u8; N] = chunk
                 .try_into()
-                .map_err(|_| eyre!("Failed to convert chunk to array"))?;
+                .map_err(|_| ParseError::InvalidChunk(format!("size={}", N)))?;
 
             Ok(T::from_le_bytes(array))
         })
@@ -46,7 +47,7 @@ where
 impl TryFrom<i32> for VarKind {
     type Error = String;
 
-    fn try_from(var_type: i32) -> eyre::Result<Self, Self::Error> {
+    fn try_from(var_type: i32) -> Result<Self, Self::Error> {
         match var_type {
             0 => Ok(Self::Char8),
             1 => Ok(Self::Bool),

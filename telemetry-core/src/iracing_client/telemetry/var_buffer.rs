@@ -1,4 +1,7 @@
-use crate::utils::constants::size::ByteSize;
+use crate::{
+    domain::iracing_errors::{ClientError, SharedMemoryError},
+    utils::constants::size::ByteSize,
+};
 
 use std::sync::Arc;
 
@@ -9,18 +12,41 @@ pub struct VarBuffer {
     buf_len: usize,
     offset: usize,
     frozen_memory: Option<Vec<u8>>,
+    frozen_offset: Option<usize>,
     is_memory_frozen: bool,
 }
 
 impl VarBuffer {
-    pub fn new(shared_mem: Arc<[u8]>, buf_len: usize, offset: usize) -> Self {
-        Self {
+    pub fn parse(
+        shared_mem: Arc<[u8]>,
+        buf_len: usize,
+        offset: usize,
+    ) -> Result<Self, ClientError> {
+        // Prevent offset + buf_len from overflowing usize.
+        let end = offset
+            .checked_add(buf_len)
+            .ok_or(SharedMemoryError::OffsetOverflow {
+                offset,
+                len: buf_len,
+            })?;
+
+        if end > shared_mem.len() {
+            return Err(SharedMemoryError::SliceOutOfBounds {
+                start: offset,
+                end,
+                mem_len: shared_mem.len(),
+            }
+            .into());
+        }
+
+        Ok(Self {
             shared_mem,
             buf_len,
             offset,
             frozen_memory: None,
+            frozen_offset: None,
             is_memory_frozen: false,
-        }
+        })
     }
 
     fn read_i32(&self, rel_offset: usize) -> i32 {
@@ -45,7 +71,6 @@ impl VarBuffer {
     pub fn freeze(&mut self) {
         let buff_offset = self.buff_offset() as usize;
         let end = buff_offset + self.buf_len;
-
 
         let memory = self.shared_mem[buff_offset..end].to_vec();
         self.frozen_memory = Some(memory);

@@ -1,6 +1,8 @@
-use crate::iracing_client::{Client, telemetry::TelemetryValue};
+use crate::{
+    domain::iracing_errors::ClientError,
+    iracing_client::{Client, telemetry::TelemetryValue},
+};
 
-use color_eyre::eyre::{self, Ok};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -16,13 +18,13 @@ pub struct IracingProvider {
 }
 
 impl IracingProvider {
-    pub fn new() -> eyre::Result<Self> {
+    pub fn new() -> Result<Self, ClientError> {
         Ok(Self {
             ir_client: Arc::new(RwLock::new(Client::default())),
         })
     }
 
-    pub async fn init(&self) -> eyre::Result<()> {
+    pub async fn init(&self) -> Result<(), ClientError> {
         let mut client = self.ir_client.write().await;
 
         client.init().await?;
@@ -37,7 +39,7 @@ impl IracingProvider {
         }
     }
 
-    pub async fn read_value(&self, key: &str) -> eyre::Result<TelemetryValue> {
+    pub async fn read_value(&self, key: &str) -> Result<TelemetryValue, ClientError> {
         let client = self.ir_client.read().await;
 
         client.read_value(key)

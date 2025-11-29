@@ -1,44 +1,34 @@
 use crate::{
+    domain::iracing_errors::{ClientError, ResolverError},
     iracing_client::telemetry::VarBuffer,
-    utils::constants::size::{ByteSize, VAR_BUF_SIZE},
+    utils::constants::size::{ByteSize, HEADER_OFFSET, VAR_BUF_OFFSET},
 };
 
-use std::{fmt, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Header {
     shared_mem: Arc<[u8]>,
 }
 
-impl fmt::Display for Header {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Header: {{ version: {}, status: {}, tick_rate: {}, num_vars: {}, num_buf: {}, buf_len: {} }}",
-            self.version(),
-            self.status(),
-            self.tick_rate(),
-            self.num_vars(),
-            self.num_buf(),
-            self.buf_len()
-        )
-    }
-}
-
 impl Header {
-    pub fn new(shared_mem: Arc<[u8]>) -> Self {
+    pub fn parse(shared_mem: Arc<[u8]>) -> Result<Self, ClientError> {
         let header = Self { shared_mem };
-        println!("{}", header);
-        header
+        header.validate()?;
+
+        Ok(header)
     }
 
-    fn read_i32(&self, offset: usize) -> i32 {
-        let bytes = &self.shared_mem[offset..offset + 4];
-        i32::from_le_bytes(
-            bytes
-                .try_into()
-                .expect("Failed to convert bytes to little endian i32"),
-        )
+    pub fn var_buffers(&self) -> Result<Vec<VarBuffer>, ClientError> {
+        let buf_len = self.buf_len() as usize;
+
+        (0..self.num_buf() as usize)
+            .map(|i| {
+                let offset = HEADER_OFFSET + (VAR_BUF_OFFSET * i);
+
+                VarBuffer::parse(self.shared_mem.clone(), buf_len, offset)
+            })
+            .collect()
     }
 
     pub fn version(&self) -> i32 {
@@ -81,16 +71,111 @@ impl Header {
         self.read_i32(9 * ByteSize::I32)
     }
 
-    pub fn var_buffers(&self) -> Vec<VarBuffer> {
-        let num_buf = self.num_buf().max(0) as usize;
-        let buf_len = self.buf_len().max(0) as usize;
+    fn read_i32(&self, offset: usize) -> i32 {
+        let bytes = &self.shared_mem[offset..offset + ByteSize::I32];
+        i32::from_le_bytes(
+            bytes
+                .try_into()
+                .expect("Failed to convert bytes to little endian i32"),
+        )
+    }
 
-        (0..num_buf)
-            .map(|i| {
-                let offset = (10 * ByteSize::I32 + ByteSize::PADDING) + (i * VAR_BUF_SIZE);
+    fn validate(&self) -> Result<(), ClientError> {
+        // Check minimum buffer size
+        if self.shared_mem.len() < HEADER_OFFSET {
+            return Err(ResolverError::HeaderBufferTooSmall {
+                expected: HEADER_OFFSET,
+                actual: self.shared_mem.len(),
+            }
+            .into());
+        }
 
-                VarBuffer::new(self.shared_mem.clone(), buf_len, offset)
-            })
-            .collect()
+        // Validate version
+        let version = self.version();
+        if version < 1 || version > 3 {
+            return Err(ResolverError::UnsupportedVersion(version).into());
+        }
+
+        // Validate num_vars
+        let num_vars = self.num_vars();
+        if num_vars < 0 {
+            return Err(ResolverError::InvalidHeaderField {
+                field: "num_vars".to_string(),
+                reason: format!("cannot be negative: {}", num_vars),
+            }
+            .into());
+        }
+        if num_vars > 10_000 {
+            // Reasonable upper limit
+            return Err(ResolverError::InvalidHeaderField {
+                field: "num_vars".to_string(),
+                reason: format!("exceeds reasonable maximum: {}", num_vars),
+            }
+            .into());
+        }
+
+        // 4. Validate num_buf
+        let num_buf = self.num_buf();
+        if num_buf < 0 {
+            return Err(ResolverError::InvalidHeaderField {
+                field: "num_buf".to_string(),
+                reason: format!("cannot be negative: {}", num_buf),
+            }
+            .into());
+        }
+        if num_buf > 100 {
+            // iRacing typically uses 3-4 buffers
+            return Err(ResolverError::InvalidHeaderField {
+                field: "num_buf".to_string(),
+                reason: format!("exceeds reasonable maximum: {}", num_buf),
+            }
+            .into());
+        }
+
+        // 5. Validate buf_len
+        let buf_len = self.buf_len();
+        if buf_len < 0 {
+            return Err(ResolverError::InvalidHeaderField {
+                field: "buf_len".to_string(),
+                reason: format!("cannot be negative: {}", buf_len),
+            }
+            .into());
+        }
+
+        // 6. Validate tick_rate
+        let tick_rate = self.tick_rate();
+        if tick_rate <= 0 {
+            return Err(ResolverError::InvalidHeaderField {
+                field: "tick_rate".to_string(),
+                reason: format!("must be positive: {}", tick_rate),
+            }
+            .into());
+        }
+
+        // 7. Validate var_header_offset
+        let var_header_offset = self.var_header_offset();
+        if var_header_offset < 0 || var_header_offset as usize >= self.shared_mem.len() {
+            return Err(ResolverError::InvalidHeaderField {
+                field: "var_header_offset".to_string(),
+                reason: format!("offset {} is outside buffer bounds", var_header_offset),
+            }
+            .into());
+        }
+
+        // 8. Validate session_info_offset if present
+        let session_info_len = self.session_info_len();
+        if session_info_len > 0 {
+            let session_info_offset = self.session_info_offset();
+
+            if session_info_offset < 0 || session_info_offset as usize >= self.shared_mem.len() {
+                return Err(ResolverError::InvalidHeaderField {
+                    field: "session_info_offset".to_string(),
+                    reason: format!("offset {} is outside buffer bounds", session_info_offset),
+                }
+                .into());
+            }
+        }
+
+        Ok(())
     }
 }
