@@ -1,11 +1,11 @@
-pub mod mmap_error;
-pub mod resolver_error;
-pub mod shared_memory_error;
+pub mod mmap;
+pub mod resolver;
+pub mod shared_memory;
 
 use color_eyre::eyre;
-pub use mmap_error::*;
-pub use resolver_error::*;
-pub use shared_memory_error::*;
+pub use mmap::*;
+pub use resolver::*;
+pub use shared_memory::*;
 
 // Top-level error type for the iRacing SDK
 #[derive(Debug, thiserror::Error)]

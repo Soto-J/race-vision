@@ -25,18 +25,13 @@ impl VarBuffer {
         // Prevent offset + buf_len from overflowing usize.
         let end = offset
             .checked_add(buf_len)
-            .ok_or(SharedMemoryError::OffsetOverflow {
+            .ok_or_else(|| SharedMemoryError::OffsetOverflow {
                 offset,
                 len: buf_len,
             })?;
 
         if end > shared_mem.len() {
-            return Err(SharedMemoryError::SliceOutOfBounds {
-                start: offset,
-                end,
-                mem_len: shared_mem.len(),
-            }
-            .into());
+            return Err(SharedMemoryError::OutOfBounds(format!("end offset overflow")).into());
         }
 
         Ok(Self {

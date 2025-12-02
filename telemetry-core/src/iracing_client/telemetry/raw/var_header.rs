@@ -1,7 +1,10 @@
 use crate::{
     domain::iracing_errors::{ClientError, ResolverError},
     iracing_client::telemetry::VarKind,
-    utils::constants::size::VAR_HEADER_SIZE,
+    utils::constants::size::{
+        COUNT_AS_TIME_BYTE, COUNT_END, COUNT_START, DESCRIPTION_END, DESCRIPTION_START, KIND_END,
+        KIND_START, NAME_END, NAME_START, OFFSET_END, OFFSET_START, UNIT_START, VAR_HEADER_SIZE,
+    },
 };
 
 use std::fmt;
@@ -32,17 +35,12 @@ impl VarHeader {
             return Err(ResolverError::VarHeaderNotFound.into());
         }
 
-        let var_type = i32::from_le_bytes(read_slice!(buf, 0, 4, "var_type"));
-
+        let var_type = i32::from_le_bytes(read_slice!(buf, KIND_START, KIND_END, "var_type"));
         if VarKind::try_from(var_type).is_err() {
             return Err(ResolverError::InvalidVarKind(var_type).into());
         }
 
-        let offset = i32::from_le_bytes(read_slice!(buf, 4, 8, "offset"));
-        let count = i32::from_le_bytes(read_slice!(buf, 8, 12, "count"));
-
-        let count_as_time = buf[12] != 0;
-
+        let offset = i32::from_le_bytes(read_slice!(buf, OFFSET_START, OFFSET_END, "offset"));
         if offset < 0 {
             return Err(ResolverError::InvalidVarHeader(format!(
                 "offset must be positive {}",
@@ -51,6 +49,7 @@ impl VarHeader {
             .into());
         }
 
+        let count = i32::from_le_bytes(read_slice!(buf, COUNT_START, COUNT_END, "count"));
         if count <= 0 {
             return Err(ResolverError::InvalidVarHeader(format!(
                 "count must be positive: {}",
@@ -63,10 +62,10 @@ impl VarHeader {
             var_type,
             offset,
             count,
-            count_as_time,
-            name: read_slice!(buf, 16, 48, "name"),
-            description: read_slice!(buf, 48, 112, "description"),
-            unit: read_slice!(buf, 112, 144, "unit"),
+            count_as_time: buf[COUNT_AS_TIME_BYTE] != 0,
+            name: read_slice!(buf, NAME_START, NAME_END, "name"),
+            description: read_slice!(buf, DESCRIPTION_START, DESCRIPTION_END, "description"),
+            unit: read_slice!(buf, UNIT_START, VAR_HEADER_SIZE, "unit"),
         })
     }
 

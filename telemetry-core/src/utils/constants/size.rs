@@ -7,6 +7,27 @@ pub const HEADER_PADDING: usize = ByteSize::I64;
 // Var Header
 pub const VAR_BUF_OFFSET: usize = 4 * ByteSize::I32;
 pub const VAR_HEADER_SIZE: usize = 144;
+pub const MAX_REASONABLE_VARS: i32 = 10_000;
+
+pub const KIND_START: usize = 0;
+pub const KIND_END: usize = 4;
+
+pub const OFFSET_START: usize = 4;
+pub const OFFSET_END: usize = 8;
+
+pub const COUNT_START: usize = 8;
+pub const COUNT_END: usize = 12;
+
+pub const COUNT_AS_TIME_BYTE: usize = 12;
+
+pub const NAME_START: usize = 16;
+pub const NAME_END: usize = 48;
+
+pub const DESCRIPTION_START: usize = 48;
+pub const DESCRIPTION_END: usize = 112;
+
+pub const UNIT_START: usize = 112;
+pub const UNIT_END: usize = 144;
 
 pub struct ByteSize;
 impl ByteSize {
