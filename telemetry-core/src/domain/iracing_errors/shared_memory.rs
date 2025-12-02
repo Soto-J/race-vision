@@ -1,22 +1,8 @@
 /// Errors that occur during shared memory operations
 #[derive(Debug, thiserror::Error)]
 pub enum SharedMemoryError {
-    // Memory access errors
-    #[error("integer read out of bounds at offset {offset}")]
-    ReadOutOfBounds { offset: usize },
-    #[error("slice out of bounds: start={start}, end={end}, mem_len={mem_len}")]
-    SliceOutOfBounds {
-        start: usize,
-        end: usize,
-        mem_len: usize,
-    },
-    #[error(
-        "variable data range exceeds buffer bounds: end={end_offset}, snapshot_len={snapshot_len}"
-    )]
-    OutOfBounds {
-        end_offset: usize,
-        snapshot_len: usize,
-    },
+    #[error("out of bounds access: {0}")]
+    OutOfBounds(String),
 
     // Buffer errors
     #[error("invalid buffer offset: {0}")]

@@ -23,7 +23,7 @@ impl TelemetryResolver {
         let var_header = self
             .var_headers_hash
             .get(key)
-            .ok_or(ResolverError::VarHeaderNotFound)?;
+            .ok_or_else(|| ResolverError::VarHeaderNotFound)?;
 
         let var_kind = VarKind::try_from(var_header.var_type)
             .map_err(|e| ClientError::UnexpectedError(eyre!(e)))?;
@@ -38,30 +38,27 @@ impl TelemetryResolver {
 
         let byte_len = count
             .checked_mul(bytes_per_element)
-            .ok_or(SharedMemoryError::SizeOverflow)?;
+            .ok_or_else(|| SharedMemoryError::SizeOverflow)?;
 
         let offset = var_header.offset as usize;
 
-        let end_offset =
-            offset
-                .checked_add(byte_len)
-                .ok_or(SharedMemoryError::InvalidSharedMemory(
-                    "Offset calculation overflowed",
-                ))?;
+        let end_offset = offset.checked_add(byte_len).ok_or_else(|| {
+            SharedMemoryError::InvalidSharedMemory("Offset calculation overflowed")
+        })?;
 
         let latest_buffer = self
             .latest_var_buffer
             .as_ref()
-            .ok_or(SharedMemoryError::BufferNotFound)?;
+            .ok_or_else(|| SharedMemoryError::BufferNotFound)?;
 
         let snapshot = latest_buffer.get_memory();
 
         if end_offset > snapshot.len() {
-            return Err(SharedMemoryError::SliceOutOfBounds {
-                start: offset,
-                end: end_offset,
-                mem_len: snapshot.len(),
-            }
+            return Err(SharedMemoryError::OutOfBounds(format!(
+                "latest buffer out of range: end_offset={}, snapshot_len={}",
+                end_offset,
+                snapshot.len()
+            ))
             .into());
         }
 

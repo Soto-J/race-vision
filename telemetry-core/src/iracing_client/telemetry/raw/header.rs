@@ -1,7 +1,7 @@
 use crate::{
     domain::iracing_errors::{ClientError, ResolverError},
     iracing_client::telemetry::VarBuffer,
-    utils::constants::size::{ByteSize, HEADER_OFFSET, VAR_BUF_OFFSET},
+    utils::constants::size::{ByteSize, HEADER_OFFSET, MAX_REASONABLE_VARS, VAR_BUF_OFFSET},
 };
 
 use std::sync::Arc;
@@ -81,7 +81,6 @@ impl Header {
     }
 
     fn validate(&self) -> Result<(), ClientError> {
-        // Check minimum buffer size
         if self.shared_mem.len() < HEADER_OFFSET {
             return Err(ResolverError::HeaderBufferTooSmall {
                 expected: HEADER_OFFSET,
@@ -90,13 +89,11 @@ impl Header {
             .into());
         }
 
-        // Validate version
         let version = self.version();
         if version < 1 || version > 3 {
             return Err(ResolverError::UnsupportedVersion(version).into());
         }
 
-        // Validate num_vars
         let num_vars = self.num_vars();
         if num_vars < 0 {
             return Err(ResolverError::InvalidHeaderField {
@@ -105,8 +102,7 @@ impl Header {
             }
             .into());
         }
-        if num_vars > 10_000 {
-            // Reasonable upper limit
+        if num_vars > MAX_REASONABLE_VARS {
             return Err(ResolverError::InvalidHeaderField {
                 field: "num_vars".to_string(),
                 reason: format!("exceeds reasonable maximum: {}", num_vars),
@@ -114,7 +110,6 @@ impl Header {
             .into());
         }
 
-        // 4. Validate num_buf
         let num_buf = self.num_buf();
         if num_buf < 0 {
             return Err(ResolverError::InvalidHeaderField {
@@ -132,7 +127,6 @@ impl Header {
             .into());
         }
 
-        // 5. Validate buf_len
         let buf_len = self.buf_len();
         if buf_len < 0 {
             return Err(ResolverError::InvalidHeaderField {
@@ -142,7 +136,6 @@ impl Header {
             .into());
         }
 
-        // 6. Validate tick_rate
         let tick_rate = self.tick_rate();
         if tick_rate <= 0 {
             return Err(ResolverError::InvalidHeaderField {
@@ -152,7 +145,6 @@ impl Header {
             .into());
         }
 
-        // 7. Validate var_header_offset
         let var_header_offset = self.var_header_offset();
         if var_header_offset < 0 || var_header_offset as usize >= self.shared_mem.len() {
             return Err(ResolverError::InvalidHeaderField {
@@ -162,7 +154,6 @@ impl Header {
             .into());
         }
 
-        // 8. Validate session_info_offset if present
         let session_info_len = self.session_info_len();
         if session_info_len > 0 {
             let session_info_offset = self.session_info_offset();

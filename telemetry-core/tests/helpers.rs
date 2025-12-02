@@ -28,7 +28,7 @@ impl TestApp {
             .mmap
             .snapshot
             .as_ref()
-            .ok_or(SharedMemoryError::InvalidSharedMemory("Memory not found"))?;
+            .ok_or_else(|| SharedMemoryError::InvalidSharedMemory("Memory not found"))?;
 
         let mut file = File::create(path)?;
 
