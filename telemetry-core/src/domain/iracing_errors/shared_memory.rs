@@ -9,6 +9,8 @@ pub enum SharedMemoryError {
     InvalidBufferOffset(i32),
     #[error("buffer not found")]
     BufferNotFound,
+    #[error("buffer update failed: {0}")]
+    BufferUpdateFailed(String),
 
     // Calculation overflow errors
     #[error("buffer length calculation overflowed")]
