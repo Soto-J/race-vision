@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 import { formatSessionTime } from "./lib/format";
-import { TelemetryValueSchema } from "./lib/types";
+import { VarKindSchema } from "./lib/types";
 import { TelemetryVars } from "./lib/constants/telemetry-vars";
 
 import "./App.css";
@@ -32,7 +32,7 @@ function App() {
 
   async function read_value() {
     try {
-      const value = TelemetryValueSchema.parse(
+      const value = VarKindSchema.parse(
         await invoke("read_value", {
           key: TelemetryVars.SESSION_TIME,
         })

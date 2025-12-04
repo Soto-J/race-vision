@@ -1,3 +1,7 @@
 export default function OverlayPage() {
-  return <div className="bg-transparent text-9xl">OverlayWindow</div>;
+  return (
+    <div id="overlay" className="text-9xl bg-transparent">
+      OverlayWindow
+    </div>
+  );
 }

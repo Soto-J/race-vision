@@ -12,14 +12,14 @@
   "app": {
     "windows": [
       {
-        "url": "/",
+        "url": "/public/index.html",
         "label": "desktop-app",
         "title": "desktop-app",
         "width": 800,
         "height": 600
       },
       {
-        "url": "/overlay",
+        "url": "/public/overlay.html",
         "label": "overlay",
         "title": "overlay",
         "fullscreen": true,

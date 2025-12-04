@@ -9,7 +9,7 @@ const BitfieldSchema = z.object({ Bitfield: z.array(z.number()) });
 const F32Schema = z.object({ F32: z.array(z.number()) });
 const F64Schema = z.object({ F64: z.array(z.number()) });
 
-export const TelemetryValueSchema = z.union([
+export const VarKindSchema = z.union([
   Chars8Schema,
   BoolSchema,
   I32Schema,
@@ -18,4 +18,4 @@ export const TelemetryValueSchema = z.union([
   F64Schema,
 ]);
 
-export type TelemetryValue = z.infer<typeof TelemetryValueSchema>;
+export type VarKind = z.infer<typeof VarKindSchema>;
