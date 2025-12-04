@@ -17,7 +17,7 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         desktop: resolve(__dirname, "public/index.html"),
-        overlay: resolve(__dirname, "ppublic/overlay.html"),
+        overlay: resolve(__dirname, "public/overlay.html"),
       },
     },
   },

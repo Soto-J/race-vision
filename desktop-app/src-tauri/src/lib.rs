@@ -20,7 +20,7 @@ pub fn run() -> Result<(), AppError> {
             read_value
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .map_err(|e| AppError::TauriError(format!("{e:?}")))?;
 
     Ok(())
 }
@@ -55,10 +55,14 @@ fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                 match background_provider.read_snapshot(&keys).await {
                     Ok(snapshot) => {
                         if let Err(e) = app_handle.emit("telemetry-update", snapshot) {
-                            eprintln!("emit to frontend failed: {e:?}")
+                            eprintln!("emit to frontend failed: {e:?}");
+                            return;
                         }
                     }
-                    Err(e) => eprintln!("failed reading snapshot: {e:?}"),
+                    Err(e) => {
+                        eprintln!("failed reading snapshot: {e:?}");
+                        return;
+                    }
                 }
             }
 

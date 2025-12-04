@@ -10,4 +10,7 @@ pub enum AppError {
 
     #[error("telemetry snapshot error: {0}")]
     TelemetrySnapshotError(String),
+
+    #[error("tauri error: {0}")]
+    TauriError(String),
 }
