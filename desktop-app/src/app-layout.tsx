@@ -8,7 +8,7 @@ export default function AppLayout() {
     <SidebarProvider>
       <AppSidebar />
 
-      <main className="h-screen w-screen">
+      <main className="h-screen w-screen p-4">
         <SidebarTrigger />
         <Outlet />
       </main>

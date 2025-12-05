@@ -17,9 +17,8 @@ import InputsGraph from "./pages/inputs-graph";
 import Traffic from "./pages/traffic";
 import Indicator from "./pages/indicator";
 import Flatmap from "./pages/flat-map";
-import Delta from "./pages/delta";
-import Bar from "./pages/bar";
 import TrackMap from "./pages/track-map";
+import DeltaBar from "./pages/delta-bar";
 import Twitch from "./pages/twitch";
 import Chat from "./pages/chat";
 import AppLayout from "./app-layout";
@@ -43,8 +42,7 @@ const router = createHashRouter([
       { path: "traffic", element: <Traffic /> },
       { path: "indicator", element: <Indicator /> },
       { path: "flat-map", element: <Flatmap /> },
-      { path: "delta", element: <Delta /> },
-      { path: "bar", element: <Bar /> },
+      { path: "delta-bar", element: <DeltaBar /> },
       { path: "track-map", element: <TrackMap /> },
       { path: "twitch", element: <Twitch /> },
       { path: "chat", element: <Chat /> },

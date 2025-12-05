@@ -1,3 +1,10 @@
+import { PageHeader } from "../components/page-header";
+
 export default function Fuel() {
-  return <div>fuel</div>;
+  return (
+    <div>
+      {" "}
+      <PageHeader id={""} title={""} description={""} vars={[]} />
+    </div>
+  );
 }
