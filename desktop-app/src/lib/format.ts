@@ -1,11 +1,3 @@
-export type VarType =
-  | { Chars8: Uint8Array }
-  | { Bool: boolean[] }
-  | { I32: number[] }
-  | { Bitfield: number[] }
-  | { F32: number[] }
-  | { F64: number[] };
-
 export const formatFloat = (value: number, digits = 2): string =>
   value.toFixed(digits);
 
