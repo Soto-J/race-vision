@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 
 import { createHashRouter, RouterProvider } from "react-router-dom";
 
-import App from "./pages/App";
+import App from "./pages/app";
 
 import Standings from "./pages/standings";
 import Relative from "./pages/relative";
@@ -17,7 +17,7 @@ import InputsGraph from "./pages/inputs-graph";
 import Traffic from "./pages/traffic";
 import Indicator from "./pages/indicator";
 import Flatmap from "./pages/flat-map";
-import Delta from "./pages/Delta";
+import Delta from "./pages/delta";
 import Bar from "./pages/bar";
 import TrackMap from "./pages/track-map";
 import Twitch from "./pages/twitch";
