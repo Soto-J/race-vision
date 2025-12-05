@@ -2,16 +2,17 @@ import { useEffect, useState } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
 
-import { formatSessionTime } from "./lib/format";
-import { VarKindSchema } from "./lib/types";
-import { TelemetryVars } from "./lib/constants/telemetry-vars";
+import { formatSessionTime } from "@/lib/format";
+import { VarKindSchema } from "@/lib/types";
+import { TelemetryVars } from "@/lib/constants/telemetry-vars";
 
-import "./App.css";
+import "@/App.css";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
   const [sessionTime, setSessionTime] = useState("");
+  const [selectedVars, setSelectedVars] = useState<string[]>([]);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -29,6 +30,14 @@ function App() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     setGreetMsg(await invoke("greet", { name }));
   }
+
+  const watchedVars = async () => {
+    try {
+      await invoke("set_watched_vars", { vars: selectedVars });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   async function read_value() {
     try {
@@ -49,7 +58,7 @@ function App() {
   }
 
   return (
-    <main className="h-screen  w-screen">
+    <div>
       <h1>Session Time: {formatSessionTime(sessionTime)}</h1>
 
       <form
@@ -67,7 +76,7 @@ function App() {
         <button type="submit">Greet</button>
       </form>
       <p>{greetMsg}</p>
-    </main>
+    </div>
   );
 }
 

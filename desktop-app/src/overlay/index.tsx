@@ -1,7 +1,11 @@
+import { useTelemetry } from "@/hooks/useTelemetry";
+import OverlayPageLayout from "./layout";
+
+interface OverlayPageProps {
+  children: React.ReactNode;
+}
 export default function OverlayPage() {
-  return (
-    <div id="overlay" className="text-9xl bg-transparent">
-      OverlayWindow
-    </div>
-  );
+  useTelemetry();
+
+  return <div>OverlayWindow</div>;
 }
