@@ -18,7 +18,7 @@ export const VarKindSchema = z.union([
 
 export type VarKind = z.infer<typeof VarKindSchema>;
 
-export const parseToValue = (value: VarKind) => {
+export const parseToValue = (value: VarKind): number | boolean | string => {
   if ("F32" in value) return value.F32[0];
   if ("F64" in value) return value.F64[0];
   if ("I32" in value) return value.I32[0];
@@ -27,4 +27,3 @@ export const parseToValue = (value: VarKind) => {
 
   throw new Error("Unsupported type");
 };
-

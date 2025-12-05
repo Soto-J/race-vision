@@ -21,8 +21,8 @@ export const useTelemetryStore = create<State & Actions>()(
 
     setSnapshot: (snapshot) => {
       set((state) => {
-        for (const key in snapshot) {
-          state.data = parseToValue(snapshot[key]);
+        for (const [key, varKind] of Object.entries(snapshot)) {
+          state.data[key] = parseToValue(varKind);
         }
       });
     },
