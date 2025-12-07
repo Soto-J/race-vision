@@ -38,6 +38,7 @@ fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
     // Background telemetry loop - Run update on seperate thread
     tauri::async_runtime::spawn(async move {
+        // Initialize background provider
         if let Err(e) = background_provider.init().await {
             eprintln!("init failed: {:?}", e);
             return;

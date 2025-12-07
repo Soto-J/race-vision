@@ -1,27 +1,24 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-
 import { createHashRouter, RouterProvider } from "react-router-dom";
 
 import App from "./pages/app";
+import AppLayout from "./app-layout";
 
 import Standings from "./pages/standings";
 import Relative from "./pages/relative";
-import Fuel from "./pages/fuel";
-import Calculator from "./pages/calculator";
+import FuelCalculator from "./pages/fuel-calculator";
 import Spotter from "./pages/spotter";
-import Pit from "./pages/pit";
-import Helper from "./pages/helper";
+import PitHelper from "./pages/pit-helper";
 import Inputs from "./pages/inputs";
 import InputsGraph from "./pages/inputs-graph";
-import Traffic from "./pages/traffic";
-import Indicator from "./pages/indicator";
+import TrafficIndicator from "./pages/traffic-indicator";
 import Flatmap from "./pages/flat-map";
 import TrackMap from "./pages/track-map";
 import DeltaBar from "./pages/delta-bar";
-import Twitch from "./pages/twitch";
-import Chat from "./pages/chat";
-import AppLayout from "./app-layout";
+import TwitchChat from "./pages/twitch";
+
+import "@/App.css";
 
 const router = createHashRouter([
   {
@@ -32,20 +29,16 @@ const router = createHashRouter([
 
       { path: "standings", element: <Standings /> },
       { path: "relative", element: <Relative /> },
-      { path: "fuel", element: <Fuel /> },
-      { path: "calculator", element: <Calculator /> },
+      { path: "fuel-calculator", element: <FuelCalculator /> },
       { path: "spotter", element: <Spotter /> },
-      { path: "pit", element: <Pit /> },
-      { path: "helper", element: <Helper /> },
+      { path: "pit-helper", element: <PitHelper /> },
       { path: "inputs", element: <Inputs /> },
       { path: "inputs-graph", element: <InputsGraph /> },
-      { path: "traffic", element: <Traffic /> },
-      { path: "indicator", element: <Indicator /> },
+      { path: "traffic-indicator", element: <TrafficIndicator /> },
       { path: "flat-map", element: <Flatmap /> },
       { path: "delta-bar", element: <DeltaBar /> },
       { path: "track-map", element: <TrackMap /> },
-      { path: "twitch", element: <Twitch /> },
-      { path: "chat", element: <Chat /> },
+      { path: "twitch-chat", element: <TwitchChat /> },
     ],
   },
 ]);
@@ -53,5 +46,5 @@ const router = createHashRouter([
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <RouterProvider router={router} />
-  </React.StrictMode>
+  </React.StrictMode>,
 );
