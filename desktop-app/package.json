@@ -47,7 +47,9 @@
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   },
-  "plugins": [
-    "prettier-plugin-tailwindcss"
-  ]
+  "prettier": {
+    "plugins": [
+      "prettier-plugin-tailwindcss"
+    ]
+  }
 }

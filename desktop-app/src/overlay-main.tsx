@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 
 import OverlayPage from "./overlay";
 
+
 const overlayRoot = document.getElementById("overlay-root") as HTMLElement;
 
 if (!overlayRoot) {

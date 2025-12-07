@@ -8,6 +8,7 @@ interface PageHeaderProps {
   id: string;
   title: string;
   description: string;
+  isActive: boolean;
   vars: string[]; // list of telemetry variables this page needs
 }
 
@@ -15,19 +16,19 @@ export const PageHeader = ({
   id,
   title,
   description,
+  isActive,
   vars,
 }: PageHeaderProps) => {
-  const isActive = useTelemetryStore((s) => s.isActive[id] ?? false);
   const toggle = useTelemetryStore((s) => s.toggleSetting);
 
   return (
     <div
       className={cn(
-        "space-y-3 pb-6 mb-6 border-b",
-        isActive ? "" : "opacity-40"
+        "mb-6 space-y-3 border-b py-6",
+        isActive ? "" : "opacity-40",
       )}
     >
-      <div className="flex justify-between items-start">
+      <div className="flex items-start justify-between">
         <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
 
         <div className="flex items-center gap-2">
@@ -35,6 +36,7 @@ export const PageHeader = ({
             Active
           </label>
           <Switch
+            className=""
             id={`${id}-toggle`}
             checked={isActive}
             onCheckedChange={(value) => toggle(id, value, vars)}
@@ -42,7 +44,7 @@ export const PageHeader = ({
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {description}
       </p>
     </div>

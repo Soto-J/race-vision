@@ -44,7 +44,7 @@ function App() {
       const value = VarKindSchema.parse(
         await invoke("read_value", {
           key: TelemetryVars.SESSION_TIME,
-        })
+        }),
       );
 
       console.log("Value: ", value);
