@@ -31,7 +31,7 @@ export default function Inputs() {
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="header">Header</TabsTrigger>
-            <TabsTrigger value="footer">footer</TabsTrigger>
+            <TabsTrigger value="footer">Footer</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">

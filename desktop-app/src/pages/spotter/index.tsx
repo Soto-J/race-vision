@@ -7,15 +7,15 @@ import { Switch } from "@/components/ui/switch";
 
 export default function Spotter() {
   const isActive = useTelemetryStore(
-    (state) => state.isActive["inputs"] ?? false,
+    (state) => state.isActive["spotter"] ?? false,
   );
 
   return (
     <div>
       <PageHeader
+        isActive={isActive}
         id="spotter"
         title="Spotter"
-        isActive={isActive}
         description="The spotter indicates when a driver is side by side."
         vars={[]}
       />

@@ -6,7 +6,7 @@ import { PageHeader } from "@/pages/components/page-header";
 
 export default function TrafficIndicator() {
   const isActive = useTelemetryStore(
-    (state) => state.isActive["pit-helper"] ?? false,
+    (state) => state.isActive["traffic-indicator"] ?? false,
   );
 
   return (

@@ -3,9 +3,10 @@ import { Activity } from "react";
 import { useTelemetryStore } from "@/hooks/useTelemetryStore";
 
 import { PageHeader } from "@/pages/components/page-header";
+
 export default function Flatmap() {
   const isActive = useTelemetryStore(
-    (state) => state.isActive["pit-helper"] ?? false,
+    (state) => state.isActive["flat-map"] ?? false,
   );
 
   return (

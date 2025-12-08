@@ -12,9 +12,9 @@ export default function InputsGraph() {
   return (
     <div>
       <PageHeader
+        isActive={isActive}
         id="inputs-graph"
         title="Inputs Graph"
-        isActive={isActive}
         description="Show the inputs graph in a separate window, so you can place this where you want on your screen."
         vars={[]}
       />

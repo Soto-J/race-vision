@@ -14,9 +14,9 @@ export default function TrackMap() {
   return (
     <div>
       <PageHeader
+        isActive={isActive}
         id="track-map"
         title="Track Map"
-        isActive={isActive}
         description="See where everybody is on track."
         vars={[]}
       />

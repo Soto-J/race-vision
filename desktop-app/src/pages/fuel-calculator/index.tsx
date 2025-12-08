@@ -14,12 +14,13 @@ export default function FuelCalculator() {
   const isActive = useTelemetryStore(
     (state) => state.isActive["fuel-calculator"] ?? false,
   );
+
   return (
     <div>
       <PageHeader
+        isActive={isActive}
         id="fuel-calculator"
         title="Fuel Calculator"
-        isActive={false}
         description="Fuel calculator keeps track of your average fuel usage per lap and calculate the refuel amount. In a team session, you can keep track of your teammates fuel level, if they also use ioverlay."
         vars={[]}
       />
@@ -30,7 +31,7 @@ export default function FuelCalculator() {
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="header">Header</TabsTrigger>
-            <TabsTrigger value="footer">footer</TabsTrigger>
+            <TabsTrigger value="footer">Footer</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">

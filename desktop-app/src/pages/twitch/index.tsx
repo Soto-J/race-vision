@@ -6,8 +6,9 @@ import { PageHeader } from "@/pages/components/page-header";
 
 export default function TwitchChat() {
   const isActive = useTelemetryStore(
-    (state) => state.isActive["pit-helper"] ?? false,
+    (state) => state.isActive["twitch-chat"] ?? false,
   );
+  
   return (
     <div>
       <PageHeader
