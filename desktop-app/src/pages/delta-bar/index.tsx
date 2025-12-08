@@ -1,15 +1,26 @@
-import { PageHeader } from "../components/page-header";
+import { Activity } from "react";
+
+import { useTelemetryStore } from "@/hooks/useTelemetryStore";
+
+import { PageHeader } from "@/pages/components/page-header";
 
 export default function DeltaBar() {
+  const isActive = useTelemetryStore(
+    (state) => state.isActive["pit-helper"] ?? false,
+  );
+
   return (
     <div>
       <PageHeader
+        isActive={isActive}
         id="delta"
         title="Delta Bar"
         description="Show your delta times in a horizontal bar and more."
         vars={[]}
       />
-      Delta
+      <Activity mode={isActive ? "visible" : "hidden"}>
+        <div></div>
+      </Activity>
     </div>
   );
 }

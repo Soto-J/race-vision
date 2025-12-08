@@ -2,7 +2,7 @@ import { Activity } from "react";
 
 import { useTelemetryStore } from "@/hooks/useTelemetryStore";
 
-import { PageHeader } from "../components/page-header";
+import { PageHeader } from "@/pages/components/page-header";
 import { GeneralTab } from "./components/tabs/general-tab";
 import { ContentTab } from "./components/tabs/content-tab";
 import { HeaderTab } from "./components/tabs/header-tab";
@@ -18,9 +18,9 @@ export default function Inputs() {
   return (
     <div className="">
       <PageHeader
+        isActive={isActive}
         id="inputs"
         title="Inputs"
-        isActive={isActive}
         description="Show your inputs in this window, you can even make this visible in a graph."
         vars={[]}
       />

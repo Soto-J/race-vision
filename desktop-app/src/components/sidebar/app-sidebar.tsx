@@ -3,7 +3,6 @@ import { NavLink } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -14,7 +13,7 @@ import {
 } from "@/components/sidebar";
 
 export function AppSidebar() {
-  const items = [
+  const routes = [
     { title: "General", href: "/" },
     { title: "Standings", href: "standings" },
     { title: "Relative", href: "relative" },
@@ -32,34 +31,38 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader />
-      <SidebarContent>
-        <SidebarGroup />
-        <SidebarGroupLabel className="mb-3">
-          <h3 className="text-primary px-2 text-xs font-semibold tracking-wider uppercase">
-            Race Vision
-          </h3>
-        </SidebarGroupLabel>
+      <SidebarHeader>
+        <h1 className="text-primary pl-6 text-2xl">Race Vision</h1>
+      </SidebarHeader>
 
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {items.map(({ title, href }) => (
-              <SidebarMenuItem key={title}>
-                <SidebarMenuButton asChild>
+      <SidebarContent className="px-4">
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            <h3 className="text-primary text-xs font-semibold tracking-wider uppercase">
+              Overlay
+            </h3>
+          </SidebarGroupLabel>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {routes.map(({ title, href }) => (
+                <SidebarMenuItem key={title}>
                   <NavLink
                     to={href}
-                    className="font-medium tracking-tight capitalize"
+                    className={"font-medium tracking-tight capitalize"}
                   >
-                    {title}
+                    {({ isActive }) => (
+                      <SidebarMenuButton asChild isActive={isActive}>
+                        <span>{title}</span>
+                      </SidebarMenuButton>
+                    )}
                   </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-        <SidebarGroup />
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter />
     </Sidebar>
   );
 }
