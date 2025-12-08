@@ -30,17 +30,27 @@ export const PedalGraph = ({
   const normalize = (v: number) => (v > 1 ? v / 100 : v);
 
   useEffect(() => {
+    // Recreate buffers when size changes
+    throttleRef.current = new Float32Array(bufferSize);
+    brakeRef.current = new Float32Array(bufferSize);
+    indexRef.current = 0;
+    accumulatorRef.current = 0;
+
     const canvas = canvasRef.current;
+
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
+
     if (!ctx) return;
 
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
 
+    let frameId: number;
+
     const loop = () => {
-      requestAnimationFrame(loop);
+      frameId = requestAnimationFrame(loop);
 
       // pull LIVE telemetry values
       const store = useTelemetryStore.getState();
@@ -98,6 +108,10 @@ export const PedalGraph = ({
     };
 
     loop();
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
   }, [scrollSpeed, bufferSize]);
 
   return <canvas ref={canvasRef} width={300} height={80} />;

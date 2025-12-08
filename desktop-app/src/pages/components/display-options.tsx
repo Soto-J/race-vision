@@ -7,11 +7,10 @@ interface OptionsProps {
 }
 
 export const DisplayOptions = ({ options }: OptionsProps) => {
-
   return (
     <div className="space-y-2">
       {options.map((option) => (
-        <div className="flex justify-between gap-x-2">
+        <div key={option.title} className="flex justify-between gap-x-2">
           <div className="flex gap-x-2">
             <Switch key={option.title} id={`${option.title}-toggle`} />
             <div>{option.title}</div>

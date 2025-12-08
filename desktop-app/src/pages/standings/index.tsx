@@ -26,7 +26,7 @@ export default function Standings() {
       />
 
       <Activity mode={isActive ? "visible" : "hidden"}>
-        <Tabs>
+        <Tabs defaultValue="general">
           <TabsList className="mx-auto mb-4 gap-x-2">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
