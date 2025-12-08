@@ -1,44 +1,104 @@
 import { useEffect, useRef } from "react";
 
-export function PedalGraph() {
-  const getPedalValue = () => {};
-  const canvasRef = useRef(null);
-  const dataRef = useRef(new Float32Array(300)); // 300-sample buffer
+import { useTelemetryStore } from "@/hooks/useTelemetryStore";
+
+import { TelemetryVars } from "@/lib/constants/telemetry-vars";
+
+const THROTTLE_COLOR = "#22c55e";
+const BRAKE_COLOR = "#ef4444";
+
+const GRAPH_SPEED = 0.5;
+
+interface PedalGraphProps {
+  scrollSpeed?: number; // 0.5 = slower, 1 = normal, 2 = fast
+  bufferSize?: number; // 300 = history depth
+}
+
+export const PedalGraph = ({
+  scrollSpeed = 1,
+  bufferSize = 300,
+}: PedalGraphProps) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const throttleRef = useRef(new Float32Array(bufferSize));
+  const brakeRef = useRef(new Float32Array(bufferSize));
+  const clutchRef = useRef(new Float32Array(bufferSize));
+
   const indexRef = useRef(0);
+  const accumulatorRef = useRef(0); // for fractional scrollSpeed logic
+
+  const normalize = (v: number) => (v > 1 ? v / 100 : v);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    if (!canvas) return;
 
-    function loop() {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+
+    const loop = () => {
       requestAnimationFrame(loop);
 
-      // Get latest pedal value (0–1)
-      const v = getPedalValue();
+      // pull LIVE telemetry values
+      const store = useTelemetryStore.getState();
 
-      // Write into circular buffer
-      dataRef.current[indexRef.current] = v;
-      indexRef.current = (indexRef.current + 1) % dataRef.current.length;
+      const throttleValue = normalize(
+        (store.getValue(TelemetryVars.THROTTLE) as number) ?? 0,
+      );
+      const brakeValue = normalize(
+        (store.getValue(TelemetryVars.BRAKE) as number) ?? 0,
+      );
 
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // ------------------------------------
+      // SCROLL SPEED CONTROL
+      // ------------------------------------
+      accumulatorRef.current += scrollSpeed;
 
-      // Draw graph
-      ctx.beginPath();
-      for (let i = 0; i < dataRef.current.length; i++) {
-        const idx = (indexRef.current + i) % dataRef.current.length;
-        const x = (i / dataRef.current.length) * canvas.width;
-        const y = canvas.height - dataRef.current[idx] * canvas.height;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+      while (accumulatorRef.current >= 1) {
+        indexRef.current = (indexRef.current + 1) % bufferSize;
+        accumulatorRef.current -= 1;
       }
-      ctx.strokeStyle = "#22c55e"; // green
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
+
+      // Update buffers
+      throttleRef.current[indexRef.current] = throttleValue;
+      brakeRef.current[indexRef.current] = brakeValue;
+      // clutchRef.current[indexRef.current] = pedalValues;
+
+      // ------------------------------------
+      // DRAWING
+      // ------------------------------------
+      const W = canvas.width;
+      const H = canvas.height;
+      const graphHeight = H * 0.7;
+
+      // Clear + redraw
+      ctx.clearRect(0, 0, W, H);
+
+      const drawLine = (buf: Float32Array, color: string) => {
+        ctx.beginPath();
+
+        for (let i = 0; i < buf.length; i++) {
+          const idx = (indexRef.current + i) % buf.length;
+          const x = (i / buf.length) * W;
+          const y = graphHeight - buf[idx] * graphHeight;
+
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      };
+
+      drawLine(throttleRef.current, THROTTLE_COLOR);
+      drawLine(brakeRef.current, BRAKE_COLOR);
+    };
 
     loop();
-  }, []);
+  }, [scrollSpeed, bufferSize]);
 
   return <canvas ref={canvasRef} width={300} height={80} />;
-}
+};
