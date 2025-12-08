@@ -1,3 +1,6 @@
+import { DisplayOptions } from "@/pages/components/display-options";
+import { DISPLAY_OPTIONS } from "@/pages/constants";
+
 export const FooterTab = () => {
-  return <div>Footer</div>;
+  return <DisplayOptions options={DISPLAY_OPTIONS} />;
 };

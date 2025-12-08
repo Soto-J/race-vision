@@ -57,7 +57,6 @@ export const useTelemetryStore = create<TelemetryStore>()(
       const all = Object.values(get().pageVars).flat();
 
       try {
-        
         invoke("set_watched_vars", { vars: all });
       } catch (error) {
          console.error("Failed to sync watched vars to Rust:", error);
