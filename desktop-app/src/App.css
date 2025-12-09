@@ -14,11 +14,6 @@ body,
   width: 100%;
 }
 
-#overlay-root {
-  background-color: transparent !important;
-  pointer-events: none;
-}
-
 /* Widgets will override this and RECEIVE events */
 .overlay-widget {
   pointer-events: auto;

@@ -4,6 +4,7 @@ use commands::{greet, read_value, set_watched_vars};
 use serde::Deserialize;
 use std::sync::Arc;
 use tauri::{App, AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Wry};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_store::{Store, StoreExt};
 use telemetry_core::IracingProvider;
 use tokio::sync::RwLock;
@@ -15,6 +16,7 @@ pub mod errors;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), AppError> {
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| setup_config(app))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -28,8 +30,6 @@ pub fn run() -> Result<(), AppError> {
 
     Ok(())
 }
-
-
 
 pub type WatchedVars = Arc<RwLock<Vec<String>>>;
 
@@ -152,3 +152,5 @@ fn init_widget_window(
 
     Ok(())
 }
+
+fn register_F6() {}

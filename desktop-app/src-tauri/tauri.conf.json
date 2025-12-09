@@ -20,7 +20,7 @@
       },
       {
         "label": "pedals-widget",
-        "url": "index.html#/overlay/pedals",
+        "url": "index.html#/pedals",
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,
@@ -30,7 +30,7 @@
       },
       {
         "label": "standings-widget",
-        "url": "index.html#/overlay/standings",
+        "url": "index.html#/standings",
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,
@@ -40,7 +40,7 @@
       },
       {
         "label": "track-map-widget",
-        "url": "index.html#/overlay/track-map",
+        "url": "index.html#/track-map",
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,
@@ -50,7 +50,7 @@
       },
       {
         "label": "relative-widget",
-        "url": "index.html#/overlay/relative",
+        "url": "index.html#/relative",
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,

@@ -1,5 +1,3 @@
-import { useTelemetry } from "@/hooks/useTelemetry";
-
 import Standings from "@/pages/standings";
 import TrackMap from "@/pages/track-map";
 import Relative from "@/pages/relative";
@@ -12,8 +10,6 @@ interface OverlayPageProps {
 }
 
 export default function OverlayPage({ widgetId }: OverlayPageProps) {
-  useTelemetry();
-
   const params = new URLSearchParams(window.location.search);
   const widget = params.get(widgetId);
 

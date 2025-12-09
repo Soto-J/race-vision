@@ -1,14 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-type WidgetData = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-type Widgets = Record<string, WidgetData>;
+import { WidgetData, Widgets } from "@/lib/types/widget-overlay";
 
 type OverlayStore = {
   widgets: Widgets;
