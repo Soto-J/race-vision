@@ -7,10 +7,11 @@ import { useTelemetryStore } from "./useTelemetryStore";
 export type TelemetrySnapshot = Record<string, VarKind>;
 
 export function useTelemetry() {
-  if (!(window as any).__TAURI__) return; // running in browser dev
-  if (window.location.hash.startsWith("#/overlay/")) return;
-  
   useEffect(() => {
+    // Bail out if not in Tauri or on overlay route
+    if (!(window as any).__TAURI__) return;
+    if (window.location.hash.startsWith("#/overlay/")) return;
+
     let unlisten: (() => void) | undefined;
 
     listen<TelemetrySnapshot>("telemetry-update", (event) => {
