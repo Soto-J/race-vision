@@ -7,11 +7,15 @@ import Relative from "@/pages/relative";
 import { PedalGraph } from "./components/widget/pedal-graph";
 import { DraggableWidget } from "./components/draggable-widget";
 
-export default function OverlayPage() {
+interface OverlayPageProps {
+  widgetId: string;
+}
+
+export default function OverlayPage({ widgetId }: OverlayPageProps) {
   useTelemetry();
 
   const params = new URLSearchParams(window.location.search);
-  const widget = params.get("widget");
+  const widget = params.get(widgetId);
 
   switch (widget) {
     case "pedals":

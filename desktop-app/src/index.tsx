@@ -6,7 +6,6 @@ import { formatSessionTime } from "@/lib/format";
 import { VarKindSchema } from "@/lib/types";
 import { TelemetryVars } from "@/lib/constants/telemetry-vars";
 
-import "@/App.css";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
