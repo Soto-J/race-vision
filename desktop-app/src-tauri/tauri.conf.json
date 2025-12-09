@@ -19,17 +19,44 @@
         "height": 600
       },
       {
-        "url": "/public/overlay.html",
-        "label": "overlay",
-        "title": "overlay",
-        "fullscreen": true,
+        "url": "/public/overlay.html?widget=pedals",
+        "label": "pedals-widget",
         "transparent": true,
         "decorations": false,
-        "resizable": false,
-        "skipTaskbar": true,
         "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "url": "/public/overlay.html?widget=standings",
+        "label": "standings-widget",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "url": "/public/overlay.html?widget=track-map",
+        "label": "track-map-widget",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "visible": false,
         "focus": false,
-        "visible": false
+        "skipTaskbar": true
+      },
+      {
+        "url": "/public/overlay.html?widget=relative",
+        "label": "relative-widget",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "visible": false,
+        "focus": false,
+        "skipTaskbar": true
       }
     ],
     "security": {

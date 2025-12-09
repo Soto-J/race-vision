@@ -19,6 +19,11 @@ body,
   pointer-events: none;
 }
 
+/* Widgets will override this and RECEIVE events */
+.overlay-widget {
+  pointer-events: auto;
+}
+
 :root {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
