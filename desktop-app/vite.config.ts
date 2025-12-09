@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
+
 import path, { resolve } from "path";
 
 const host = process.env.TAURI_DEV_HOST;
@@ -17,7 +18,6 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         desktop: resolve(__dirname, "public/index.html"),
-        overlay: resolve(__dirname, "public/overlay.html"),
       },
     },
   },

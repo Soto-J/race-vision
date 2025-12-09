@@ -8,6 +8,10 @@ export type TelemetrySnapshot = Record<string, VarKind>;
 
 export function useTelemetry() {
   useEffect(() => {
+    // Bail out if not in Tauri or on overlay route
+    if (!(window as any).__TAURI__) return;
+    if (window.location.hash.startsWith("#/overlay/")) return;
+
     let unlisten: (() => void) | undefined;
 
     listen<TelemetrySnapshot>("telemetry-update", (event) => {

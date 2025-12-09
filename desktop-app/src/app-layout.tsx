@@ -16,6 +16,7 @@ export default function AppLayout() {
             <SidebarTrigger />
             <ThemeToggle className="h-6 w-6" />
           </div>
+          
           <Outlet />
         </main>
       </SidebarProvider>

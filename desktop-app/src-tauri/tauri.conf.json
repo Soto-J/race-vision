@@ -12,24 +12,51 @@
   "app": {
     "windows": [
       {
-        "url": "/public/index.html",
-        "label": "desktop-app",
-        "title": "desktop-app",
-        "width": 800,
-        "height": 600
+        "label": "app",
+        "url": "index.html",
+        "title": "Race Vision",
+        "width": 900,
+        "height": 700
       },
       {
-        "url": "/public/overlay.html",
-        "label": "overlay",
-        "title": "overlay",
-        "fullscreen": true,
+        "label": "pedals-widget",
+        "url": "index.html#/overlay/pedals",
         "transparent": true,
         "decorations": false,
-        "resizable": false,
-        "skipTaskbar": true,
         "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "label": "standings-widget",
+        "url": "index.html#/overlay/standings",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "label": "track-map-widget",
+        "url": "index.html#/overlay/track-map",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "visible": false,
         "focus": false,
-        "visible": false
+        "skipTaskbar": true
+      },
+      {
+        "label": "relative-widget",
+        "url": "index.html#/overlay/relative",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "visible": false,
+        "focus": false,
+        "skipTaskbar": true
       }
     ],
     "security": {
