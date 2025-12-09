@@ -1,4 +1,22 @@
+import { cn } from "@/lib/utils";
 import { NavLink } from "react-router-dom";
+
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ChartAverageIcon,
+  DashboardSquare01Icon,
+  EyeIcon,
+  FuelStationIcon,
+  JoystickIcon,
+  MapsIcon,
+  MapsLocation01Icon,
+  MentoringIcon,
+  TimerIcon,
+  TrafficLightIcon,
+  UserGroupIcon,
+  BarChartIcon,
+  TwitchIcon,
+} from "@hugeicons/core-free-icons";
 
 import {
   Sidebar,
@@ -10,32 +28,94 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/sidebar";
 
 export function AppSidebar() {
+  const { open } = useSidebar();
+
   const routes = [
-    { title: "General", href: "/" },
-    { title: "Standings", href: "standings" },
-    { title: "Relative", href: "relative" },
-    { title: "Fuel Calculator", href: "fuel-calculator" },
-    { title: "Spotter", href: "spotter" },
-    { title: "Pit Helper", href: "pit-helper" },
-    { title: "Inputs", href: "inputs" },
-    { title: "Inputs Graph", href: "inputs-graph" },
-    { title: "Traffic Indicator", href: "traffic-indicator" },
-    { title: "Flatmap", href: "flat-map" },
-    { title: "Delta Bar", href: "delta-bar" },
-    { title: "Trackmap", href: "track-map" },
-    { title: "Twitch", href: "twitch-chat" },
+    {
+      title: "General",
+      href: "/",
+      icon: DashboardSquare01Icon,
+    },
+    {
+      title: "Standings",
+      href: "standings",
+      icon: BarChartIcon,
+    },
+    {
+      title: "Relative",
+      href: "relative",
+      icon: UserGroupIcon,
+    },
+    {
+      title: "Fuel Calculator",
+      href: "fuel-calculator",
+      icon: FuelStationIcon,
+    },
+    {
+      title: "Spotter",
+      href: "spotter",
+      icon: EyeIcon,
+    },
+    {
+      title: "Pit Helper",
+      href: "pit-helper",
+      icon: MentoringIcon,
+    },
+    {
+      title: "Inputs",
+      href: "inputs",
+      icon: JoystickIcon,
+    },
+    {
+      title: "Inputs Graph",
+      href: "inputs-graph",
+      icon: ChartAverageIcon,
+    },
+    {
+      title: "Traffic Indicator",
+      href: "traffic-indicator",
+      icon: TrafficLightIcon,
+    },
+    {
+      title: "Flatmap",
+      href: "flat-map",
+      icon: MapsIcon,
+    },
+    {
+      title: "Delta Bar",
+      href: "delta-bar",
+      icon: TimerIcon,
+    },
+    {
+      title: "Trackmap",
+      href: "track-map",
+      icon: MapsLocation01Icon,
+    },
+    {
+      title: "Twitch",
+      href: "twitch-chat",
+      icon: TwitchIcon,
+    },
   ] as const;
 
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <h1 className="text-primary pl-6 text-2xl">Race Vision</h1>
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="overflow-hidden">
+        <h1
+          className={cn(
+            "text-primary pl-6 text-2xl whitespace-nowrap transition-all duration-300",
+            open ? "opacity-100" : "hidden opacity-0",
+          )}
+        >
+          Race Vision
+        </h1>
       </SidebarHeader>
 
-      <SidebarContent className="px-4">
+      <SidebarContent className={cn(open ? "px-4" : "")}>
         <SidebarGroup>
           <SidebarGroupLabel>
             <h3 className="text-primary text-xs font-semibold tracking-wider uppercase">
@@ -45,7 +125,7 @@ export function AppSidebar() {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {routes.map(({ title, href }) => (
+              {routes.map(({ title, href, icon }) => (
                 <SidebarMenuItem key={title}>
                   <NavLink
                     to={href}
@@ -53,7 +133,10 @@ export function AppSidebar() {
                   >
                     {({ isActive }) => (
                       <SidebarMenuButton asChild isActive={isActive}>
-                        <span>{title}</span>
+                        <div>
+                          <HugeiconsIcon icon={icon} />
+                          <span>{title}</span>
+                        </div>
                       </SidebarMenuButton>
                     )}
                   </NavLink>

@@ -15,6 +15,8 @@ export default function Inputs() {
     (state) => state.isActive["inputs"] ?? false,
   );
 
+  const tabs = ["general", "content", "header", "footer"] as const;
+
   return (
     <div className="">
       <PageHeader
@@ -27,11 +29,16 @@ export default function Inputs() {
 
       <Activity mode={isActive ? "visible" : "hidden"}>
         <Tabs defaultValue="general">
-          <TabsList className="mx-auto mb-4 gap-x-2">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="header">Header</TabsTrigger>
-            <TabsTrigger value="footer">Footer</TabsTrigger>
+          <TabsList className="bg-muted mx-auto mb-4 flex gap-2 rounded-full p-1">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary rounded-full px-4 py-2 text-sm font-medium transition data-[state=inactive]:opacity-60"
+              >
+                {tab}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value="general">
