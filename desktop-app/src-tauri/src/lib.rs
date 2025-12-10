@@ -3,12 +3,8 @@ use crate::{constants::AppWebView, errors::AppError};
 use commands::{greet, read_value, set_watched_vars};
 use serde::Deserialize;
 use std::sync::Arc;
-use tauri::{
-    App, AppHandle, Emitter, EventLoopMessage, Manager, PhysicalPosition, PhysicalSize, Wry,
-};
-use tauri_plugin_global_shortcut::{
-    Code, GlobalShortcut, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
-};
+use tauri::{App, AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Wry};
+use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_store::{Store, StoreExt};
 use tokio::sync::RwLock;
 
