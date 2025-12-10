@@ -4,10 +4,67 @@ use commands::{greet, read_value, set_watched_vars};
 use serde::Deserialize;
 use std::sync::Arc;
 use tauri::{App, AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Wry};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_store::{Store, StoreExt};
-use telemetry_core::IracingProvider;
 use tokio::sync::RwLock;
+
+#[cfg(target_os = "windows")]
+use telemetry_core::IracingProvider;
+
+// Mock implementation for non-Windows platforms
+#[cfg(not(target_os = "windows"))]
+pub mod mock_telemetry {
+    use serde::{Deserialize, Serialize};
+    use std::collections::HashMap;
+
+    #[derive(Debug, Clone)]
+    pub struct IracingProvider;
+
+    impl IracingProvider {
+        pub fn new() -> Result<Self, String> {
+            Ok(Self)
+        }
+
+        pub async fn init(&self) -> Result<(), String> {
+            Ok(())
+        }
+
+        pub async fn update(&self) -> Result<(), String> {
+            Ok(())
+        }
+
+        pub async fn read_value(&self, _key: &str) -> Result<TelemetryValue, String> {
+            // Return mock data
+            Ok(TelemetryValue::F32(vec![0.0]))
+        }
+
+        pub async fn read_snapshot(&self, keys: &[String]) -> Result<TelemetrySnapshot, String> {
+            let mut data = HashMap::with_capacity(keys.len());
+            for key in keys {
+                data.insert(key.clone(), TelemetryValue::F32(vec![0.0]));
+            }
+            Ok(TelemetrySnapshot { data })
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    pub enum TelemetryValue {
+        Chars8(Vec<u8>),
+        Bool(Vec<bool>),
+        I32(Vec<i32>),
+        Bitfield(Vec<u32>),
+        F32(Vec<f32>),
+        F64(Vec<f64>),
+    }
+
+    #[derive(Debug, Clone, Serialize)]
+    pub struct TelemetrySnapshot {
+        pub data: HashMap<String, TelemetryValue>,
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+use mock_telemetry::IracingProvider;
 
 pub mod commands;
 pub mod constants;
@@ -37,7 +94,7 @@ fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let ir_provider = Arc::new(IracingProvider::new().expect("failed to create provider"));
     let watched_vars: WatchedVars = Arc::new(RwLock::new(Vec::new()));
 
-    run_background_job(
+    register_background_job(
         app.handle().clone(),
         ir_provider.clone(),
         watched_vars.clone(),
@@ -60,13 +117,15 @@ fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         init_widget_window(app.handle(), widget.as_ref(), layout)?;
     }
 
+    register_shortcuts(app)?;
+
     app.manage(watched_vars);
     app.manage(ir_provider);
 
     Ok(())
 }
 
-fn run_background_job(
+fn register_background_job(
     app_handle: AppHandle,
     background_provider: Arc<IracingProvider>,
     watched_vars: WatchedVars,
@@ -153,4 +212,22 @@ fn init_widget_window(
     Ok(())
 }
 
-fn register_F6() {}
+fn register_shortcuts(app: &App) -> Result<(), tauri_plugin_global_shortcut::Error> {
+    let f6 = Shortcut::new(Some(Modifiers::CONTROL), Code::F6);
+    let f6_clone = f6.clone();
+
+    app.handle().plugin(
+        tauri_plugin_global_shortcut::Builder::new()
+            .with_shortcuts([f6_clone])?
+            .with_handler(move |app, shortcut, event| {
+                if *shortcut == f6 && event.state == ShortcutState::Pressed {
+                    if let Err(e) = app.emit("toggle-edit-mode", ()) {
+                        eprintln!("Failed to emit toggle-edit-mode: {e:?}")
+                    };
+                }
+            })
+            .build(),
+    )?;
+    println!("Registering F6 shortcut...");
+    Ok(())
+}

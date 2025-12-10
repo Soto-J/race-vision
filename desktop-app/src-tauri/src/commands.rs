@@ -2,7 +2,12 @@ use crate::{errors::AppError, WatchedVars};
 
 use std::sync::Arc;
 use tauri::State;
+
+#[cfg(target_os = "windows")]
 use telemetry_core::{iracing_client::telemetry::TelemetryValue, IracingProvider};
+
+#[cfg(not(target_os = "windows"))]
+use crate::mock_telemetry::{IracingProvider, TelemetryValue};
 
 #[tauri::command]
 pub async fn set_watched_vars(
