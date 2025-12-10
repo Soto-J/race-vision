@@ -15,7 +15,7 @@ export default function Inputs() {
     (state) => state.isActive["inputs"] ?? false,
   );
 
-  const tabs = ["general", "content", "header", "footer"] as const;
+  const tabs = ["General", "Content", "Header", "Footer"] as const;
 
   return (
     <div className="">
@@ -34,7 +34,7 @@ export default function Inputs() {
               <TabsTrigger
                 key={tab}
                 value={tab}
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary rounded-full px-4 py-2 text-sm font-medium transition data-[state=inactive]:opacity-60"
+                className="rounded-full px-4 py-2 text-sm font-medium transition data-[state=inactive]:opacity-60"
               >
                 {tab}
               </TabsTrigger>

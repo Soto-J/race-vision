@@ -7,16 +7,12 @@ html,
 body,
 #root {
   width: 100%;
+  background-color: oklch(0.7155 0 0);
 }
 
 #root {
   min-height: 100svh;
   width: 100%;
-}
-
-/* Widgets will override this and RECEIVE events */
-.overlay-widget {
-  pointer-events: auto;
 }
 
 :root {
