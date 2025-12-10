@@ -3,9 +3,9 @@ use crate::{constants::AppWebView, errors::AppError};
 use commands::{greet, read_value, set_watched_vars};
 use serde::Deserialize;
 use std::sync::Arc;
-use tauri::{App, AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Wry};
-use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
-use tauri_plugin_store::{Store, StoreExt};
+use tauri::{App, AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_store::StoreExt;
 use tokio::sync::RwLock;
 
 #[cfg(target_os = "windows")]
@@ -73,10 +73,10 @@ pub mod errors;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), AppError> {
     tauri::Builder::default()
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
-        .setup(|app| setup_config(app))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .setup(|app| setup_config(app))
         .invoke_handler(tauri::generate_handler![
             greet,
             set_watched_vars,
@@ -99,24 +99,7 @@ fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         ir_provider.clone(),
         watched_vars.clone(),
     );
-
-    // Widgets set up
-    let store = app
-        .store("widget-overlays")
-        .map_err(|e| AppError::TauriError(format!("{e:?}")))?;
-
-    let widgets = [
-        AppWebView::PEDAL,
-        AppWebView::STANDINGS,
-        AppWebView::TRACK_MAP,
-        AppWebView::RELATIVE,
-    ];
-
-    for widget in widgets {
-        let layout = load_widget_layout(&store, widget.as_ref());
-        init_widget_window(app.handle(), widget.as_ref(), layout)?;
-    }
-
+    register_widgets(app)?;
     register_shortcuts(app)?;
 
     app.manage(watched_vars);
@@ -174,12 +157,33 @@ struct WidgetLayout {
     height: f64,
 }
 
-fn load_widget_layout(tauri_store: &Store<Wry>, key: &str) -> Option<WidgetLayout> {
-    let value = tauri_store.get(key)?;
+fn register_widgets(app: &App) -> Result<(), AppError> {
+    let widgets = [
+        AppWebView::PEDAL,
+        AppWebView::STANDINGS,
+        AppWebView::TRACK_MAP,
+        AppWebView::RELATIVE,
+    ];
 
-    serde_json::from_value(value)
-        .map_err(|e| eprintln!("Failed to parse widget layout for key {key:?}: {e}"))
-        .ok()
+    let tauri_store = app
+        .store("widget-overlays")
+        .map_err(|e| AppError::TauriError(format!("{e:?}")))?;
+
+    for widget in widgets {
+        let widget_layout = match tauri_store.get(widget) {
+            Some(val) => serde_json::from_value(val)
+                .map_err(|e| {
+                    eprintln!("Failed to parse layout for {widget:?}: {e}");
+                    AppError::TauriError(format!("invalid layout for {widget:?}"))
+                })
+                .ok(),
+            None => None,
+        };
+
+        init_widget_window(app.handle(), widget.as_ref(), widget_layout)?;
+    }
+
+    Ok(())
 }
 
 fn init_widget_window(
@@ -214,20 +218,15 @@ fn init_widget_window(
 
 fn register_shortcuts(app: &App) -> Result<(), tauri_plugin_global_shortcut::Error> {
     let f6 = Shortcut::new(Some(Modifiers::CONTROL), Code::F6);
-    let f6_clone = f6.clone();
 
-    app.handle().plugin(
-        tauri_plugin_global_shortcut::Builder::new()
-            .with_shortcuts([f6_clone])?
-            .with_handler(move |app, shortcut, event| {
-                if *shortcut == f6 && event.state == ShortcutState::Pressed {
-                    if let Err(e) = app.emit("toggle-edit-mode", ()) {
-                        eprintln!("Failed to emit toggle-edit-mode: {e:?}")
-                    };
-                }
-            })
-            .build(),
-    )?;
-    println!("Registering F6 shortcut...");
+    app.global_shortcut()
+        .on_shortcut(f6, move |app, shortcut, event| {
+            if shortcut == &f6 && event.state() == ShortcutState::Pressed {
+                if let Err(e) = app.emit("toggle-edit-mode", ()) {
+                    eprintln!("Failed to emit toggle-edit-mode: {e:?}")
+                };
+            }
+        })?;
+
     Ok(())
 }
