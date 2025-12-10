@@ -170,9 +170,7 @@ fn register_widgets(app: &App) -> Result<(), AppError> {
         .map_err(|e| AppError::TauriError(format!("{e:?}")))?;
 
     for widget in widgets {
-        let value = tauri_store.get(widget);
-
-        let widget_layout = match value {
+        let widget_layout = match tauri_store.get(widget) {
             Some(val) => serde_json::from_value(val)
                 .map_err(|e| {
                     eprintln!("Failed to parse layout for {widget:?}: {e}");
