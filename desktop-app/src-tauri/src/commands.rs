@@ -1,4 +1,4 @@
-use crate::{errors::AppError, WatchedVars};
+use crate::{domain::AppError, WatchedVars};
 
 use std::sync::Arc;
 use tauri::State;
@@ -29,9 +29,7 @@ pub async fn read_value(
 }
 
 #[tauri::command]
-pub async fn toggle_edit_mode() {
-
-}
+pub async fn toggle_edit_mode() {}
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {
