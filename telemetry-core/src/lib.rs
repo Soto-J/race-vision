@@ -1,8 +1,5 @@
-use crate::{
-    domain::iracing_errors::{ClientError, SharedMemoryError},
-    iracing_client::{Client, telemetry::TelemetryValue},
-};
-
+use domain::iracing_errors::{ClientError, SharedMemoryError};
+use iracing_client::{Client, telemetry::TelemetryValue};
 use serde::Serialize;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
