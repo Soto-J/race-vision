@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { Rnd } from "react-rnd";
-
-import { useOverlayStore } from "../hooks/use-overlay-store";
+import { useOverlayStore } from "../../hooks/store/use-overlay-store";
 
 const SNAP = 12;
 
@@ -41,9 +40,7 @@ export const DraggableWidget = ({
       position={pos}
       size={{ width, height }}
       dragHandleClassName="drag-handle"
-      onDragStop={(e, data) => {
-        let { x, y } = data;
-
+      onDragStop={(_, { x, y }) => {
         // Snap to screen edges
         x = maybeSnap(x, 0);
         y = maybeSnap(y, 0);

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { useTelemetryStore } from "@/hooks/useTelemetryStore";
+import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
 import { TelemetryVars } from "@/lib/constants/telemetry-vars";
 

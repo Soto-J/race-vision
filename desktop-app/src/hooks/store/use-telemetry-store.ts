@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
 import { parseToValue } from "@/lib/types";
-import { TelemetrySnapshot } from "./useTelemetry";
+import type { TelemetrySnapshot } from "../use-telemetry";
 import { invoke } from "@tauri-apps/api/core";
 
 type TelemetryStore = {
@@ -56,13 +56,11 @@ export const useTelemetryStore = create<TelemetryStore>()(
     syncToRust: () => {
       const all = Object.values(get().pageVars).flat();
 
-      try {
-        invoke("set_watched_vars", { vars: all });
-      } catch (error) {
-         console.error("Failed to sync watched vars to Rust:", error);
-      }
+      invoke("set_watched_vars", { vars: all }).catch((error) =>
+        console.log(`Failed to sync watched vars to Rust: ${error}`),
+      );
     },
 
     getValue: (key) => get().data[key],
-  }))
+  })),
 );

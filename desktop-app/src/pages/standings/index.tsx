@@ -1,6 +1,6 @@
 import { Activity } from "react";
 
-import { useTelemetryStore } from "@/hooks/useTelemetryStore";
+import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
 import { PageHeader } from "../components/page-header";
 import { ContentTab } from "./components/tabs/content-tab";

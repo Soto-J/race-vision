@@ -1,6 +1,6 @@
 import { Activity } from "react";
 
-import { useTelemetryStore } from "@/hooks/useTelemetryStore";
+import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
 import { PageHeader } from "@/pages/components/page-header";
 import { Switch } from "@/components/ui/switch";
@@ -22,7 +22,7 @@ export default function Spotter() {
 
       <Activity mode={isActive ? "visible" : "hidden"}>
         <div>Show overlay when</div>
-        
+
         <div className="flex gap-x-8">
           <div className="flex items-center gap-x-2">
             <Switch />

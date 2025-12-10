@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 
 import { listen } from "@tauri-apps/api/event";
+
 import { VarKind } from "@/lib/types";
-import { useTelemetryStore } from "./useTelemetryStore";
+
+import { useTelemetryStore } from "./store/use-telemetry-store";
 
 export type TelemetrySnapshot = Record<string, VarKind>;
 
@@ -10,7 +12,7 @@ export function useTelemetry() {
   useEffect(() => {
     // Bail out if not in Tauri or on overlay route
     if (!(window as any).__TAURI__) return;
-    if (window.location.hash.startsWith("#/overlay/")) return;
+    if (window.location.hash.startsWith("#/")) return;
 
     let unlisten: (() => void) | undefined;
 

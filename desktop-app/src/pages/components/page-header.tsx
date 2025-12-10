@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-import { useTelemetryStore } from "@/hooks/useTelemetryStore";
+import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
 import { Switch } from "@/components/ui/switch";
 

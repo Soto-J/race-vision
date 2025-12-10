@@ -24,6 +24,11 @@ pub async fn read_value(
 }
 
 #[tauri::command]
+pub async fn toggle_edit_mode() {
+
+}
+
+#[tauri::command]
 pub fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }

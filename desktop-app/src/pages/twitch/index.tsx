@@ -1,6 +1,6 @@
 import { Activity } from "react";
 
-import { useTelemetryStore } from "@/hooks/useTelemetryStore";
+import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
 import { PageHeader } from "@/pages/components/page-header";
 
@@ -8,7 +8,7 @@ export default function TwitchChat() {
   const isActive = useTelemetryStore(
     (state) => state.isActive["twitch-chat"] ?? false,
   );
-  
+
   return (
     <div>
       <PageHeader
