@@ -13,7 +13,6 @@ export const useToggleEditMode = () => {
     listen("toggle-edit-mode", () => {
       toggleEditMode();
       console.log("F6 Clicked!");
-      console.log("F6 Clicked!");
     }).then((fn) => (unlisten = fn));
 
     return () => {
