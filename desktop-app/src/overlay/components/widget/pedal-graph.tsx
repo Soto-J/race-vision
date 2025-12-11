@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
-
+import { listen } from "@tauri-apps/api/event";
 import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
-
-import { TelemetryVars } from "@/lib/constants/telemetry-vars";
 
 const THROTTLE_COLOR = "#22c55e";
 const BRAKE_COLOR = "#ef4444";
@@ -15,12 +13,12 @@ interface PedalGraphProps {
 }
 
 export const PedalGraph = ({
-  scrollSpeed = 1,
+  scrollSpeed = 0.5,
   bufferSize = 300,
 }: PedalGraphProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // ring buffers
+  // Ring buffers
   const throttleRef = useRef(new Float32Array(bufferSize));
   const brakeRef = useRef(new Float32Array(bufferSize));
   const clutchRef = useRef(new Float32Array(bufferSize));
@@ -80,7 +78,11 @@ export const PedalGraph = ({
     const loop = () => {
       frameId = requestAnimationFrame(loop);
 
-      // SCROLL SPEED CONTROL
+      listen("tauri://resize", (e) =>
+        console.log("Resize event", e.payload),
+      )
+
+      // Scroll speed control
       accumulatorRef.current += scrollSpeed;
       while (accumulatorRef.current >= 1) {
         indexRef.current = (indexRef.current + 1) % bufferSize;
