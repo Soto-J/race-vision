@@ -7,7 +7,7 @@ type OverlayStore = {
   widgets: Widgets;
   isInEditMode: boolean;
 
-  toggleEditMode: () => void;
+  toggleEditMode: (mode: boolean) => void;
   registerWidget: (id: string, data: WidgetData) => void;
   updateWidget: (id: string, data: Partial<WidgetData>) => void;
 };
@@ -17,9 +17,9 @@ export const useOverlayStore = create<OverlayStore>()(
     widgets: {},
     isInEditMode: false,
 
-    toggleEditMode: () =>
+    toggleEditMode: (mode) =>
       set((state) => {
-        state.isInEditMode = !state.isInEditMode;
+        state.isInEditMode = mode;
       }),
 
     registerWidget: (id, data) =>

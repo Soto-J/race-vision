@@ -2,9 +2,8 @@ use background::register_background_job;
 use commands::{greet, read_value, set_watched_vars};
 use domain::AppError;
 use shortcuts::register_shortcuts;
-use std::sync::Arc;
+use std::sync::{atomic::AtomicBool, Arc};
 use tauri::{App, Manager};
-
 use tokio::sync::RwLock;
 use widgets::register_widgets;
 
@@ -42,18 +41,21 @@ pub type WatchedVars = Arc<RwLock<Vec<String>>>;
 
 fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let ir_provider = Arc::new(IracingProvider::new().expect("failed to create provider"));
-    let watched_vars: WatchedVars = Arc::new(RwLock::new(Vec::new()));
+    let active_vars = Arc::new(RwLock::new(Vec::new()));
 
     register_background_job(
         app.handle().clone(),
         ir_provider.clone(),
-        watched_vars.clone(),
+        active_vars.clone(),
     );
     register_widgets(app)?;
     register_shortcuts(app)?;
 
-    app.manage(watched_vars);
+    let edit_mode = RwLock::new(false);
+
     app.manage(ir_provider);
+    app.manage(active_vars);
+    app.manage(edit_mode);
 
     Ok(())
 }

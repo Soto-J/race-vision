@@ -1,4 +1,4 @@
-use crate::{domain::AppError, utils::AppWebView};
+use crate::{domain::AppError, utils::WIDGETS};
 
 use serde::Deserialize;
 use tauri::{App, AppHandle, Manager, PhysicalPosition, PhysicalSize};
@@ -13,23 +13,15 @@ struct WidgetLayout {
 }
 
 pub fn register_widgets(app: &App) -> Result<(), AppError> {
-    let widgets = [
-        AppWebView::PEDAL,
-        AppWebView::STANDINGS,
-        AppWebView::TRACK_MAP,
-        AppWebView::RELATIVE,
-    ];
-
     let tauri_store = app
         .store("widget-overlays")
         .map_err(|e| AppError::TauriError(format!("{e:?}")))?;
 
-    for widget in widgets {
+    for widget in WIDGETS {
         let widget_layout = match tauri_store.get(widget) {
             Some(val) => serde_json::from_value(val)
                 .map_err(|e| {
-                    eprintln!("Failed to parse layout for {widget:?}: {e}");
-                    AppError::TauriError(format!("invalid layout for {widget:?}"))
+                    AppError::TauriError(format!("Failed to parse layout for {widget:?}: {e}"))
                 })
                 .ok(),
             None => None,

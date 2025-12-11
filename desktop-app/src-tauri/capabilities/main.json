@@ -1,7 +1,6 @@
 {
-  "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "default",
-  "description": "Capability for the main window",
+  "identifier": "main-capability",
+  "platforms": ["macOS", "windows", "linux"],
   "windows": [
     "app",
     "pedals-widget",
@@ -10,8 +9,7 @@
     "relative-widget"
   ],
   "permissions": [
-    "core:default",
-    "opener:default",
+    "global-shortcut:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",

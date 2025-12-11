@@ -6,8 +6,8 @@ import { router } from "./router";
 export default function Root() {
   const hash = window.location.hash;
 
-  if (hash.includes("#/")) {
-    const widgetId = hash.replace("#/", "");
+  if (hash.includes("#/overlay/")) {
+    const widgetId = hash.replace("#/overlay/", "");
 
     return <OverlayPage widgetId={widgetId} />;
   }
