@@ -16,28 +16,20 @@ pub fn register_shortcuts(app: &App) -> Result<(), AppError> {
 
                 *mode = !*mode;
 
-                let _ = app.emit("toggle-edit-mode", *mode);
+                if let Err(e) = app.emit("toggle-edit-mode", *mode) {
+                    eprintln!("Failed to emit toggle-edit-mode event: {}", e);
+                }
 
                 // update each widget window
                 for widget in WIDGETS {
                     if let Some(window) = app.get_webview_window(widget) {
                         // If edit mode: allow dragging → enable pointer events
                         // If not edit mode: disable all interactions
-                        let _ = window.set_ignore_cursor_events(*mode);
+                        let _ = window.set_ignore_cursor_events(!*mode);
                     }
                 }
             }
         })?;
-
-    Ok(())
-}
-
-fn toggle_cursor_event(app: &App) -> Result<(), AppError> {
-    for widget in WIDGETS {
-        let window = app
-            .get_webview_window(widget)
-            .ok_or_else(|| AppError::InitializationFailed(format!("window {widget} not found")))?;
-    }
 
     Ok(())
 }

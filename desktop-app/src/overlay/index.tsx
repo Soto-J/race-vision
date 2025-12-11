@@ -18,6 +18,6 @@ export default function OverlayPage({ widgetId }: OverlayPageProps) {
     case "relative":
       return <Relative />;
     default:
-      null;
+      return null;
   }
 }

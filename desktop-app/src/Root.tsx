@@ -7,7 +7,6 @@ export default function Root() {
   const hash = window.location.hash;
 
   if (hash.includes("#/overlay/")) {
-    console.log("HASH: ", hash);
     const widgetId = hash.replace("#/overlay/", "");
 
     return <OverlayPage widgetId={widgetId} />;

@@ -19,8 +19,6 @@ mod shortcuts;
 mod utils;
 mod widgets;
 
-pub static EDIT_MODE: AtomicBool = AtomicBool::new(false);
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), AppError> {
     tauri::Builder::default()
