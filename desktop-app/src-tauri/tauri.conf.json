@@ -20,47 +20,39 @@
       },
       {
         "label": "pedals-widget",
-        "url": "index.html#/pedals",
-        "transparent": true,
+        "url": "index.html#/overlay/pedals",
+        "visible": true,
         "decorations": false,
         "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "visible": false,
-        "focus": false
+        "skipTaskbar": true
       },
       {
         "label": "standings-widget",
-        "url": "index.html#/standings",
-        "transparent": true,
+        "url": "index.html#/overlay/standings",
+        "visible": true,
         "decorations": false,
         "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "visible": false,
-        "focus": false
+        "skipTaskbar": true
       },
       {
         "label": "track-map-widget",
-        "url": "index.html#/track-map",
-        "transparent": true,
+        "url": "index.html#/overlay/track-map",
+        "visible": true,
         "decorations": false,
         "alwaysOnTop": true,
-        "visible": false,
-        "focus": false,
         "skipTaskbar": true
       },
       {
         "label": "relative-widget",
-        "url": "index.html#/relative",
-        "transparent": true,
+        "url": "index.html#/overlay/relative",
         "decorations": false,
         "alwaysOnTop": true,
-        "visible": false,
-        "focus": false,
         "skipTaskbar": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "capabilities": ["main-capability"]
     }
   },
   "bundle": {

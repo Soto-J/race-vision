@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom";
 
-import { useTelemetry } from "./hooks/use-telemetry";
+import { useTelemetryListener } from "./hooks/listeners/use-telemetry-listener";
 import { useLoadWidgets } from "./hooks/use-load-widgets";
 import { usePersistWidget } from "./hooks/use-persist-widget";
-import { useToggleEditMode } from "./hooks/use-toggle-edit-mode";
+import { useEditModeListener } from "./hooks/listeners/use-edit-mode-listener";
 
 import { SidebarProvider, SidebarTrigger } from "./components/sidebar";
 import { AppSidebar } from "./components/sidebar/app-sidebar";
@@ -11,8 +11,9 @@ import { ThemeProvider } from "./components/theme-provider";
 import { ThemeToggle } from "./components/theme-toggle";
 
 export default function AppLayout() {
-  useTelemetry();
-  useToggleEditMode();
+  useTelemetryListener();
+  useEditModeListener();
+
   useLoadWidgets();
   usePersistWidget();
 

@@ -1,43 +1,22 @@
-import Standings from "@/pages/standings";
-import TrackMap from "@/pages/track-map";
-import Relative from "@/pages/relative";
-
 import { PedalGraph } from "./components/widget/pedal-graph";
-import { DraggableWidget } from "./components/draggable-widget";
+import { Relative } from "./components/widget/relative";
+import { Standings } from "./components/widget/standings";
+import { TrackMap } from "./components/widget/track-map";
 
 interface OverlayPageProps {
   widgetId: string;
 }
 
 export default function OverlayPage({ widgetId }: OverlayPageProps) {
-  const params = new URLSearchParams(window.location.search);
-  const widget = params.get(widgetId);
-
-  switch (widget) {
+  switch (widgetId) {
     case "pedals":
-      return (
-        <DraggableWidget id="pedal-graph" width={800} height={800}>
-          <PedalGraph />
-        </DraggableWidget>
-      );
+      return <PedalGraph />;
     case "standings":
-      return (
-        <DraggableWidget id="standings-widget" width={300} height={600}>
-          <Standings />
-        </DraggableWidget>
-      );
-    case "trackmap":
-      return (
-        <DraggableWidget id="trackmap-widget" width={500} height={500}>
-          <TrackMap />
-        </DraggableWidget>
-      );
+      return <Standings />;
+    case "track-map":
+      return <TrackMap />;
     case "relative":
-      return (
-        <DraggableWidget id="relative-widget" width={300} height={700}>
-          <Relative />
-        </DraggableWidget>
-      );
+      return <Relative />;
     default:
       null;
   }

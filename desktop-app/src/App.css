@@ -7,13 +7,22 @@ html,
 body,
 #root {
   width: 100%;
-  background-color: oklch(0.7155 0 0);
 }
 
 #root {
   min-height: 100svh;
   width: 100%;
 }
+
+.overlay-widget, .drag-handle {
+  pointer-events: auto !important;
+  background-color: transparent !important;
+}
+
+
+/* .overlay-widget {
+  pointer-events: auto;
+} */
 
 :root {
   -webkit-font-smoothing: antialiased;

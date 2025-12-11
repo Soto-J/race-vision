@@ -13,4 +13,7 @@ pub enum AppError {
 
     #[error("tauri error: {0}")]
     TauriError(String),
+
+    #[error("")]
+    ShortcutError(#[from] tauri_plugin_global_shortcut::Error),
 }

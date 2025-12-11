@@ -5,3 +5,10 @@ impl AppWebView {
     pub const TRACK_MAP: &str = "track-map-widget";
     pub const RELATIVE: &str = "relative-widget";
 }
+
+pub const WIDGETS: [&str; 4] = [
+    AppWebView::PEDAL,
+    AppWebView::STANDINGS,
+    AppWebView::TRACK_MAP,
+    AppWebView::RELATIVE,
+];

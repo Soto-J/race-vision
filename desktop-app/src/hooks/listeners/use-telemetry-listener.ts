@@ -4,11 +4,11 @@ import { listen } from "@tauri-apps/api/event";
 
 import { VarKind } from "@/lib/types";
 
-import { useTelemetryStore } from "./store/use-telemetry-store";
+import { useTelemetryStore } from "../store/use-telemetry-store";
 
 export type TelemetrySnapshot = Record<string, VarKind>;
 
-export function useTelemetry() {
+export function useTelemetryListener() {
   useEffect(() => {
     // Bail out if not in Tauri or on overlay route
     if (!(window as any).__TAURI__) return;

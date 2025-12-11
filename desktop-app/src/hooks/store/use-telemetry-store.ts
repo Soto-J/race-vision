@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
 import { parseToValue } from "@/lib/types";
-import type { TelemetrySnapshot } from "../use-telemetry";
+import type { TelemetrySnapshot } from "../listeners/use-telemetry-listener";
 import { invoke } from "@tauri-apps/api/core";
 
 type TelemetryStore = {
