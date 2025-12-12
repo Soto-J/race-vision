@@ -12,7 +12,9 @@ export function useCanvasResize(
     const applyResize = () => {
       resizeQueued = false;
 
-      const parent = canvas.parentElement!;
+      const parent = canvas.parentElement;
+      if (!parent) return;
+
       const width = parent.clientWidth;
       const height = parent.clientHeight;
 

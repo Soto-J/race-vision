@@ -33,9 +33,11 @@ export function useLoadWidgets() {
         const result = WidgetLayoutSchema.safeParse(raw);
 
         if (!result.success) {
-          console.error(
-            `widgets parse failed: ${z.treeifyError(result.error)}`,
-          );
+          console.error("widgets parse failed", {
+            id,
+            error: z.treeifyError(result.error),
+            raw,
+          });
           continue;
         }
 

@@ -52,7 +52,11 @@ export const VarKindSchema = z
 
 export type VarKind = z.infer<typeof VarKindSchema>;
 
-export const valueSchema = z.array(z.number()).transform((v) => v[0]);
+export const valueSchema = z
+  .array(z.number())
+  .min(1)
+  .transform((v) => v[0]);
+
 export const TelemetryValueSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("F32"), value: valueSchema }),
   z.object({ kind: z.literal("F64"), value: valueSchema }),
@@ -61,7 +65,10 @@ export const TelemetryValueSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("Bitfield"), value: valueSchema }),
   z.object({
     kind: z.literal("Bool"),
-    value: z.array(z.boolean()).transform((v) => v[0]),
+    value: z
+      .array(z.boolean())
+      .min(1)
+      .transform((v) => v[0]),
   }),
 ]);
 
