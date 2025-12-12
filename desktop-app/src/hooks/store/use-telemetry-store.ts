@@ -1,13 +1,15 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import { parseToValue } from "@/lib/types";
-import type { TelemetrySnapshot } from "../listeners/use-telemetry-listener";
 import { invoke } from "@tauri-apps/api/core";
+
+import { type TelemetryValue, TelemetryValueSchema } from "@/lib/types";
+
+import type { TelemetrySnapshot } from "@/hooks/listeners/use-telemetry-listener";
 
 type TelemetryStore = {
   // State
-  data: Record<string, number | boolean | string>;
+  data: Record<string, TelemetryValue>;
   isActive: Record<string, boolean>;
   pageVars: Record<string, string[]>;
 
@@ -16,7 +18,7 @@ type TelemetryStore = {
   setSnapshot: (snap: TelemetrySnapshot) => void;
   setPageVars: (id: string, vars: string[]) => void;
   syncToRust: () => void;
-  getValue: (varName: string) => number | boolean | string | undefined;
+  getValue: (varName: string) => TelemetryValue | undefined;
 };
 
 export const useTelemetryStore = create<TelemetryStore>()(
@@ -40,7 +42,18 @@ export const useTelemetryStore = create<TelemetryStore>()(
     setSnapshot: (snapshot) => {
       set((state) => {
         for (const [key, varKind] of Object.entries(snapshot)) {
-          state.data[key] = parseToValue(varKind);
+          const result = TelemetryValueSchema.safeParse(varKind);
+
+          if (!result.success) {
+            console.warn("Problem parsing telemetry value", {
+              key,
+              error: result.error,
+              raw: varKind,
+            });
+            return;
+          }
+
+          state.data[key] = result.data;
         }
       });
     },
@@ -56,6 +69,7 @@ export const useTelemetryStore = create<TelemetryStore>()(
     syncToRust: () => {
       const all = Object.values(get().pageVars).flat();
 
+      // sends a list of watched variables to Rust.
       invoke("set_watched_vars", { vars: all }).catch((error) =>
         console.log(`Failed to sync watched vars to Rust: ${error}`),
       );

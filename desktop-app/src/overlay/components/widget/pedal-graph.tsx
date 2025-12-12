@@ -1,11 +1,24 @@
 import { useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
+
 import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
+import { useCanvasResize } from "@/hooks/use-canvas-resize";
+
+import { TelemetryVars } from "@/lib/constants/telemetry-vars";
+
+import { TelemetryValueSchema, VarKind, VarKindSchema } from "@/lib/types";
 
 const THROTTLE_COLOR = "#22c55e";
 const BRAKE_COLOR = "#ef4444";
+const CLUTCH_COLOR = "#2b35af";
 
 const GRAPH_SPEED = 0.5;
+
+const MOCK_DATA = () => {
+  return { throttleValue: Math.random(), brakeValue: Math.random() };
+};
+
+const normalize = (value: number) => (value > 1 ? value / 100 : value);
 
 interface PedalGraphProps {
   scrollSpeed?: number; // 0.5 = slower, 1 = normal, 2 = fast
@@ -13,7 +26,7 @@ interface PedalGraphProps {
 }
 
 export const PedalGraph = ({
-  scrollSpeed = 0.5,
+  scrollSpeed = 0.2,
   bufferSize = 300,
 }: PedalGraphProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -27,31 +40,12 @@ export const PedalGraph = ({
   const indexRef = useRef(0);
   const accumulatorRef = useRef(0);
 
-  const normalize = (v: number) => (v > 1 ? v / 100 : v);
+  useCanvasResize(canvasRef);
 
-  // ---------------------------
-  // 1) Resize canvas to parent
-  // ---------------------------
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const resize = () => {
-      const parent = canvas.parentElement!;
-      canvas.width = parent.clientWidth;
-      canvas.height = parent.clientHeight;
-    };
-
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas.parentElement!);
-
-    resize();
-
-    return () => observer.disconnect();
-  }, []);
+  // const normalize = (v: number) => (v > 1 ? v / 100 : v);
 
   // ---------------------------------------------------
-  // 2) Recreate buffers ONLY when bufferSize changes
+  // Recreate buffers ONLY when bufferSize changes
   // ---------------------------------------------------
   useEffect(() => {
     throttleRef.current = new Float32Array(bufferSize);
@@ -61,12 +55,11 @@ export const PedalGraph = ({
   }, [bufferSize]);
 
   // ---------------------------
-  // 3) Drawing animation loop
+  // Drawing animation loop
   // ---------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -78,10 +71,6 @@ export const PedalGraph = ({
     const loop = () => {
       frameId = requestAnimationFrame(loop);
 
-      listen("tauri://resize", (e) =>
-        console.log("Resize event", e.payload),
-      )
-
       // Scroll speed control
       accumulatorRef.current += scrollSpeed;
       while (accumulatorRef.current >= 1) {
@@ -89,21 +78,38 @@ export const PedalGraph = ({
         accumulatorRef.current -= 1;
       }
 
-      // TODOpull LIVE telemetry values
-      // const store = useTelemetryStore.getState();
-      // const throttleValue = normalize(
-      //   (store.getValue(TelemetryVars.THROTTLE) as number) ?? 0,
-      // );
-      // const brakeValue = normalize(
-      //   (store.getValue(TelemetryVars.BRAKE) as number) ?? 0,
-      // );
       const throttleValue = Math.random();
       const brakeValue = Math.random();
 
+      console.log("", throttleValue);
+      const store = useTelemetryStore.getState();
+
+      // const value = store.getValue(TelemetryVars.THROTTLE);
+      // console.log("val: ", value);
+      // const throttleResult = TelemetryValueSchema.safeParse(
+      // );
+      // console.log("Throttle Value: ", throttleResult);
+
+      // if (!throttleResult.success) {
+      //   console.error("problem parsing pedal data, ", throttleResult.error);
+      //   return;
+      // }
+
+      // const throttleValue = normalize(
+      //   (store.getValue(TelemetryVars.THROTTLE.toLowerCase()) ?? 0) as number,
+      // );
+      // const brakeValue = normalize(
+      //   (store.getValue(TelemetryVars.BRAKE.toLowerCase()) ?? 0) as number,
+      // );
+      // const clutchValue = normalize(
+      //   (store.getValue(TelemetryVars.CLUTCH.toLowerCase()) ?? 0) as number,
+      // );
+
       // UPDATE BUFFERS
       throttleRef.current[indexRef.current] = throttleValue;
-      brakeRef.current[indexRef.current] = brakeValue;
-      // clutchRef.current[indexRef.current] = pedalValues;
+
+      // brakeRef.current[indexRef.current] = brakeValue;
+      // clutchRef.current[indexRef.current] = clutchValue;
 
       // DRAWING
       const W = canvas.width;
@@ -130,21 +136,21 @@ export const PedalGraph = ({
       };
 
       drawLine(throttleRef.current, THROTTLE_COLOR);
-      drawLine(brakeRef.current, BRAKE_COLOR);
+      // drawLine(brakeRef.current, BRAKE_COLOR);
+      // drawLine(clutchRef.current, CLUTCH_COLOR);
     };
-
     loop();
 
-    return () => {
-      cancelAnimationFrame(frameId);
-    };
+    return () => cancelAnimationFrame(frameId);
   }, [scrollSpeed, bufferSize]);
 
   return (
     <canvas
       data-tauri-drag-region
       ref={canvasRef}
-      className="block min-h-screen w-full"
+      width={1920}
+      height={600}
+      className="fixed inset-0 h-full w-full transform overflow-hidden"
     />
   );
 };

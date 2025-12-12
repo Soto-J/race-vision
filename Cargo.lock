@@ -940,6 +940,8 @@ dependencies = [
  "telemetry-core",
  "thiserror 2.0.17",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -4845,7 +4847,6 @@ dependencies = [
  "thiserror 2.0.17",
  "tokio",
  "tracing",
- "tracing-subscriber",
  "windows 0.58.0",
 ]
 

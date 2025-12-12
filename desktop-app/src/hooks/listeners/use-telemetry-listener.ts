@@ -12,7 +12,11 @@ export function useTelemetryListener() {
   useEffect(() => {
     // Bail out if not in Tauri or on overlay route
     if (!(window as any).__TAURI__) return;
+
     if (window.location.hash.startsWith("#/")) return;
+
+    // console.log("Telem listener mount check", window.location.hash);
+    // console.log("Telemetry listener ACTIVATED");
 
     let unlisten: (() => void) | undefined;
 

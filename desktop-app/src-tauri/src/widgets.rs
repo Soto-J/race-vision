@@ -14,7 +14,7 @@ struct WidgetLayout {
 
 pub fn register_widgets(app: &App) -> Result<(), AppError> {
     let tauri_store = app
-        .store("widget-overlays")
+        .store("widget-layouts.json")
         .map_err(|e| AppError::TauriError(format!("{e:?}")))?;
 
     for widget in WIDGETS {
