@@ -50,7 +50,8 @@ export const useTelemetryStore = create<TelemetryStore>()(
               error: result.error,
               raw: varKind,
             });
-            return;
+            
+            continue;
           }
 
           state.data[key] = result.data;
