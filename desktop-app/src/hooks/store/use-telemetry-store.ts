@@ -4,40 +4,33 @@ import { immer } from "zustand/middleware/immer";
 import { invoke } from "@tauri-apps/api/core";
 
 import { type TelemetryValue, TelemetryValueSchema } from "@/lib/types";
-
+import type { TelemetryVar } from "@/lib/constants/telemetry-vars";
 import type { TelemetrySnapshot } from "@/hooks/listeners/use-telemetry-listener";
 
 type TelemetryStore = {
-  // State
   data: Record<string, TelemetryValue>;
-  isActive: Record<string, boolean>;
-  pageVars: Record<string, string[]>;
+  // Keeps track of which page is active
+  pageIsActive: Record<string, boolean>;
+  // Keeps track of which variables are active for a giving page
+  pageVars: Record<string, TelemetryVar[]>;
+  subscriptions: Set<TelemetryVar>;
 
-  // Action
-  toggleSetting: (id: string, value: boolean, vars?: string[]) => void;
   setSnapshot: (snap: TelemetrySnapshot) => void;
-  setPageVars: (id: string, vars: string[]) => void;
-  syncToRust: () => void;
+
+  togglePage: (id: string, value: boolean, vars?: TelemetryVar[]) => void;
+  toggleVar: (pageId: string, varName: TelemetryVar, enabled: boolean) => void;
+
+  setPageVars: (id: string, vars: TelemetryVar[]) => void;
   getValue: (varName: string) => TelemetryValue | undefined;
+  syncToRust: () => void;
 };
 
 export const useTelemetryStore = create<TelemetryStore>()(
   immer((set, get) => ({
     data: {},
-    isActive: {},
+    pageIsActive: {},
     pageVars: {},
-
-    toggleSetting: (id, value, vars = []) => {
-      set((state) => {
-        state.isActive[id] = value;
-
-        // If enabling → store required vars
-        // If disabling → clear vars for this page
-        state.pageVars[id] = value ? vars : [];
-      });
-
-      get().syncToRust();
-    },
+    subscriptions: new Set(),
 
     setSnapshot: (snapshot) => {
       set((state) => {
@@ -50,7 +43,7 @@ export const useTelemetryStore = create<TelemetryStore>()(
               error: result.error,
               raw: varKind,
             });
-            
+
             continue;
           }
 
@@ -59,23 +52,57 @@ export const useTelemetryStore = create<TelemetryStore>()(
       });
     },
 
-    setPageVars: (id, vars) => {
+    togglePage: (pageId, isEnabled) => {
       set((state) => {
-        state.pageVars[id] = vars;
+        state.pageIsActive[pageId] = isEnabled;
+        recomputeSubscriptions(state);
       });
 
       get().syncToRust();
     },
 
-    syncToRust: () => {
-      const all = Object.values(get().pageVars).flat();
+    setPageVars: (id, vars) => {
+      set((state) => {
+        state.pageVars[id] = vars;
+        recomputeSubscriptions(state);
+      });
 
+      get().syncToRust();
+    },
+
+    toggleVar: (pageId, varName, enabled) => {
+      set((state) => {
+        const vars = state.pageVars[pageId] ?? [];
+
+        if (enabled) {
+          if (!vars.includes(varName)) vars.push(varName);
+        } else {
+          state.pageVars[pageId] = vars.filter((v) => v !== varName);
+        }
+
+        recomputeSubscriptions(state);
+      });
+    },
+
+    syncToRust: () => {
       // sends a list of watched variables to Rust.
-      invoke("set_watched_vars", { vars: all }).catch((error) =>
-        console.log(`Failed to sync watched vars to Rust: ${error}`),
+      invoke("set_watched_vars", {
+        vars: Array.from(get().subscriptions),
+      }).catch((error) =>
+        console.log(`Failed to sync watched variables to Rust: ${error}`),
       );
     },
 
     getValue: (key) => get().data[key],
   })),
 );
+
+const recomputeSubscriptions = (state: TelemetryStore) => {
+  const activeVars = new Set<TelemetryVar>();
+
+  Object.values(state.pageVars).forEach((list) =>
+    list.forEach((v) => activeVars.add(v)),
+  );
+
+  state.subscriptions = activeVars;
+};

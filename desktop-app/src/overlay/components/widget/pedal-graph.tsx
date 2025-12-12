@@ -84,8 +84,8 @@ export const PedalGraph = ({
       console.log("", throttleValue);
       const store = useTelemetryStore.getState();
 
-      // const value = store.getValue(TelemetryVars.THROTTLE);
-      // console.log("val: ", value);
+      const value = store.getValue(TelemetryVars.THROTTLE);
+      console.log("val: ", store.pageVars);
       // const throttleResult = TelemetryValueSchema.safeParse(
       // );
       // console.log("Throttle Value: ", throttleResult);

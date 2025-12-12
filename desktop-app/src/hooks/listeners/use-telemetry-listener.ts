@@ -9,23 +9,32 @@ import { useTelemetryStore } from "../store/use-telemetry-store";
 export type TelemetrySnapshot = Record<string, VarKind>;
 
 export function useTelemetryListener() {
+  const { setSnapshot, syncToRust, subscriptions } = useTelemetryStore();
+
   useEffect(() => {
     // Bail out if not in Tauri or on overlay route
     if (!(window as any).__TAURI__) return;
-
     if (window.location.hash.startsWith("#/")) return;
-
-    // console.log("Telem listener mount check", window.location.hash);
-    // console.log("Telemetry listener ACTIVATED");
 
     let unlisten: (() => void) | undefined;
 
     listen<TelemetrySnapshot>("telemetry-update", (event) => {
-      useTelemetryStore.getState().setSnapshot(event.payload);
+      setSnapshot(event.payload);
     }).then((fn) => (unlisten = fn));
 
     return () => unlisten?.();
   }, []);
+
+  // Subscription → Rust sync
+  useEffect(() => {
+    if (!(window as any).__TAURI__) return;
+
+    syncToRust();
+  }, [
+    syncToRust,
+    // force stable comparison
+    Array.from(subscriptions).sort().join(","),
+  ]);
 
   return null;
 }
