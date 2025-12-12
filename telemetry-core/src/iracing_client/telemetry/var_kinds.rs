@@ -61,6 +61,7 @@ impl TryFrom<i32> for VarKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value")]
 pub enum TelemetryValue {
     Chars8(Vec<u8>),
     Bool(Vec<bool>),

@@ -25,6 +25,8 @@ pub async fn read_value(
     // '_ Borrow the state for the duration of this command handler
     state: State<'_, Arc<IracingProvider>>,
 ) -> Result<TelemetryValue, String> {
+    tracing::debug!(key, "read_value invoked");
+
     state.read_value(&key).await.map_err(|e| e.to_string())
 }
 

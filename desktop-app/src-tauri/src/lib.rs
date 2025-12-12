@@ -16,22 +16,22 @@ mod background;
 mod commands;
 pub mod domain;
 mod shortcuts;
-mod utils;
+pub mod utils;
 mod widgets;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), AppError> {
-    let mut tauri_builder = tauri::Builder::default();
+    let mut builder = tauri::Builder::default();
 
     #[cfg(debug_assertions)] // only enable instrumentation in development builds
     let devtools = tauri_plugin_devtools::init();
 
     #[cfg(debug_assertions)]
     {
-        tauri_builder = tauri_builder.plugin(devtools);
+        builder = builder.plugin(devtools);
     }
 
-    tauri_builder
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::default().build())

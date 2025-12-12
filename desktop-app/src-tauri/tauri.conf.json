@@ -21,28 +21,30 @@
       {
         "label": "pedals-widget",
         "url": "index.html#/overlay/pedals",
-        "visible": true,
+        "width": 500,
+        "height": 100,
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true
       },
       {
+        "transparent": true,
         "label": "standings-widget",
         "url": "index.html#/overlay/standings",
-        "visible": true,
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true
       },
       {
+        "transparent": true,
         "label": "track-map-widget",
         "url": "index.html#/overlay/track-map",
-        "visible": true,
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true
       },
       {
+        "transparent": true,
         "label": "relative-widget",
         "url": "index.html#/overlay/relative",
         "decorations": false,

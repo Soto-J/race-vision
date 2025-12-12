@@ -3,9 +3,8 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 import { formatSessionTime } from "@/lib/format";
-import { VarKindSchema } from "@/lib/types";
+import { TelemetryValueSchema, VarKindSchema } from "@/lib/types";
 import { TelemetryVars } from "@/lib/constants/telemetry-vars";
-
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
@@ -40,17 +39,18 @@ function App() {
 
   async function read_value() {
     try {
-      const value = VarKindSchema.parse(
+      const value = TelemetryValueSchema.safeParse(
         await invoke("read_value", {
           key: TelemetryVars.SESSION_TIME,
         }),
       );
 
-      console.log("Value: ", value);
-
-      if ("F64" in value) {
-        setSessionTime(String(value.F64[0]));
+      if (!value.success) {
+        console.error("Error", value.error);
+        return;
       }
+
+      setSessionTime(String(value.data.value));
     } catch (error) {
       console.error("Failed to read session time:", error);
     }
