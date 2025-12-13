@@ -38,7 +38,7 @@ export function AppSidebar() {
   const routes = [
     {
       title: "General",
-      href: "/",
+      href: "",
       icon: DashboardSquare01Icon,
     },
     {
@@ -129,7 +129,8 @@ export function AppSidebar() {
               {routes.map(({ title, href, icon }) => (
                 <SidebarMenuItem key={title}>
                   <Link
-                    to={href}
+                    to={`/dashboard/${href}`}
+                    activeOptions={{ exact: true }}
                     className={"font-medium tracking-tight capitalize"}
                   >
                     {({ isActive }) => (

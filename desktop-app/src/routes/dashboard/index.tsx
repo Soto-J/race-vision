@@ -6,7 +6,7 @@ import { TelemetryVars } from "@/lib/constants/telemetry-vars";
 import { TelemetryValueSchema } from "@/lib/types";
 
 export const Route = createFileRoute("/dashboard/")({
-  component: () => DashboardHome,
+  component: DashboardHome,
 });
 
 function DashboardHome() {

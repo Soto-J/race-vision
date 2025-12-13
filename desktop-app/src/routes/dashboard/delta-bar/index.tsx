@@ -7,7 +7,7 @@ import { PageHeader } from "@/routes/dashboard/components/page-header";
 
 const PAGE_TITLE = "delta-bar";
 
-export const Route = createFileRoute(`/dashboard/delta-bar/`)({
+export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: DeltaBar,
 });
 
@@ -19,8 +19,8 @@ export default function DeltaBar() {
   return (
     <div>
       <PageHeader
-        id="delta"
-        title={PAGE_TITLE}
+        id={PAGE_TITLE}
+        title={PAGE_TITLE.replace("-", " ")}
         description="Show your delta times in a horizontal bar and more."
         pageIsActive={isActive}
         togglePage={togglePage}

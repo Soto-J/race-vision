@@ -14,16 +14,6 @@ body,
   width: 100%;
 }
 
-.overlay-widget, .drag-handle {
-  pointer-events: auto !important;
-  background-color: transparent !important;
-}
-
-
-/* .overlay-widget {
-  pointer-events: auto;
-} */
-
 :root {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
