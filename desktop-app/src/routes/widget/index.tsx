@@ -5,7 +5,7 @@ import { Relative } from "./components/widget/relative";
 import { Standings } from "./components/widget/standings";
 import { TrackMap } from "./components/widget/track-map";
 
-export const Route = createFileRoute("/widgets/")({
+export const Route = createFileRoute("/widget/")({
   component: WidgetsPage,
 });
 
