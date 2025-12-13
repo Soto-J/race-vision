@@ -7,7 +7,7 @@ use tauri::State;
 use telemetry_core::{iracing_client::telemetry::TelemetryValue, IracingProvider};
 
 #[cfg(not(target_os = "windows"))]
-use crate::mock_telemetry::{IracingProvider, TelemetryValue};
+use crate::domain::telemetry::{IracingProvider, TelemetryValue};
 
 #[tauri::command]
 pub async fn set_watched_vars(
