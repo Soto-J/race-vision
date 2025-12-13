@@ -7,7 +7,7 @@ export const Route = createFileRoute(`/widget/track-map/`)({
 
 export default function TrackMapWidget() {
   return (
-    <div>
+    <div data-tauri-drag-region>
       <TrackMap />
     </div>
   );

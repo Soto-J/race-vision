@@ -1,23 +1,10 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { useRouter, createRootRoute } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { useTelemetryListener } from "@/hooks/listeners/use-telemetry-listener";
-import { useEditModeListener } from "@/hooks/listeners/use-edit-mode-listener";
-import { useLoadWidgets } from "@/hooks/use-load-widgets";
-import { usePersistWidget } from "@/hooks/use-persist-widget";
-
-import { SidebarProvider, SidebarTrigger } from "@/components/sidebar";
-import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import DashboardLayout from "./dashboard/layout";
+import WidgetLayout from "./widget/layout";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -26,26 +13,14 @@ export const Route = createRootRoute({
 function RootLayout() {
   const queryClient = new QueryClient();
 
-  useTelemetryListener();
-  useEditModeListener();
-  useLoadWidgets();
-  usePersistWidget();
+  const router = useRouter();
+  const isWidget = router.state.location.pathname.startsWith("/widget");
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <SidebarProvider>
-        <AppSidebar />
-
-        <main className="w-full p-4">
-          <div className="flex justify-between">
-            <SidebarTrigger />
-            <ThemeToggle className="h-6 w-6" />
-          </div>
-
-          <Outlet />
-          <TanStackRouterDevtools />
-        </main>
-      </SidebarProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        {isWidget ? <WidgetLayout /> : <DashboardLayout />}
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

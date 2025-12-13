@@ -8,7 +8,7 @@ export const Route = createFileRoute(`/widget/relative/`)({
 
 export default function RelativeWidget() {
   return (
-    <div>
+    <div data-tauri-drag-region>
       <PedalGraph />
     </div>
   );

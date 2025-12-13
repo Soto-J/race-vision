@@ -30,7 +30,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/sidebar";
+} from "@/routes/dashboard/components/sidebar";
 
 export function AppSidebar() {
   const { open } = useSidebar();

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /// Schemas
 export const WidgetIdsSchema = z.enum([
-  "pedals-widget",
+  "inputs-widget",
   "standings-widget",
   "track-map-widget",
   "relative-widget",
