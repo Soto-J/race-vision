@@ -2,6 +2,7 @@ use crate::WatchedVars;
 
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
+use telemetry_core::IracingProvider;
 
 #[cfg(not(target_os = "windows"))]
 use crate::domain::telemetry::IracingProvider;

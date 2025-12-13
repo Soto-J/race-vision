@@ -7,7 +7,7 @@ export const Route = createFileRoute(`/widget/standings/`)({
 
 export default function StandingsWidget() {
   return (
-    <div>
+    <div data-tauri-drag-region>
       <Standings />
     </div>
   );

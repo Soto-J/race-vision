@@ -6,7 +6,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
 import path, { resolve } from "path";
 
-const HOST = process.env.TAURI_DEV_HOST;
+const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
@@ -36,11 +36,11 @@ export default defineConfig(async () => ({
   server: {
     port: 1420,
     strictPort: true,
-    host: HOST || false,
-    hmr: HOST
+    host: host || false,
+    hmr: host
       ? {
           protocol: "ws",
-          HOST,
+          host,
           port: 1421,
         }
       : undefined,

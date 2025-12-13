@@ -13,14 +13,14 @@
     "windows": [
       {
         "label": "app",
-        "url": "index.html/dashboard",
+        "url": "index.html#/dashboard",
         "title": "Race Vision",
         "width": 900,
         "height": 700
       },
       {
         "label": "pedals-widget",
-        "url": "index.html/widget/pedals",
+        "url": "index.html#/widget/pedals",
         "width": 500,
         "height": 100,
         "decorations": false,
@@ -30,7 +30,7 @@
       {
         "transparent": true,
         "label": "standings-widget",
-        "url": "index.html/widget/standings",
+        "url": "index.html#/widget/standings",
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true
@@ -38,7 +38,7 @@
       {
         "transparent": true,
         "label": "track-map-widget",
-        "url": "index.html/widget/track-map",
+        "url": "index.html#/widget/track-map",
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true
@@ -46,7 +46,7 @@
       {
         "transparent": true,
         "label": "relative-widget",
-        "url": "index.html/widget/relative",
+        "url": "index.html#/widget/relative",
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true
