@@ -14,6 +14,7 @@ import { Route as WidgetIndexRouteImport } from './routes/widget/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as WidgetTrackMapIndexRouteImport } from './routes/widget/track-map/index'
 import { Route as WidgetStandingsIndexRouteImport } from './routes/widget/standings/index'
+import { Route as WidgetRelativeIndexRouteImport } from './routes/widget/relative/index'
 import { Route as WidgetInputsIndexRouteImport } from './routes/widget/inputs/index'
 import { Route as DashboardTwitchChatIndexRouteImport } from './routes/dashboard/twitch-chat/index'
 import { Route as DashboardTrafficIndicatorIndexRouteImport } from './routes/dashboard/traffic-indicator/index'
@@ -51,6 +52,11 @@ const WidgetTrackMapIndexRoute = WidgetTrackMapIndexRouteImport.update({
 const WidgetStandingsIndexRoute = WidgetStandingsIndexRouteImport.update({
   id: '/widget/standings/',
   path: '/widget/standings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WidgetRelativeIndexRoute = WidgetRelativeIndexRouteImport.update({
+  id: '/widget/relative/',
+  path: '/widget/relative/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WidgetInputsIndexRoute = WidgetInputsIndexRouteImport.update({
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/traffic-indicator': typeof DashboardTrafficIndicatorIndexRoute
   '/dashboard/twitch-chat': typeof DashboardTwitchChatIndexRoute
   '/widget/inputs': typeof WidgetInputsIndexRoute
+  '/widget/relative': typeof WidgetRelativeIndexRoute
   '/widget/standings': typeof WidgetStandingsIndexRoute
   '/widget/track-map': typeof WidgetTrackMapIndexRoute
 }
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/dashboard/traffic-indicator': typeof DashboardTrafficIndicatorIndexRoute
   '/dashboard/twitch-chat': typeof DashboardTwitchChatIndexRoute
   '/widget/inputs': typeof WidgetInputsIndexRoute
+  '/widget/relative': typeof WidgetRelativeIndexRoute
   '/widget/standings': typeof WidgetStandingsIndexRoute
   '/widget/track-map': typeof WidgetTrackMapIndexRoute
 }
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/dashboard/traffic-indicator/': typeof DashboardTrafficIndicatorIndexRoute
   '/dashboard/twitch-chat/': typeof DashboardTwitchChatIndexRoute
   '/widget/inputs/': typeof WidgetInputsIndexRoute
+  '/widget/relative/': typeof WidgetRelativeIndexRoute
   '/widget/standings/': typeof WidgetStandingsIndexRoute
   '/widget/track-map/': typeof WidgetTrackMapIndexRoute
 }
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/dashboard/traffic-indicator'
     | '/dashboard/twitch-chat'
     | '/widget/inputs'
+    | '/widget/relative'
     | '/widget/standings'
     | '/widget/track-map'
   fileRoutesByTo: FileRoutesByTo
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/dashboard/traffic-indicator'
     | '/dashboard/twitch-chat'
     | '/widget/inputs'
+    | '/widget/relative'
     | '/widget/standings'
     | '/widget/track-map'
   id:
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/dashboard/traffic-indicator/'
     | '/dashboard/twitch-chat/'
     | '/widget/inputs/'
+    | '/widget/relative/'
     | '/widget/standings/'
     | '/widget/track-map/'
   fileRoutesById: FileRoutesById
@@ -264,6 +276,7 @@ export interface RootRouteChildren {
   DashboardTrafficIndicatorIndexRoute: typeof DashboardTrafficIndicatorIndexRoute
   DashboardTwitchChatIndexRoute: typeof DashboardTwitchChatIndexRoute
   WidgetInputsIndexRoute: typeof WidgetInputsIndexRoute
+  WidgetRelativeIndexRoute: typeof WidgetRelativeIndexRoute
   WidgetStandingsIndexRoute: typeof WidgetStandingsIndexRoute
   WidgetTrackMapIndexRoute: typeof WidgetTrackMapIndexRoute
 }
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       path: '/widget/standings'
       fullPath: '/widget/standings'
       preLoaderRoute: typeof WidgetStandingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/widget/relative/': {
+      id: '/widget/relative/'
+      path: '/widget/relative'
+      fullPath: '/widget/relative'
+      preLoaderRoute: typeof WidgetRelativeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/widget/inputs/': {
@@ -416,6 +436,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardTrafficIndicatorIndexRoute: DashboardTrafficIndicatorIndexRoute,
   DashboardTwitchChatIndexRoute: DashboardTwitchChatIndexRoute,
   WidgetInputsIndexRoute: WidgetInputsIndexRoute,
+  WidgetRelativeIndexRoute: WidgetRelativeIndexRoute,
   WidgetStandingsIndexRoute: WidgetStandingsIndexRoute,
   WidgetTrackMapIndexRoute: WidgetTrackMapIndexRoute,
 }
