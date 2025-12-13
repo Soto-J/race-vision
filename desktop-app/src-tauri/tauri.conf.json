@@ -19,8 +19,8 @@
         "height": 700
       },
       {
-        "label": "pedals-widget",
-        "url": "index.html#/widget/pedals",
+        "label": "inputs-widget",
+        "url": "index.html#/widget/inputs",
         "width": 500,
         "height": 100,
         "decorations": false,

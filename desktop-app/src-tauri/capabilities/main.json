@@ -3,7 +3,7 @@
   "platforms": ["macOS", "windows", "linux"],
   "windows": [
     "app",
-    "pedals-widget",
+    "inputs-widget",
     "standings-widget",
     "track-map-widget",
     "relative-widget"

@@ -12,7 +12,7 @@ import {
 } from "@/lib/types/widget-overlay";
 
 export const WIDGET_IDS = [
-  "pedals-widget",
+  "inputs-widget",
   "standings-widget",
   "track-map-widget",
   "relative-widget",

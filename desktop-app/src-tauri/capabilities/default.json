@@ -4,7 +4,7 @@
   "description": "Capability for the main window",
   "windows": [
     "app",
-    "pedals-widget",
+    "inputs-widget",
     "standings-widget",
     "track-map-widget",
     "relative-widget"

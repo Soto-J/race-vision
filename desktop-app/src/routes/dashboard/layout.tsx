@@ -13,7 +13,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function DashboardLayout() {
   useTelemetryListener();
   useEditModeListener();
-  useLoadWidgets();
+
+  // useLoadWidgets();
   usePersistWidget();
 
   return (
