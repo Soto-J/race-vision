@@ -11,11 +11,21 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+
 export const Route = createRootRoute({
   component: RootLayout,
 });
 
 function RootLayout() {
+  const queryClient = new QueryClient();
+
   useTelemetryListener();
   useEditModeListener();
   useLoadWidgets();
