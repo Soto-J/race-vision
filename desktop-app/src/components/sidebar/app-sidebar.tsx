@@ -1,5 +1,6 @@
+import { Link } from "@tanstack/react-router";
+
 import { cn } from "@/lib/utils";
-import { NavLink } from "react-router-dom";
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -127,7 +128,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {routes.map(({ title, href, icon }) => (
                 <SidebarMenuItem key={title}>
-                  <NavLink
+                  <Link
                     to={href}
                     className={"font-medium tracking-tight capitalize"}
                   >
@@ -139,7 +140,7 @@ export function AppSidebar() {
                         </div>
                       </SidebarMenuButton>
                     )}
-                  </NavLink>
+                  </Link>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
