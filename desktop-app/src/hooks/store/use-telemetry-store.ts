@@ -75,7 +75,11 @@ export const useTelemetryStore = create<TelemetryStore>()(
         const vars = state.pageVars[pageId] ?? [];
 
         if (enabled) {
-          if (!vars.includes(varName)) vars.push(varName);
+          if (!vars.includes(varName)) {
+            vars.push(varName);
+          }
+          
+          state.pageVars[pageId] = vars;
         } else {
           state.pageVars[pageId] = vars.filter((v) => v !== varName);
         }
@@ -100,9 +104,11 @@ export const useTelemetryStore = create<TelemetryStore>()(
 const recomputeSubscriptions = (state: TelemetryStore) => {
   const activeVars = new Set<TelemetryVar>();
 
-  Object.values(state.pageVars).forEach((list) =>
-    list.forEach((v) => activeVars.add(v)),
-  );
+  Object.entries(state.pageVars).forEach(([pageId, list]) => {
+    if (!state.pageVars[pageId]) return;
+
+    list.forEach((v) => activeVars.add(v));
+  });
 
   state.subscriptions = activeVars;
 };
