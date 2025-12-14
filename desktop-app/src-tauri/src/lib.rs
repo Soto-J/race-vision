@@ -5,7 +5,7 @@ use shortcuts::register_shortcuts;
 use std::sync::Arc;
 use tauri::{App, Manager};
 use tokio::sync::RwLock;
-use widgets::register_widgets;
+use webviews::register_webviews;
 
 #[cfg(not(target_os = "windows"))]
 use domain::mock_data::telemetry::IracingProvider;
@@ -17,7 +17,7 @@ mod commands;
 pub mod domain;
 mod shortcuts;
 pub mod utils;
-mod widgets;
+mod webviews;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), AppError> {
@@ -42,7 +42,7 @@ pub fn run() -> Result<(), AppError> {
             read_value
         ])
         .run(tauri::generate_context!())
-        .map_err(|e| AppError::TauriError(format!("{e:?}")))?;
+        .map_err(|e| AppError::Tauri(format!("{e:?}")))?;
 
     Ok(())
 }
@@ -58,7 +58,7 @@ fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         ir_provider.clone(),
         active_vars.clone(),
     );
-    register_widgets(app)?;
+    register_webviews(app)?;
     register_shortcuts(app)?;
 
     let edit_mode = RwLock::new(false);

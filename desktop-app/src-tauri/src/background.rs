@@ -2,10 +2,11 @@ use crate::WatchedVars;
 
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
-use telemetry_core::IracingProvider;
 
 #[cfg(not(target_os = "windows"))]
 use crate::domain::telemetry::IracingProvider;
+#[cfg(target_os = "windows")]
+use telemetry_core::IracingProvider;
 
 pub fn register_background_job(
     app_handle: AppHandle,

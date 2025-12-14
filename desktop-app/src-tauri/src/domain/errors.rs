@@ -1,19 +1,20 @@
-use serde::Serialize;
-
-#[derive(Debug, Serialize, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum AppError {
     #[error("failed to initialize iracing provider: {0}")]
-    InitializationFailed(String),
+    ProviderInitializationFailed(String),
 
     #[error("failed to update provider: {0}")]
-    FailedUpdateProvider(String),
+    ProviderUpdateFailed(String),
 
     #[error("telemetry snapshot error: {0}")]
-    TelemetrySnapshotError(String),
+    TelemetrySnapshot(String),
 
     #[error("tauri error: {0}")]
-    TauriError(String),
+    Tauri(String),
 
-    #[error("")]
-    ShortcutError(#[from] tauri_plugin_global_shortcut::Error),
+    #[error("json error: {0}")]
+    Json(#[from] serde_json::Error),
+
+    #[error("global shortcut error: {0}")]
+    Shortcut(#[from] tauri_plugin_global_shortcut::Error),
 }
