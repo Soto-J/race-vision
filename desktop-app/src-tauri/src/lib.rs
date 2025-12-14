@@ -48,7 +48,10 @@ pub fn run() -> Result<(), DomainError> {
 }
 
 fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
-    let provider = Arc::new(IracingProvider::new().expect("failed to create provider"));
+    let provider = Arc::new(
+        IracingProvider::new()
+            .map_err(|e| DomainError::ProviderInitializationFailed(e.to_string()))?,
+    );
     let active_vars = Arc::new(RwLock::new(Vec::new()));
 
     register_background_job(app.handle().clone(), provider.clone(), active_vars.clone());

@@ -35,6 +35,8 @@ use tauri_plugin_store::StoreExt;
 /// # Errors
 /// Returns a [`DomainError`] if any webview fails to be created or configured.
 pub fn register_webviews(app: &App) -> Result<(), DomainError> {
+    tracing::info!(phase = "startup", "registering webviews");
+
     let dashboard_url = tauri::WebviewUrl::App("index.html#/dashboard".into());
 
     let dashboard_webview = tauri::WebviewWindowBuilder::new(app, "dashboard", dashboard_url)
@@ -66,30 +68,32 @@ pub fn register_webviews(app: &App) -> Result<(), DomainError> {
 /// # Errors
 /// Returns a [`DomainError`] if layout restoration or window configuration fails.
 fn load_widget_webviews(app: &App) -> Result<(), DomainError> {
+    tracing::info!("loading widget webviews");
+
     let tauri_store = app
         .store(WIDGET_LAYOUTS_KEY)
         .map_err(|e| DomainError::Tauri(format!("{e:?}")))?;
 
     for widget in WIDGET_DEFINITIONS.iter() {
-        let widget_url =
+        let webview_url =
             tauri::WebviewUrl::App(format!("index.html#/widget/{}", widget.label).into());
 
-        let webview = tauri::WebviewWindowBuilder::new(app, widget.label, widget_url)
+        let webview = tauri::WebviewWindowBuilder::new(app, widget.label, webview_url)
             .title(capitalize_widget(widget.label))
             .build()
             .map_err(|e| DomainError::Tauri(format!("failed to load {}: {}", widget.label, e)))?;
 
         match tauri_store.get(widget.label) {
-            Some(value) => {
-                let config: WidgetConfig = serde_json::from_value(value).map_err(|e| {
-                    DomainError::Tauri(format!(
-                        "Failed to parse layout for {}: {}",
-                        widget.label, e,
-                    ))
-                })?;
-
-                configure_webview(webview, config)?;
-            }
+            Some(value) => match serde_json::from_value(value) {
+                Ok(config) => {
+                    tracing::info!("using saved config");
+                    configure_webview(webview, config)?;
+                }
+                Err(e) => {
+                    tracing::warn!("failed to parse layout for {}: {e}", webview.label());
+                    configure_webview(webview, widget.into())?;
+                }
+            },
             None => {
                 tracing::info!("No saved layout for {}, using defaults", widget.label);
                 configure_webview(webview, widget.into())?
@@ -137,13 +141,13 @@ fn configure_webview(webview: WebviewWindow, config: WidgetConfig) -> Result<(),
     })?;
     webview.set_skip_taskbar(true).map_err(|e| {
         DomainError::Tauri(format!(
-            "failed to set skip taskbar for {}:,{e}",
+            "failed to set skip taskbar for {}: {e}",
             webview.label()
         ))
     })?;
     webview.set_always_on_top(true).map_err(|e| {
         DomainError::Tauri(format!(
-            "failed to set always on top for {}:,{e}",
+            "failed to set always on top for {}: {e}",
             webview.label()
         ))
     })?;

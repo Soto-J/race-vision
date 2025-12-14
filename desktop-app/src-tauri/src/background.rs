@@ -45,6 +45,8 @@ pub fn register_background_job(
     background_provider: Arc<IracingProvider>,
     watched_vars: Arc<RwLock<Vec<String>>>,
 ) {
+    tracing::info!(phase = "startup", "registering background jobs");
+
     tauri::async_runtime::spawn(async move {
         if let Err(e) = background_provider.init().await {
             eprintln!("init failed: {:?}", e);

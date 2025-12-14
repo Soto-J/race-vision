@@ -24,6 +24,8 @@ use tokio::sync::RwLock;
 /// # Errors
 /// Returns `DomainError::Shortcut` if shortcut registration fails
 pub fn register_shortcuts(app: &App) -> Result<(), DomainError> {
+    tracing::info!(phase = "startup", "registering shortcuts");
+
     let ctrl_f6 = Shortcut::new(Some(Modifiers::CONTROL), Code::F6);
 
     app.global_shortcut()
@@ -81,13 +83,15 @@ fn exit_edit_mode_and_save(app: &AppHandle) -> Result<(), DomainError> {
                 tracing::warn!("Failed to update cursor events for {}: {e}", widget.label);
             }
 
-            if let (Ok(pos), Ok(size)) = (window.outer_position(), window.outer_size()) {
-                let config = WidgetConfig::new(
-                    pos.x as f64,
-                    pos.y as f64,
-                    size.width as f64,
-                    size.height as f64,
-                );
+            if let (Ok(pos), Ok(size), Ok(scale)) = (
+                window.outer_position(),
+                window.outer_size(),
+                window.scale_factor(),
+            ) {
+                let pos = pos.to_logical(scale);
+                let size = size.to_logical(scale);
+
+                let config = WidgetConfig::new(pos.x, pos.y, size.width, size.height);
 
                 if let Ok(value) = serde_json::to_value(config) {
                     tauri_store.set(widget.label, value);
