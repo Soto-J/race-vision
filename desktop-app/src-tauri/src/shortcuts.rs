@@ -1,6 +1,12 @@
+//! Global keyboard shortcut handling.
+//!
+//! Provides application-wide shortcuts such as edit-mode toggling.
 use crate::{
-    domain::AppError,
-    utils::{WidgetConfig, WIDGET_LAYOUTS_KEY, WIDGET_WEBVIEWS},
+    domain::DomainError,
+    utils::constants::{
+        widget::{WidgetConfig, WIDGET_DEFINITIONS},
+        TOGGLE_EDIT_MODE, WIDGET_LAYOUTS_KEY,
+    },
 };
 
 use tauri::{App, AppHandle, Emitter, Manager};
@@ -8,16 +14,24 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 use tauri_plugin_store::StoreExt;
 use tokio::sync::RwLock;
 
-pub fn register_shortcuts(app: &App) -> Result<(), AppError> {
-    let tauri_store = app
-        .store(WIDGET_LAYOUTS_KEY)
-        .map_err(|e| AppError::Tauri(format!("{e}")))?;
-
+/// Registers all global keyboard shortcuts for the application.
+///
+/// Currently registers:
+/// - **Ctrl+F6**: Toggle edit mode for widget windows
+///   - When enabled: Windows become draggable/resizable
+///   - When disabled: Positions are saved and windows ignore cursor events
+///
+/// # Errors
+/// Returns `DomainError::Shortcut` if shortcut registration fails
+pub fn register_shortcuts(app: &App) -> Result<(), DomainError> {
     let ctrl_f6 = Shortcut::new(Some(Modifiers::CONTROL), Code::F6);
 
     app.global_shortcut()
         .on_shortcut(ctrl_f6, move |app, shortcut, event| {
-            if shortcut == &ctrl_f6 && event.state() == ShortcutState::Pressed {
+            let ctrl_f6_is_pressed =
+                shortcut == &ctrl_f6 && event.state() == ShortcutState::Pressed;
+
+            if ctrl_f6_is_pressed {
                 let state: tauri::State<RwLock<bool>> = app.state();
 
                 let new_edit_mode = {
@@ -27,16 +41,18 @@ pub fn register_shortcuts(app: &App) -> Result<(), AppError> {
                     *edit_mode
                 };
 
-                if let Err(e) = app.emit("toggle-edit-mode", new_edit_mode) {
-                    tracing::error!("Failed to emit toggle-edit-mode event: {e}");
+                if let Err(e) = app.emit(TOGGLE_EDIT_MODE, new_edit_mode) {
+                    tracing::error!("Failed to emit {TOGGLE_EDIT_MODE} event: {e}");
                 }
 
-                if new_edit_mode == true {
-                    // Update widgets + persist only when leaving edit mode
-                    exit_edit_mode_and_save(app);
-                } else {
+                if new_edit_mode {
                     // Entering edit mode → enable pointer events
                     enter_edit_mode(app);
+                } else {
+                    // Update widgets + persist only when leaving edit mode
+                    if let Err(e) = exit_edit_mode_and_save(app) {
+                        tracing::error!("Failed to exit edit mode cleanly: {e}");
+                    }
                 }
             }
         })?;
@@ -45,23 +61,22 @@ pub fn register_shortcuts(app: &App) -> Result<(), AppError> {
 }
 
 fn enter_edit_mode(app: &AppHandle) {
-    for widget in WIDGET_WEBVIEWS.iter() {
-        let window_label = format!("{}-widget", widget.label);
-        if let Some(window) = app.get_webview_window(&window_label) {
-            let _ = window.set_ignore_cursor_events(false);
+    for widget in WIDGET_DEFINITIONS.iter() {
+        if let Some(window) = app.get_webview_window(widget.label) {
+            if let Err(e) = window.set_ignore_cursor_events(false) {
+                tracing::warn!("Failed to update cursor events for {}: {e}", widget.label);
+            }
         }
     }
 }
 
-fn exit_edit_mode_and_save(app: &AppHandle) -> Result<(), AppError> {
+fn exit_edit_mode_and_save(app: &AppHandle) -> Result<(), DomainError> {
     let tauri_store = app
         .store(WIDGET_LAYOUTS_KEY)
-        .map_err(|e| AppError::Tauri(format!("{e}")))?;
+        .map_err(|e| DomainError::Tauri(format!("{e}")))?;
 
-    for widget in WIDGET_WEBVIEWS.iter() {
-        let window_label = format!("{}-widget", widget.label);
-
-        if let Some(window) = app.get_webview_window(&window_label) {
+    for widget in WIDGET_DEFINITIONS.iter() {
+        if let Some(window) = app.get_webview_window(widget.label) {
             if let Err(e) = window.set_ignore_cursor_events(true) {
                 tracing::warn!("Failed to update cursor events for {}: {e}", widget.label);
             }

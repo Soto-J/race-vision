@@ -1,6 +1,6 @@
 use background::register_background_job;
 use commands::{greet, read_value, set_watched_vars};
-use domain::AppError;
+use domain::DomainError;
 use shortcuts::register_shortcuts;
 use std::sync::Arc;
 use tauri::{App, Manager};
@@ -20,7 +20,7 @@ pub mod utils;
 mod webviews;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() -> Result<(), AppError> {
+pub fn run() -> Result<(), DomainError> {
     let mut builder = tauri::Builder::default();
 
     #[cfg(debug_assertions)] // only enable instrumentation in development builds
@@ -42,28 +42,22 @@ pub fn run() -> Result<(), AppError> {
             read_value
         ])
         .run(tauri::generate_context!())
-        .map_err(|e| AppError::Tauri(format!("{e:?}")))?;
+        .map_err(|e| DomainError::Tauri(format!("{e}")))?;
 
     Ok(())
 }
 
-pub type WatchedVars = Arc<RwLock<Vec<String>>>;
-
 fn setup_config(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
-    let ir_provider = Arc::new(IracingProvider::new().expect("failed to create provider"));
+    let provider = Arc::new(IracingProvider::new().expect("failed to create provider"));
     let active_vars = Arc::new(RwLock::new(Vec::new()));
 
-    register_background_job(
-        app.handle().clone(),
-        ir_provider.clone(),
-        active_vars.clone(),
-    );
+    register_background_job(app.handle().clone(), provider.clone(), active_vars.clone());
     register_webviews(app)?;
     register_shortcuts(app)?;
 
     let edit_mode = RwLock::new(false);
 
-    app.manage(ir_provider);
+    app.manage(provider);
     app.manage(active_vars);
     app.manage(edit_mode);
 

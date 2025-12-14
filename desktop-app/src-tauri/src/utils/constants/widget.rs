@@ -2,21 +2,15 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tauri::{LogicalPosition, LogicalSize};
 
-use crate::domain::AppError;
-
-pub const WIDGET_LAYOUTS_KEY: &str = "widget-layouts.json";
-
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct AppWebView {
+pub struct WidgetDefinition {
     pub label: &'static str,
-    pub position: Position,
+    
     pub size: Size,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Position {
-    pub x: f64,
-    pub y: f64,
+    pub position: Position,
+    // pub always_on_top: bool,
+    // pub decorations: bool,
+    // pub skip_taskbar: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -25,7 +19,13 @@ pub struct Size {
     pub height: f64,
 }
 
-impl AppWebView {
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Position {
+    pub x: f64,
+    pub y: f64,
+}
+
+impl WidgetDefinition {
     pub fn new(label: &'static str, x: f64, y: f64, width: f64, height: f64) -> Self {
         Self {
             label,
@@ -42,15 +42,6 @@ impl AppWebView {
         LogicalSize::new(self.size.width, self.size.height)
     }
 }
-
-pub static WIDGET_WEBVIEWS: Lazy<Vec<AppWebView>> = Lazy::new(|| {
-    vec![
-        AppWebView::new("inputs", 50.0, 50.0, 400.0, 150.0),
-        AppWebView::new("standings", 200.0, 200.0, 400.0, 600.0),
-        AppWebView::new("track-map", 600.0, 200.0, 300.0, 300.0),
-        AppWebView::new("relative", 100.0, 500.0, 400.0, 200.0),
-    ]
-});
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WidgetConfig {
@@ -71,4 +62,22 @@ impl WidgetConfig {
     }
 }
 
+impl From<&WidgetDefinition> for WidgetConfig {
+    fn from(def: &WidgetDefinition) -> Self {
+        Self {
+            x: def.position.x,
+            y: def.position.y,
+            width: def.size.width,
+            height: def.size.height,
+        }
+    }
+}
 
+pub static WIDGET_DEFINITIONS: Lazy<Vec<WidgetDefinition>> = Lazy::new(|| {
+    vec![
+        WidgetDefinition::new("inputs", 50.0, 50.0, 400.0, 150.0),
+        WidgetDefinition::new("standings", 200.0, 200.0, 400.0, 600.0),
+        WidgetDefinition::new("track-map", 600.0, 200.0, 300.0, 300.0),
+        WidgetDefinition::new("relative", 100.0, 500.0, 400.0, 200.0),
+    ]
+});

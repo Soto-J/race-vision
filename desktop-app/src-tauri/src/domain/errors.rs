@@ -1,5 +1,5 @@
 #[derive(Debug, thiserror::Error)]
-pub enum AppError {
+pub enum DomainError {
     #[error("failed to initialize iracing provider: {0}")]
     ProviderInitializationFailed(String),
 
