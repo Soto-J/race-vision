@@ -1,19 +1,18 @@
-use crate::{domain::AppError, WatchedVars};
+#[cfg(not(target_os = "windows"))]
+use crate::domain::telemetry::{IracingProvider, TelemetryValue};
 
 use std::sync::Arc;
 use tauri::State;
+use tokio::sync::RwLock;
 
 #[cfg(target_os = "windows")]
 use telemetry_core::{iracing_client::telemetry::TelemetryValue, IracingProvider};
 
-#[cfg(not(target_os = "windows"))]
-use crate::domain::telemetry::{IracingProvider, TelemetryValue};
-
 #[tauri::command]
 pub async fn set_watched_vars(
     vars: Vec<String>,
-    watched_vars: State<'_, WatchedVars>,
-) -> Result<(), AppError> {
+    watched_vars: State<'_, RwLock<Vec<String>>>,
+) -> Result<(), String> {
     *watched_vars.write().await = vars;
 
     Ok(())
