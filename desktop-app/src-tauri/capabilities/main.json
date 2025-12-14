@@ -1,13 +1,7 @@
 {
   "identifier": "main-capability",
   "platforms": ["macOS", "windows", "linux"],
-  "windows": [
-    "app",
-    "inputs-widget",
-    "standings-widget",
-    "track-map-widget",
-    "relative-widget"
-  ],
+  "windows": ["app", "inputs", "standings", "track-map", "relative"],
   "permissions": [
     "global-shortcut:default",
     "global-shortcut:allow-is-registered",

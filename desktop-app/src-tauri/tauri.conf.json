@@ -10,48 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [
-      {
-        "label": "app",
-        "url": "index.html#/dashboard",
-        "title": "Race Vision",
-        "width": 900,
-        "height": 700
-      },
-      {
-        "label": "inputs-widget",
-        "url": "index.html#/widget/inputs",
-        "width": 500,
-        "height": 100,
-        "decorations": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true
-      },
-      {
-        "transparent": true,
-        "label": "standings-widget",
-        "url": "index.html#/widget/standings",
-        "decorations": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true
-      },
-      {
-        "transparent": true,
-        "label": "track-map-widget",
-        "url": "index.html#/widget/track-map",
-        "decorations": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true
-      },
-      {
-        "transparent": true,
-        "label": "relative-widget",
-        "url": "index.html#/widget/relative",
-        "decorations": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null,
       "capabilities": ["main-capability"]
