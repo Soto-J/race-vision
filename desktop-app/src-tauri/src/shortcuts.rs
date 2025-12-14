@@ -5,11 +5,11 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 use tokio::sync::RwLock;
 
 pub fn register_shortcuts(app: &App) -> Result<(), AppError> {
-    let f6 = Shortcut::new(Some(Modifiers::CONTROL), Code::F6);
+    let ctrl_f6 = Shortcut::new(Some(Modifiers::CONTROL), Code::F6);
 
     app.global_shortcut()
-        .on_shortcut(f6, move |app, shortcut, event| {
-            if shortcut == &f6 && event.state() == ShortcutState::Pressed {
+        .on_shortcut(ctrl_f6, move |app, shortcut, event| {
+            if shortcut == &ctrl_f6 && event.state() == ShortcutState::Pressed {
                 let state: tauri::State<RwLock<bool>> = app.state();
 
                 let mut mode = state.blocking_write();

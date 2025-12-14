@@ -81,11 +81,11 @@ export const PedalGraph = ({
       const throttleValue = Math.random();
       const brakeValue = Math.random();
 
-      console.log("", throttleValue);
-      const store = useTelemetryStore.getState();
+      // console.log("", throttleValue);
+      // const store = useTelemetryStore.getState();
 
-      const value = store.getValue(TelemetryVars.THROTTLE);
-      console.log("val: ", store.pageVars);
+      // const value = store.getValue(TelemetryVars.THROTTLE);
+      // console.log("val: ", store.pageVars);
       // const throttleResult = TelemetryValueSchema.safeParse(
       // );
       // console.log("Throttle Value: ", throttleResult);
