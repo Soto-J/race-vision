@@ -2,14 +2,15 @@ import { useEffect } from "react";
 
 import { listen } from "@tauri-apps/api/event";
 
-import { VarKind } from "@/lib/types";
+import type { TelemetrySnapshot } from "@/lib/types";
 
-import { useTelemetryStore } from "../store/use-telemetry-store";
+import { useQueryClient } from "@tanstack/react-query";
+import { TELEMETRY_QUERY_KEYS } from "@/lib/constants/telemetry-keys";
 
-export type TelemetrySnapshot = Record<string, VarKind>;
+const TELEMETRY_UPDATE_EVENT = "telemetry-update";
 
 export function useTelemetryListener() {
-  const { setSnapshot, syncToRust, subscriptions } = useTelemetryStore();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Bail out if not in Tauri or on overlay route
@@ -18,23 +19,12 @@ export function useTelemetryListener() {
 
     let unlisten: (() => void) | undefined;
 
-    listen<TelemetrySnapshot>("telemetry-update", (event) => {
-      setSnapshot(event.payload);
+    listen<TelemetrySnapshot>(TELEMETRY_UPDATE_EVENT, (event) => {
+      queryClient.setQueryData(TELEMETRY_QUERY_KEYS.snapshot, event.payload);
     }).then((fn) => (unlisten = fn));
 
     return () => unlisten?.();
-  }, []);
-
-  // Subscription → Rust sync
-  useEffect(() => {
-    if (!(window as any).__TAURI__) return;
-
-    syncToRust();
-  }, [
-    syncToRust,
-    // force stable comparison
-    Array.from(subscriptions).sort().join(","),
-  ]);
+  }, [queryClient]);
 
   return null;
 }

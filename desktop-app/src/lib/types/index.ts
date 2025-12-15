@@ -1,75 +1,103 @@
 import { z } from "zod";
+/**
+ * Telemetry value schemas for Rust → Frontend IPC.
+ *
+ * Rust sends telemetry values using an externally tagged enum:
+ *
+ *   #[serde(tag = "kind", content = "value")]
+ *   pub enum TelemetryValue {
+ *       Chars8(Vec<u8>),
+ *       Bool(Vec<bool>),
+ *       I32(Vec<i32>),
+ *       Bitfield(Vec<u32>),
+ *       F32(Vec<f32>),
+ *       F64(Vec<f64>),
+ *   }
+ *
+ * On the wire, each telemetry value has the shape:
+ *
+ *   {
+ *     kind: "F32" | "F64" | "I32" | "Bitfield" | "Chars8" | "Bool",
+ *     value: T[]
+ *   }
+ *
+ * Notes:
+ * - `value` is always an array, even for single-element telemetry variables.
+ * - This schema models the IPC payload exactly as Rust emits it.
+ * - Do NOT normalize or flatten values inside the schema.
+ *   Validation and interpretation are intentionally separated.
+ */
 
-const NumArr = z.array(z.number()).min(1);
-// -------------------------
-// Raw incoming data
-// -------------------------
-const RawChars8Schema = z.object({ Chars8: NumArr });
-const RawBitfieldSchema = z.object({ Bitfield: NumArr });
-const RawI32Schema = z.object({ I32: NumArr });
-const RawF32Schema = z.object({ F32: NumArr });
-const RawF64Schema = z.object({ F64: NumArr });
-const RawBoolSchema = z.object({ Bool: z.array(z.boolean()).min(1) });
-
-export const RawVarKindSchema = z.union([
-  RawChars8Schema,
-  RawBitfieldSchema,
-  RawI32Schema,
-  RawF32Schema,
-  RawF64Schema,
-  RawBoolSchema,
-]);
-
-export type RawVarKind = z.infer<typeof RawVarKindSchema>;
-
-// -------------------------
-// Prasrsed Raw data
-// -------------------------
-const Chars8Schema = RawChars8Schema.transform(({ Chars8 }) => Chars8[0]);
-
-const BitfieldSchema = RawBitfieldSchema.transform(
-  ({ Bitfield }) => Bitfield[0],
-);
-const I32Schema = RawI32Schema.transform(({ I32 }) => I32[0]);
-const F32Schema = RawF32Schema.transform(({ F32 }) => F32[0]);
-const F64Schema = RawF64Schema.transform(({ F64 }) => F64[0]);
-const BoolSchema = RawBoolSchema.transform(({ Bool }) => (Bool[0] ? 1 : 0));
-
-export const VarKindSchema = z
-  .union([
-    Chars8Schema,
-    BoolSchema,
-    I32Schema,
-    BitfieldSchema,
-    F32Schema,
-    F64Schema,
-  ])
-  .transform((obj) => {
-    // Extract the first field’s value no matter which variant it is
-    const key = Object.keys(obj)[0] as keyof typeof obj;
-    return obj[key]; // already transformed by child schemas
-  });
-
-export type VarKind = z.infer<typeof VarKindSchema>;
-
-export const valueSchema = z
-  .array(z.number())
-  .min(1)
-  .transform((v) => v[0]);
-
+/**
+ * Runtime validation for a single telemetry value.
+ * Matches the Rust `TelemetryValue` enum 1:1.
+ */
 export const TelemetryValueSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("F32"), value: valueSchema }),
-  z.object({ kind: z.literal("F64"), value: valueSchema }),
-  z.object({ kind: z.literal("I32"), value: valueSchema }),
-  z.object({ kind: z.literal("Chars8"), value: valueSchema }),
-  z.object({ kind: z.literal("Bitfield"), value: valueSchema }),
+  z.object({
+    kind: z.literal("F32"),
+    value: z.array(z.number()).min(1),
+  }),
+  z.object({
+    kind: z.literal("F64"),
+    value: z.array(z.number()).min(1),
+  }),
+  z.object({
+    kind: z.literal("I32"),
+    value: z.array(z.number().int()).min(1),
+  }),
+  z.object({
+    kind: z.literal("Bitfield"),
+    value: z.array(z.number().int()).min(1),
+  }),
+  z.object({
+    kind: z.literal("Chars8"),
+    value: z.array(z.number().int()).min(1),
+  }),
   z.object({
     kind: z.literal("Bool"),
-    value: z
-      .array(z.boolean())
-      .min(1)
-      .transform((v) => v[0]),
+    value: z.array(z.boolean()).min(1),
   }),
 ]);
 
 export type TelemetryValue = z.infer<typeof TelemetryValueSchema>;
+
+/**
+ * A full telemetry snapshot.
+ *
+ * Rust emits:
+ *   HashMap<String, TelemetryValue>
+ *
+ * Frontend receives:
+ *   Record<string, TelemetryValue>
+ */
+export const TelemetrySnapshotSchema = z.record(
+  z.string(),
+  TelemetryValueSchema,
+);
+
+export type TelemetrySnapshot = z.infer<typeof TelemetrySnapshotSchema>;
+
+/**
+ * Decode a validated telemetry value into a display-friendly primitive.
+ *
+ * - Numeric and boolean telemetry returns the first value
+ * - Char8 values are decoded as UTF-8 strings
+ *
+ * This function is intentionally NOT part of the Zod schema.
+ * Validation and interpretation are kept separate by design.
+ */
+export function decodeTelemetryValue(v: TelemetryValue) {
+  switch (v.kind) {
+    case "F32":
+    case "F64":
+    case "I32":
+    case "Bitfield":
+      return v.value[0];
+
+    case "Bool":
+      return v.value[0];
+
+    case "Chars8":
+      return new TextDecoder().decode(Uint8Array.from(v.value));
+  }
+}

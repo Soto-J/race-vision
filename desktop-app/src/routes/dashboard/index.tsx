@@ -10,7 +10,7 @@ export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
 });
 
-function DashboardHome() {
+export default function DashboardHome() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
   const [sessionTime, setSessionTime] = useState("");

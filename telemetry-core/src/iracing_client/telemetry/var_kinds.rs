@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
-pub enum VarKind {
+pub enum TelemetryType {
     Char8 = 0,
     Bool = 1,
     I32 = 2,
@@ -13,22 +13,24 @@ pub enum VarKind {
     F64 = 5,
 }
 
-impl VarKind {
-    pub fn parse_to_value(&self, bytes: &[u8]) -> Result<TelemetryValue, ParseError> {
+impl TelemetryType {
+    pub fn parse_value(&self, bytes: &[u8]) -> Result<TelemetryValue, ParseError> {
         match self {
-            VarKind::Char8 => Ok(TelemetryValue::Chars8(bytes.to_vec())),
-            VarKind::Bool => Ok(TelemetryValue::Bool(
+            TelemetryType::Char8 => Ok(TelemetryValue::Chars8(bytes.to_vec())),
+            TelemetryType::Bool => Ok(TelemetryValue::Bool(
                 bytes.iter().map(|&b| b != 0).collect(),
             )),
-            VarKind::I32 => Ok(TelemetryValue::I32(parse_le_chunks::<i32, 4>(bytes)?)),
-            VarKind::Bitfield => Ok(TelemetryValue::Bitfield(parse_le_chunks::<u32, 4>(bytes)?)),
-            VarKind::F32 => Ok(TelemetryValue::F32(parse_le_chunks::<f32, 4>(bytes)?)),
-            VarKind::F64 => Ok(TelemetryValue::F64(parse_le_chunks::<f64, 8>(bytes)?)),
+            TelemetryType::I32 => Ok(TelemetryValue::I32(decode_le_chunks::<i32, 4>(bytes)?)),
+            TelemetryType::Bitfield => {
+                Ok(TelemetryValue::Bitfield(decode_le_chunks::<u32, 4>(bytes)?))
+            }
+            TelemetryType::F32 => Ok(TelemetryValue::F32(decode_le_chunks::<f32, 4>(bytes)?)),
+            TelemetryType::F64 => Ok(TelemetryValue::F64(decode_le_chunks::<f64, 8>(bytes)?)),
         }
     }
 }
 
-fn parse_le_chunks<T, const N: usize>(bytes: &[u8]) -> Result<Vec<T>, ParseError>
+fn decode_le_chunks<T, const N: usize>(bytes: &[u8]) -> Result<Vec<T>, ParseError>
 where
     T: FromLeBytes<N>,
 {
@@ -44,7 +46,7 @@ where
         .collect()
 }
 
-impl TryFrom<i32> for VarKind {
+impl TryFrom<i32> for TelemetryType {
     type Error = String;
 
     fn try_from(var_type: i32) -> Result<Self, Self::Error> {
@@ -72,7 +74,7 @@ pub enum TelemetryValue {
 }
 
 impl TelemetryValue {
-    pub fn format(value: &TelemetryValue) -> String {
+    pub fn display(value: &TelemetryValue) -> String {
         match value {
             TelemetryValue::F32(vals) => {
                 if vals.len() == 1 {

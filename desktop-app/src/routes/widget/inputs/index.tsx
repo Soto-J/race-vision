@@ -8,7 +8,7 @@ export const Route = createFileRoute(`/widget/inputs/`)({
 
 export default function InputsWidget() {
   return (
-    <div data-tauri-drag-region>
+    <div data-tauri-drag-region className="min-h-screen">
       <PedalGraph />
     </div>
   );

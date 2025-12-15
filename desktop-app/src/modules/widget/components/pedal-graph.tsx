@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
-import { listen } from "@tauri-apps/api/event";
-
-import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 import { useCanvasResize } from "@/hooks/use-canvas-resize";
-
+import { useQueryClient } from "@tanstack/react-query";
+import { TELEMETRY_QUERY_KEYS } from "@/lib/constants/telemetry-keys";
+import {
+  decodeTelemetryValue,
+  TelemetrySnapshot,
+  TelemetrySnapshotSchema,
+} from "@/lib/types";
 import { TelemetryVars } from "@/lib/constants/telemetry-vars";
-
-import { TelemetryValueSchema, VarKind, VarKindSchema } from "@/lib/types";
 
 const THROTTLE_COLOR = "#22c55e";
 const BRAKE_COLOR = "#ef4444";
@@ -29,6 +30,8 @@ export const PedalGraph = ({
   scrollSpeed = 0.2,
   bufferSize = 300,
 }: PedalGraphProps) => {
+  const queryClient = useQueryClient();
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Ring buffers
@@ -41,8 +44,6 @@ export const PedalGraph = ({
   const accumulatorRef = useRef(0);
 
   useCanvasResize(canvasRef);
-
-  // const normalize = (v: number) => (v > 1 ? v / 100 : v);
 
   // ---------------------------------------------------
   // Recreate buffers ONLY when bufferSize changes
@@ -78,32 +79,20 @@ export const PedalGraph = ({
         accumulatorRef.current -= 1;
       }
 
-      const throttleValue = Math.random();
-      const brakeValue = Math.random();
+      // const throttleValue = Math.random();
+      // const brakeValue = Math.random();
+      //TODO! query client
+      let snapshot = queryClient.getQueryData<TelemetrySnapshot>(
+        TELEMETRY_QUERY_KEYS.snapshot,
+      );
 
-      // console.log("", throttleValue);
-      // const store = useTelemetryStore.getState();
+      if (!snapshot) {
+        return;
+      }
 
-      // const value = store.getValue(TelemetryVars.THROTTLE);
-      // console.log("val: ", store.pageVars);
-      // const throttleResult = TelemetryValueSchema.safeParse(
-      // );
-      // console.log("Throttle Value: ", throttleResult);
-
-      // if (!throttleResult.success) {
-      //   console.error("problem parsing pedal data, ", throttleResult.error);
-      //   return;
-      // }
-
-      // const throttleValue = normalize(
-      //   (store.getValue(TelemetryVars.THROTTLE.toLowerCase()) ?? 0) as number,
-      // );
-      // const brakeValue = normalize(
-      //   (store.getValue(TelemetryVars.BRAKE.toLowerCase()) ?? 0) as number,
-      // );
-      // const clutchValue = normalize(
-      //   (store.getValue(TelemetryVars.CLUTCH.toLowerCase()) ?? 0) as number,
-      // );
+      let throttleValue = decodeTelemetryValue(
+        snapshot[TelemetryVars.THROTTLE],
+      ) as number;
 
       // UPDATE BUFFERS
       throttleRef.current[indexRef.current] = throttleValue;

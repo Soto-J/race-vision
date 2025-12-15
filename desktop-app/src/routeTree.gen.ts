@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as WidgetIndexRouteImport } from './routes/widget/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as WidgetTrackMapIndexRouteImport } from './routes/widget/track-map/index'
@@ -29,11 +28,6 @@ import { Route as DashboardFuelCalculatorIndexRouteImport } from './routes/dashb
 import { Route as DashboardFlatMapIndexRouteImport } from './routes/dashboard/flat-map/index'
 import { Route as DashboardDeltaBarIndexRouteImport } from './routes/dashboard/delta-bar/index'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const WidgetIndexRoute = WidgetIndexRouteImport.update({
   id: '/widget/',
   path: '/widget/',
@@ -130,7 +124,6 @@ const DashboardDeltaBarIndexRoute = DashboardDeltaBarIndexRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/widget': typeof WidgetIndexRoute
   '/dashboard/delta-bar': typeof DashboardDeltaBarIndexRoute
@@ -151,7 +144,6 @@ export interface FileRoutesByFullPath {
   '/widget/track-map': typeof WidgetTrackMapIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/widget': typeof WidgetIndexRoute
   '/dashboard/delta-bar': typeof DashboardDeltaBarIndexRoute
@@ -173,7 +165,6 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/widget/': typeof WidgetIndexRoute
   '/dashboard/delta-bar/': typeof DashboardDeltaBarIndexRoute
@@ -196,7 +187,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/dashboard'
     | '/widget'
     | '/dashboard/delta-bar'
@@ -217,7 +207,6 @@ export interface FileRouteTypes {
     | '/widget/track-map'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/dashboard'
     | '/widget'
     | '/dashboard/delta-bar'
@@ -238,7 +227,6 @@ export interface FileRouteTypes {
     | '/widget/track-map'
   id:
     | '__root__'
-    | '/'
     | '/dashboard/'
     | '/widget/'
     | '/dashboard/delta-bar/'
@@ -260,7 +248,6 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   WidgetIndexRoute: typeof WidgetIndexRoute
   DashboardDeltaBarIndexRoute: typeof DashboardDeltaBarIndexRoute
@@ -283,13 +270,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/widget/': {
       id: '/widget/'
       path: '/widget'
@@ -420,7 +400,6 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   WidgetIndexRoute: WidgetIndexRoute,
   DashboardDeltaBarIndexRoute: DashboardDeltaBarIndexRoute,

@@ -3,14 +3,16 @@
 //! This module handles continuous polling of iRacing telemetry data in a background task.
 //! The telemetry loop runs at ~60 FPS (16ms intervals) and emits updates to the frontend
 //! for watched telemetry variables.
-use std::sync::Arc;
-use tauri::{AppHandle, Emitter};
-use tokio::sync::RwLock;
-
 #[cfg(not(target_os = "windows"))]
 use crate::domain::telemetry::IracingProvider;
 #[cfg(target_os = "windows")]
 use telemetry_core::IracingProvider;
+
+use crate::utils::constants::TELEMETRY_UPDATE_EVENT;
+
+use std::sync::Arc;
+use tauri::{AppHandle, Emitter};
+use tokio::sync::RwLock;
 
 /// Registers and starts a background task for continuous telemetry polling.
 ///
@@ -64,7 +66,7 @@ pub fn register_background_job(
             if !keys.is_empty() {
                 match background_provider.read_snapshot(&keys).await {
                     Ok(snapshot) => {
-                        if let Err(e) = app_handle.emit("telemetry-update", snapshot) {
+                        if let Err(e) = app_handle.emit(TELEMETRY_UPDATE_EVENT, snapshot) {
                             eprintln!("emit to frontend failed: {e:?}");
                             return;
                         }
