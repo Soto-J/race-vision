@@ -3,8 +3,8 @@ use color_eyre::eyre::eyre;
 use crate::{
     domain::iracing_errors::{ClientError, ResolverError, SharedMemoryError},
     iracing_client::telemetry::{
-        TelemetryValue, VarBuffer, VarKind,
         raw::{Header, VarHeader},
+        TelemetryType, TelemetryValue, VarBuffer,
     },
     utils::constants::size,
 };
@@ -25,13 +25,13 @@ impl TelemetryResolver {
             .get(key)
             .ok_or_else(|| ResolverError::VarHeaderNotFound)?;
 
-        let var_kind = VarKind::try_from(var_header.var_type)
+        let data_type = TelemetryType::try_from(var_header.var_type)
             .map_err(|e| ClientError::UnexpectedError(eyre!(e)))?;
 
-        let bytes_per_element = match var_kind {
-            VarKind::Char8 | VarKind::Bool => 1,
-            VarKind::I32 | VarKind::Bitfield | VarKind::F32 => 4,
-            VarKind::F64 => 8,
+        let bytes_per_element = match data_type {
+            TelemetryType::Char8 | TelemetryType::Bool => 1,
+            TelemetryType::I32 | TelemetryType::Bitfield | TelemetryType::F32 => 4,
+            TelemetryType::F64 => 8,
         };
 
         let count = var_header.count as usize;
@@ -62,7 +62,7 @@ impl TelemetryResolver {
             .into());
         }
 
-        let value = var_kind.parse_to_value(&snapshot[offset..end_offset])?;
+        let value = data_type.parse_value(&snapshot[offset..end_offset])?;
 
         Ok(value)
     }

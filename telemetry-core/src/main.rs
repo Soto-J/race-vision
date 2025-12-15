@@ -1,6 +1,6 @@
 use telemetry_core::{
     domain::iracing_errors::ClientError,
-    iracing_client::{Client, check_sim_status, telemetry::TelemetryValue},
+    iracing_client::{check_sim_status, telemetry::TelemetryValue, Client},
     utils::constants::telemetry_vars::TelemetryVars,
 };
 
@@ -40,8 +40,7 @@ async fn main() -> Result<(), ClientError> {
         for var_name in telemetry_vars.iter() {
             match irsdk.read_value(var_name) {
                 Ok(value) => {
-                    let formatted_value = TelemetryValue::format(&value);
-                    println!("{:20} : {}", var_name, formatted_value);
+                    println!("{:20} : {}", var_name, TelemetryValue::display(&value));
                 }
                 Err(e) => {
                     println!("{:20} : Error - {}", var_name, e);

@@ -1,6 +1,6 @@
 use crate::{
     domain::iracing_errors::{ClientError, ResolverError},
-    iracing_client::telemetry::VarKind,
+    iracing_client::telemetry::TelemetryType,
     utils::constants::size::{
         COUNT_AS_TIME_BYTE, COUNT_END, COUNT_START, DESCRIPTION_END, DESCRIPTION_START, KIND_END,
         KIND_START, NAME_END, NAME_START, OFFSET_END, OFFSET_START, UNIT_START, VAR_HEADER_SIZE,
@@ -36,7 +36,7 @@ impl VarHeader {
         }
 
         let var_type = i32::from_le_bytes(read_slice!(buf, KIND_START, KIND_END, "var_type"));
-        if VarKind::try_from(var_type).is_err() {
+        if TelemetryType::try_from(var_type).is_err() {
             return Err(ResolverError::InvalidVarKind(var_type).into());
         }
 
