@@ -3,13 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
-import { PageHeader } from "@/routes/dashboard/components/page-header";
-import { GeneralTab } from "./components/tabs/general-tab";
-import { ContentTab } from "./components/tabs/content-tab";
-import { HeaderTab } from "./components/tabs/header-tab";
-import { FooterTab } from "./components/tabs/footer-tab";
+import { PageHeader } from "@/modules/dashboard/components/page-header";
+import { GeneralTab } from "@/modules/dashboard/relative/component/tabs/general-tab";
+import { ContentTab } from "@/modules/dashboard/relative/component/tabs/content-tab";
+import { HeaderTab } from "@/modules/dashboard/relative/component/tabs/header-tab";
+import { FooterTab } from "@/modules/dashboard/relative/component/tabs/footer-tab";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/modules/components/ui/tabs";
 
 const PAGE_TITLE = "relative";
 

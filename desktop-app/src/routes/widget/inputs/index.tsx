@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { PedalGraph } from "@/routes/widget/components/widget/pedal-graph";
+import { PedalGraph } from "@/modules/widget/components/pedal-graph";
 
 export const Route = createFileRoute(`/widget/inputs/`)({
   component: InputsWidget,

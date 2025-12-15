@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use crate::{
     iracing_client::telemetry::raw::{Header, VarHeader},
     utils::constants::telemetry_vars::TelemetryVars,

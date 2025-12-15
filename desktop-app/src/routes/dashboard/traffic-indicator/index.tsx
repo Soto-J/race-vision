@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
-import { PageHeader } from "@/routes/dashboard/components/page-header";
+import { PageHeader } from "@/modules/dashboard/components/page-header";
 
 const PAGE_TITLE = "traffic-indicator";
 

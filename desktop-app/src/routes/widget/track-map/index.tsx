@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TrackMap } from "@/routes/widget/components/widget/track-map";
+
+import { TrackMap } from "@/modules/widget/components/track-map";
 
 export const Route = createFileRoute(`/widget/track-map/`)({
   component: TrackMapWidget,

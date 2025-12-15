@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
+
 import { formatSessionTime } from "@/lib/format";
 import { TelemetryVars } from "@/lib/constants/telemetry-vars";
 import { TelemetryValueSchema } from "@/lib/types";

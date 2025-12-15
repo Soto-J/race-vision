@@ -28,12 +28,13 @@ dist-ssr
 *.sln
 *.sw?
 
-
 *.exe
 *.pdb
 
 .env
 /*/.env
+
+/*/.tanstack
 
 notes.md
 
