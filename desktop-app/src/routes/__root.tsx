@@ -1,10 +1,10 @@
 import { useRouter, createRootRoute } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/modules/components/theme-provider";
 
-import DashboardLayout from "./dashboard/layout";
-import WidgetLayout from "./widget/layout";
+import DashboardLayout from "../modules/dashboard/layout";
+import WidgetLayout from "../modules/widget/layout";
 
 export const Route = createRootRoute({
   component: RootLayout,

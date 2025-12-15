@@ -3,8 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
-import { PageHeader } from "@/routes/dashboard/components/page-header";
-import { Switch } from "@/components/ui/switch";
+import { PageHeader } from "@/modules/dashboard/components/page-header";
+
+import { Switch } from "@/modules/components/ui/switch";
 
 const PAGE_TITLE = "spotter";
 

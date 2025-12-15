@@ -26,6 +26,14 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "src/modules/dashboard",
+    "src/modules/widget/components/pedal-graph.tsx",
+    "src/modules/widget/components/relative.tsx",
+    "src/modules/widget/components/standings.tsx",
+    "src/modules/widget/components/track-map.tsx",
+    "src/modules/widget/components/draggable-widget.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

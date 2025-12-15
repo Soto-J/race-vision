@@ -1,2 +1,4 @@
 [workspace]
+resolver = "2"
+
 members = ["telemetry-core", "desktop-app/src-tauri"]

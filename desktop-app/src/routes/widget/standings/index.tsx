@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Standings } from "@/routes/widget/components/widget/standings";
+
+import { Standings } from "@/modules/widget/components/standings";
 
 export const Route = createFileRoute(`/widget/standings/`)({
   component: StandingsWidget,

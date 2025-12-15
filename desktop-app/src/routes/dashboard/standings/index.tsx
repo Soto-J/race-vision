@@ -3,13 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
 
-import { PageHeader } from "../components/page-header";
-import { ContentTab } from "./components/tabs/content-tab";
-import { GeneralTab } from "./components/tabs/general-tab";
-import { HeaderTab } from "./components/tabs/header-tab";
-import { ClassHeader } from "./components/tabs/class-header";
+import { PageHeader } from "@/modules/dashboard/components/page-header";
+import { ContentTab } from "@/modules/dashboard/standings/component/tabs/content-tab";
+import { GeneralTab } from "@/modules/dashboard/standings/component/tabs/general-tab";
+import { HeaderTab } from "@/modules/dashboard/standings/component/tabs/header-tab";
+import { ClassHeader } from "@/modules/dashboard/standings/component/tabs/class-header";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/modules/components/ui/tabs";
 
 const PAGE_TITLE = "standings";
 
