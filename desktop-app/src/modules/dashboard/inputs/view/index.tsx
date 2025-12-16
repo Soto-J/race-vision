@@ -1,8 +1,10 @@
-import { Activity, useCallback } from "react";
+import { Activity } from "react";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
-import { TelemetryVar, TelemetryVars } from "@/lib/constants/telemetry-vars";
-import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
+import type { InputsSettings } from "../types";
+
+import { useUpdateSettings } from "@/hooks/store/use-update-settings";
 
 import { PageHeader } from "@/modules/dashboard/components/page-header";
 import { GeneralTab } from "@/modules/dashboard/inputs/component/tabs/general-tab";
@@ -17,26 +19,37 @@ import {
   TabsTrigger,
 } from "@/modules/components/ui/tabs";
 
-const INPUT_VARS: TelemetryVar[] = [
-  TelemetryVars.THROTTLE,
-  TelemetryVars.BRAKE,
-  TelemetryVars.CLUTCH,
-];
-
 interface InputsViewProps {
   title: string;
+  settings: InputsSettings;
+  schema: z.ZodSchema;
 }
 
-export const InputsView = ({ title }: InputsViewProps) => {
-  const { pageIsActive, togglePage, toggleVar } = useTelemetryStore();
+export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
+  const updateSettings = useUpdateSettings(title, schema);
 
-  const isActive = pageIsActive[title] ?? false;
+  const togglePage = () => {
+    updateSettings.mutate({
+      ...settings,
+      settings: {
+        isActive: !settings.isActive,
+      },
+    });
+  };
 
-  const toggleInputsVar = useCallback(
-    (varName: TelemetryVar, enabled: boolean) =>
-      toggleVar(title, varName, enabled),
-    [toggleVar],
-  );
+  type ContentKey = keyof typeof settings.content;
+
+  const toggleFeature = (path: ContentKey, value: boolean, id: string) => {
+    updateSettings.mutate({
+      ...settings,
+      settings: {
+        [path]: {
+          ...settings.[path as keyof typeof settings.[path]],
+          [id]: value
+        },
+      },
+    });
+  };
 
   return (
     <div>
@@ -44,11 +57,11 @@ export const InputsView = ({ title }: InputsViewProps) => {
         id={title}
         title={title}
         description="Show your inputs in this window, you can even make this visible in a graph."
-        pageIsActive={isActive}
+        pageIsActive={settings.isActive}
         togglePage={togglePage}
       />
 
-      <Activity mode={isActive ? "visible" : "hidden"}>
+      <Activity mode={settings.isActive ? "visible" : "hidden"}>
         <Tabs>
           <TabsList
             defaultValue="general"
@@ -75,10 +88,10 @@ export const InputsView = ({ title }: InputsViewProps) => {
             <ContentTab />
           </TabsContent>
           <TabsContent value="header">
-            <HeaderTab toggleVar={toggleInputsVar} />
+            <HeaderTab toggleVar={toggleFeature} />
           </TabsContent>
           <TabsContent value="footer">
-            <FooterTab toggleVar={toggleInputsVar} />
+            <FooterTab toggleVar={toggleFeature} />
           </TabsContent>
         </Tabs>
       </Activity>

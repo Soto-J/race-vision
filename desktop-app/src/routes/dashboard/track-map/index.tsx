@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { TrackMapView } from "@/modules/dashboard/track-map/view";
 
-const PAGE_TITLE = "track-map";
+const PAGE_TITLE = "track-map" as const;
 
 export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: TrackMap,

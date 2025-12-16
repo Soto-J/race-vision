@@ -7,7 +7,7 @@ interface PageHeaderProps {
   title: string;
   description: string;
   pageIsActive: boolean;
-  togglePage: (id: string, value: boolean) => void;
+  togglePage: () => void;
 }
 
 export const PageHeader = ({
@@ -37,7 +37,7 @@ export const PageHeader = ({
             className=""
             id={`${id}-toggle`}
             checked={pageIsActive}
-            onCheckedChange={(value) => togglePage(id, value)}
+            onCheckedChange={() => togglePage()}
           />
         </div>
       </div>

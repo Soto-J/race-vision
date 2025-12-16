@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { RelativeView } from "@/modules/dashboard/relative/view";
 
-const PAGE_TITLE = "relative";
+const PAGE_TITLE = "relative" as const;
 
 export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: Relative,

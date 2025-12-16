@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { TwitchChatView } from "@/modules/dashboard/twitch-chat/view";
 
-const PAGE_TITLE = "twitch-chat";
+const PAGE_TITLE = "twitch-chat" as const;
 
 export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: TwitchChat,
