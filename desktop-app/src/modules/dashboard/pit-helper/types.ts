@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 export const PitHelperSettingsSchema = z.object({
   isActive: z.boolean(),

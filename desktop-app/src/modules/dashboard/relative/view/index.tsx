@@ -23,7 +23,7 @@ interface RelativeViewProps {
 export const RelativeView = ({ title }: RelativeViewProps) => {
   const { pageIsActive, togglePage, toggleVar } = useTelemetryStore();
 
-  const isActive = pageIsActive[title] ?? 0;
+  const isActive = pageIsActive[title] ?? false;
   return (
     <div>
       <PageHeader

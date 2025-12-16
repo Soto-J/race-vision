@@ -11,7 +11,7 @@ interface DeltaBarViewProps {
 export const DeltaBarView = ({ title }: DeltaBarViewProps) => {
   const { pageIsActive, togglePage } = useTelemetryStore();
 
-  const isActive = pageIsActive[title] ?? 0;
+  const isActive = pageIsActive[title] ?? false;
   return (
     <div>
       <PageHeader

@@ -21,7 +21,7 @@ interface FuelCalculatorViewProps {
 export const FuelCalculatorView = ({ title }: FuelCalculatorViewProps) => {
   const { pageIsActive, togglePage } = useTelemetryStore();
 
-  const isActive = pageIsActive[title] ?? 0;
+  const isActive = pageIsActive[title] ?? false;
   return (
     <div>
       <PageHeader

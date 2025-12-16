@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 import { InputsSettingsSchema } from "./inputs/types";
 import { FuelCalculatorSettingsSchema } from "./fuel-calculator/types";
@@ -16,7 +16,7 @@ import { RelativeSettingsSchema } from "./relative/types";
 const PageSettingsSchema = z.object({
   general: z.object({
     useMetricSystem: z.boolean(),
-    startupiOverlayminimized: z.boolean(),
+    startupOverlayMinimized: z.boolean(),
     minimizeToSystemTray: z.boolean(),
     showRaceControlAtStartup: z.boolean(),
     useCTRLF6InsteadOfF6ToShow: z.boolean(),
@@ -37,7 +37,7 @@ const PageSettingsSchema = z.object({
   flatMap: FlatMapSettingsSchema,
   deltaBar: DeltaBarSettingsSchema,
   trackMap: TrackMapSettingsSchema,
-  twichChat: TwitchChatSettingsSchema,
+  twitchChat: TwitchChatSettingsSchema,
 });
 
 export type PageSettings = z.infer<typeof PageSettingsSchema>;

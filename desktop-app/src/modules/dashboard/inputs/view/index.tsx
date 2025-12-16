@@ -30,7 +30,7 @@ interface InputsViewProps {
 export const InputsView = ({ title }: InputsViewProps) => {
   const { pageIsActive, togglePage, toggleVar } = useTelemetryStore();
 
-  const isActive = pageIsActive[title] ?? 0;
+  const isActive = pageIsActive[title] ?? false;
 
   const toggleInputsVar = useCallback(
     (varName: TelemetryVar, enabled: boolean) =>

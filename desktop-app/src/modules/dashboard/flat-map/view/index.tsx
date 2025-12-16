@@ -10,7 +10,7 @@ interface FlatMapViewProps {
 export const FlatMapView = ({ title }: FlatMapViewProps) => {
   const { pageIsActive, togglePage } = useTelemetryStore();
 
-  const isActive = pageIsActive[title] ?? 0;
+  const isActive = pageIsActive[title] ?? false;
 
   return (
     <div>

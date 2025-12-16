@@ -13,7 +13,7 @@ interface TrackMapViewProps {
 export const TrackMapView = ({ title }: TrackMapViewProps) => {
   const { pageIsActive, togglePage, toggleVar } = useTelemetryStore();
 
-  const isActive = pageIsActive[title] ?? 0;
+  const isActive = pageIsActive[title] ?? false;
   return (
     <div>
       <PageHeader

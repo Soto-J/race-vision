@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 export const TrafficIndicatorSettingsSchema = z.object({
   isActive: z.boolean(),
