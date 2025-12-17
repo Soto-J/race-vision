@@ -4,7 +4,13 @@ import { z } from "zod";
 
 import type { InputsSettings } from "../types";
 
-import { useUpdateSettings } from "@/hooks/store/use-update-settings";
+import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
+import {
+  toggleFeature,
+  toggleGeneralFeature,
+  type FeatureKey,
+  type GeneralFeatureKey,
+} from "@/hooks/settings/helper";
 
 import { PageHeader } from "@/modules/dashboard/components/page-header";
 import { GeneralTab } from "@/modules/dashboard/inputs/component/tabs/general-tab";
@@ -28,27 +34,27 @@ interface InputsViewProps {
 export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
   const updateSettings = useUpdateSettings(title, schema);
 
-  const togglePage = () => {
+  const onToggleActive = () => {
     updateSettings.mutate({
       ...settings,
-      settings: {
-        isActive: !settings.isActive,
-      },
+      isActive: !settings.isActive,
     });
   };
 
-  type ContentKey = keyof typeof settings.content;
+  const onToggleGeneral = (feature: GeneralFeatureKey) => {
+    updateSettings.mutate(toggleGeneralFeature(settings, feature));
+  };
 
-  const toggleFeature = (path: ContentKey, value: boolean, id: string) => {
-    updateSettings.mutate({
-      ...settings,
-      settings: {
-        [path]: {
-          ...settings.[path as keyof typeof settings.[path]],
-          [id]: value
-        },
-      },
-    });
+  const onToggleContent = (feature: FeatureKey<"content">) => {
+    updateSettings.mutate(toggleFeature(settings, "content", feature));
+  };
+
+  const onToggleHeader = (feature: FeatureKey<"header">) => {
+    updateSettings.mutate(toggleFeature(settings, "header", feature));
+  };
+
+  const onToggleFooter = (feature: FeatureKey<"footer">) => {
+    updateSettings.mutate(toggleFeature(settings, "footer", feature));
   };
 
   return (
@@ -58,7 +64,7 @@ export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
         title={title}
         description="Show your inputs in this window, you can even make this visible in a graph."
         pageIsActive={settings.isActive}
-        togglePage={togglePage}
+        togglePage={onToggleActive}
       />
 
       <Activity mode={settings.isActive ? "visible" : "hidden"}>
@@ -82,16 +88,28 @@ export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
           </TabsList>
 
           <TabsContent value="general">
-            <GeneralTab />
+            <GeneralTab
+              settings={settings.general}
+              toggleFeature={onToggleGeneral}
+            />
           </TabsContent>
           <TabsContent value="content">
-            <ContentTab />
+            <ContentTab
+              settings={settings.content}
+              toggleFeature={onToggleContent}
+            />
           </TabsContent>
           <TabsContent value="header">
-            <HeaderTab toggleVar={toggleFeature} />
+            <HeaderTab
+              settings={settings.header}
+              toggleFeature={onToggleHeader}
+            />
           </TabsContent>
           <TabsContent value="footer">
-            <FooterTab toggleVar={toggleFeature} />
+            <FooterTab
+              settings={settings.footer}
+              toggleFeature={onToggleFooter}
+            />
           </TabsContent>
         </Tabs>
       </Activity>

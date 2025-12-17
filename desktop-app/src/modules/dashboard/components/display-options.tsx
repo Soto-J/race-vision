@@ -1,44 +1,60 @@
-import type { TelemetryVar } from "@/lib/constants/telemetry-vars";
-
 import { Checkbox } from "@/modules/components/ui/checkbox";
 import { Label } from "@/modules/components/ui/label";
 import { Switch } from "@/modules/components/ui/switch";
 
-interface OptionsProps {
-  options: { title: string }[];
-  toggleVar: (varName: TelemetryVar, enabled: boolean) => void;
+interface FeatureSettings {
+  isActive: boolean;
+  displayIn: {
+    race: boolean;
+    qualy: boolean;
+    practice: boolean;
+  };
 }
 
-export const DisplayOptions = ({ options, toggleVar }: OptionsProps) => {
+interface OptionsProps<TSettings extends Record<string, FeatureSettings>> {
+  settings: TSettings;
+  options: { title: string; key: keyof TSettings }[];
+  toggleFeature: (feature: keyof TSettings) => void;
+}
+
+export const DisplayOptions = <TSettings extends Record<string, FeatureSettings>>({
+  settings,
+  options,
+  toggleFeature,
+}: OptionsProps<TSettings>) => {
   return (
     <div className="space-y-2">
-      {options.map((option) => (
-        <div key={option.title} className="flex justify-between gap-x-2">
-          <div className="flex items-center gap-x-2">
-            <Switch
-              key={option.title}
-              id={`${option.title}-toggle`}
-              // onCheckedChange={(e) => toggleVar(option.title, e)}
-            />
-            <div>{option.title}</div>
-          </div>
+      {options.map((option) => {
+        const featureSettings = settings[option.key];
 
-          <div className="flex items-center gap-x-4">
-            <div className="flex items-center justify-center gap-x-2">
-              <Checkbox />
-              <Label>Race</Label>
+        return (
+          <div key={option.key as string} className="flex justify-between gap-x-2">
+            <div className="flex items-center gap-x-2">
+              <Switch
+                id={`${option.key as string}-toggle`}
+                checked={featureSettings.isActive}
+                onCheckedChange={() => toggleFeature(option.key)}
+              />
+              <div>{option.title}</div>
             </div>
-            <div className="flex items-center justify-center gap-x-2">
-              <Checkbox />
-              <Label>Qualy</Label>
-            </div>
-            <div className="flex items-center justify-center gap-x-2">
-              <Checkbox />
-              <Label>Practice</Label>
+
+            <div className="flex items-center gap-x-4">
+              <div className="flex items-center justify-center gap-x-2">
+                <Checkbox checked={featureSettings.displayIn.race} disabled />
+                <Label>Race</Label>
+              </div>
+              <div className="flex items-center justify-center gap-x-2">
+                <Checkbox checked={featureSettings.displayIn.qualy} disabled />
+                <Label>Qualy</Label>
+              </div>
+              <div className="flex items-center justify-center gap-x-2">
+                <Checkbox checked={featureSettings.displayIn.practice} disabled />
+                <Label>Practice</Label>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

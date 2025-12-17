@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { Rnd } from "react-rnd";
 
-import { useOverlayStore } from "@/hooks/store/use-overlay-store";
+import { useOverlayStore } from "@/hooks/settings/use-overlay-store";
 
 const SNAP = 12;
 

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { usePageSettingsQuery } from "@/hooks/store/use-settings-query";
+import { usePageSettingsQuery } from "@/hooks/settings/use-settings-query";
 
 import { InputsSettingsSchema } from "@/modules/dashboard/inputs/types";
 import { InputsView } from "@/modules/dashboard/inputs/view";
