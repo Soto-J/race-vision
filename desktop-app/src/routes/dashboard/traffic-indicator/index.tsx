@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { TrafficIndicatorView } from "@/modules/dashboard/traffic-indicator/view";
 
-const PAGE_TITLE = "traffic-indicator";
+const PAGE_TITLE = "traffic-indicator" as const;
 
 export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: TrafficIndicator,

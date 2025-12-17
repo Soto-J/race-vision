@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { StandingsView } from "@/modules/dashboard/standings/view";
 
-const PAGE_TITLE = "standings";
+const PAGE_TITLE = "standings" as const;
 
 export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: Standings,
