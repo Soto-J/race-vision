@@ -41,22 +41,6 @@ export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
     });
   };
 
-  const onToggleGeneral = (feature: GeneralFeatureKey) => {
-    updateSettings.mutate(toggleGeneralFeature(settings, feature));
-  };
-
-  const onToggleContent = (feature: FeatureKey<"content">) => {
-    updateSettings.mutate(toggleFeature(settings, "content", feature));
-  };
-
-  const onToggleHeader = (feature: FeatureKey<"header">) => {
-    updateSettings.mutate(toggleFeature(settings, "header", feature));
-  };
-
-  const onToggleFooter = (feature: FeatureKey<"footer">) => {
-    updateSettings.mutate(toggleFeature(settings, "footer", feature));
-  };
-
   return (
     <div>
       <PageHeader
@@ -90,25 +74,25 @@ export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
           <TabsContent value="general">
             <GeneralTab
               settings={settings.general}
-              toggleFeature={onToggleGeneral}
+              updateSettings={updateSettings}
             />
           </TabsContent>
           <TabsContent value="content">
             <ContentTab
               settings={settings.content}
-              toggleFeature={onToggleContent}
+              updateSettings={updateSettings}
             />
           </TabsContent>
           <TabsContent value="header">
             <HeaderTab
               settings={settings.header}
-              toggleFeature={onToggleHeader}
+              updateSettings={updateSettings}
             />
           </TabsContent>
           <TabsContent value="footer">
             <FooterTab
               settings={settings.footer}
-              toggleFeature={onToggleFooter}
+              updateSettings={updateSettings}
             />
           </TabsContent>
         </Tabs>

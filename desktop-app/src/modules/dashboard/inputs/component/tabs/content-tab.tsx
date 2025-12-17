@@ -1,13 +1,27 @@
 import { DisplayOptions } from "@/modules/dashboard/components/display-options";
 import type { FeatureKey } from "@/hooks/settings/helper";
 import type { InputsSettings } from "../../types";
+import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
 
 interface ContentTabProps {
   settings: InputsSettings["content"];
-  toggleFeature: (feature: FeatureKey<"content">) => void;
+  updateSettings: ReturnType<typeof useUpdateSettings>;
 }
 
-export const ContentTab = ({ settings, toggleFeature }: ContentTabProps) => {
+export const ContentTab = ({ settings, updateSettings }: ContentTabProps) => {
+  const toggleFeature = (feature: FeatureKey<"content">) => {
+    updateSettings.mutate((prev) => ({
+      ...prev,
+      content: {
+        ...prev.content,
+        [feature]: {
+          ...prev.content[feature],
+          isActive: !prev.content[feature].isActive,
+        },
+      },
+    }));
+  };
+
   const options = [
     { title: "Rev lights", key: "revLights" as const },
     { title: "Gears and speed", key: "gearsAndSpeed" as const },
