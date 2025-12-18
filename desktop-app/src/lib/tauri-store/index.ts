@@ -1,8 +1,22 @@
-import { LazyStore } from "@tauri-apps/plugin-store";
+import { LazyStore, load } from "@tauri-apps/plugin-store";
 
-const TELEMETRY_VARS = "telemetry-vars.json";
-const PAGE_SETTINGS = "settings.json";
+export const TELEMETRY_VARS_JSON = "telemetry-vars.json" as const;
+export const APP_SETTINGS_JSON = "app-settings.json" as const;
 
-export const telemetryVarStore = new LazyStore(TELEMETRY_VARS);
+interface UserSettings {
+  theme: "dark" | "light";
+  notifications: boolean;
+  volume: number;
+}
 
-export const settingsStore = new LazyStore(PAGE_SETTINGS);
+const test = await load(APP_SETTINGS_JSON, {
+  defaults: {},
+  autoSave: true,
+});
+
+export const telemetryVarStore = new LazyStore(TELEMETRY_VARS_JSON);
+
+export const settingsStore = new LazyStore(APP_SETTINGS_JSON, {
+  defaults: {},
+  autoSave: true,
+});

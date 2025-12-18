@@ -13,19 +13,23 @@ import { TrackMapSettingsSchema } from "./track-map/types";
 import { TwitchChatSettingsSchema } from "./twitch-chat/types";
 import { RelativeSettingsSchema } from "./relative/types";
 
-const PageSettingsSchema = z.object({
-  general: z.object({
-    useMetricSystem: z.boolean(),
-    startupOverlayMinimized: z.boolean(),
-    minimizeToSystemTray: z.boolean(),
-    showRaceControlAtStartup: z.boolean(),
-    useCTRLF6InsteadOfF6ToShow: z.boolean(),
-    useHardwareAcceleration: z.boolean(),
-    lowerFps: z.boolean(),
-    showOverlaysInTaskbar: z.boolean(),
-    VRCompatibility: z.boolean(),
-    noVRCompatibility: z.boolean(),
-  }),
+export const DefaultBoolean = z.boolean().default(false);
+
+export const GeneralSettingsSchema = z.object({
+  useMetricSystem: DefaultBoolean,
+  startupOverlayMinimized: DefaultBoolean,
+  minimizeToSystemTray: DefaultBoolean,
+  showRaceControlAtStartup: DefaultBoolean,
+  useCTRLF6InsteadOfF6ToShow: DefaultBoolean,
+  useHardwareAcceleration: DefaultBoolean,
+  lowerFps: DefaultBoolean,
+  showOverlaysInTaskbar: DefaultBoolean,
+  VRCompatibility: DefaultBoolean,
+  noVRCompatibility: DefaultBoolean,
+});
+
+export const AppSettingsSchema = z.object({
+  general: GeneralSettingsSchema,
   standings: StandingsSettingsSchema,
   relative: RelativeSettingsSchema,
   fuelCalculator: FuelCalculatorSettingsSchema,
@@ -40,86 +44,69 @@ const PageSettingsSchema = z.object({
   twitchChat: TwitchChatSettingsSchema,
 });
 
-export type PageSettings = z.infer<typeof PageSettingsSchema>;
+export type AppSettings = z.infer<typeof AppSettingsSchema>;
 
-// *** Schemas shared with folder ************
+export const DEFAULT_SETTINGS = AppSettingsSchema.parse({});
+
+// ****** Schemas shared with folder ************
 export const GeneralSchema = z.object({
   showOverlayWhen: z.object({
-    inCar: z.boolean(),
-    outOfCar: z.boolean(),
-    spotting: z.boolean(),
-    inGarage: z.boolean(),
+    inCar: DefaultBoolean,
+    outOfCar: DefaultBoolean,
+    spotting: DefaultBoolean,
+    inGarage: DefaultBoolean,
   }),
   showFlags: z.boolean().default(false),
 });
 
-export const SettingsSchema = z.object({
-  isActive: z.boolean().default(false),
+export const ActiveAndDisplayInSchema = z.object({
+  isActive: DefaultBoolean,
   displayIn: z.object({
-    race: z.boolean().default(true),
-    qualy: z.boolean().default(true),
-    practice: z.boolean().default(true),
+    race: DefaultBoolean,
+    qualy: DefaultBoolean,
+    practice: DefaultBoolean,
   }),
 });
 
-export const ConetentSchama = z.object({
-  revLights: SettingsSchema,
-  gearsAndSpeed: SettingsSchema,
-  inputsGraph: SettingsSchema,
-  ABSActivation: SettingsSchema,
-  inputBars: SettingsSchema,
-  boostERS: SettingsSchema,
-  cornerSpeed: SettingsSchema,
-});
-
-export const HeaderSchema = z.object({
-  sessionName: SettingsSchema,
-  eventType: SettingsSchema,
-  trackName: SettingsSchema,
-  localtime24h: SettingsSchema,
-  localtimeAmPm: SettingsSchema,
-  inSimTime24h: SettingsSchema,
-  inSimTimeAmPm: SettingsSchema,
-  airTemp: SettingsSchema,
-  trackTemp: SettingsSchema,
-  humidity: SettingsSchema,
-  fogLevel: SettingsSchema,
-  timeRemaining: SettingsSchema,
-  lapsRemaining: SettingsSchema,
-  incidentCount: SettingsSchema,
-  currentLapTime: SettingsSchema,
-  sessionBestLapTime: SettingsSchema,
-  lastLapTime: SettingsSchema,
-  lastLapTimeCalculated: SettingsSchema,
-  lapDeltaBest: SettingsSchema,
-  lapDeltaOptimal: SettingsSchema,
-  lapDeltaSessionBest: SettingsSchema,
-  lapDeltaSessionOptimal: SettingsSchema,
-  lapDeltaSessionLast: SettingsSchema,
-  brakeBias: SettingsSchema,
-  fuelLevel: SettingsSchema,
-  waterTemp: SettingsSchema,
-  oilTemp: SettingsSchema,
-  sof: SettingsSchema,
-  currentStintInLaps: SettingsSchema,
-  currentStintInTime: SettingsSchema,
-  rpm: SettingsSchema,
-  deployMode: SettingsSchema,
-  arbFront: SettingsSchema,
-  arbRear: SettingsSchema,
-  abs: SettingsSchema,
-  tc1: SettingsSchema,
-  tc2: SettingsSchema,
-  weightJacker: SettingsSchema,
-  rearBrakeValve: SettingsSchema,
-  precipitation: SettingsSchema,
-  trackWetness: SettingsSchema,
-  weatherDeclaredWet: SettingsSchema,
-  pitTimeLossBeta: SettingsSchema,
-  windDirectionForDriver: SettingsSchema,
-  predictedPositionAfterPitStop: SettingsSchema,
-  iRatingAndGain: SettingsSchema,
-  pushToPass: SettingsSchema,
-});
-
-export const FooterSchema = HeaderSchema;
+export const PAGE_SETTINGS = {
+  general: {
+    schema: GeneralSettingsSchema,
+    defaults: DEFAULT_SETTINGS.general,
+  },
+  standings: {
+    schema: StandingsSettingsSchema,
+    defaults: DEFAULT_SETTINGS.standings,
+  },
+  relative: {
+    schema: RelativeSettingsSchema,
+    defaults: DEFAULT_SETTINGS.relative,
+  },
+  inputs: {
+    schema: InputsSettingsSchema,
+    defaults: DEFAULT_SETTINGS.inputs,
+  },
+  inputsGraph: {
+    schema: InputsGraphSettingsSchema,
+    defaults: DEFAULT_SETTINGS.inputsGraph,
+  },
+  trafficIndicator: {
+    schema: TrafficIndicatorSettingsSchema,
+    defaults: DEFAULT_SETTINGS.trafficIndicator,
+  },
+  flatMap: {
+    schema: FlatMapSettingsSchema,
+    defaults: DEFAULT_SETTINGS.flatMap,
+  },
+  deltaBar: {
+    schema: DeltaBarSettingsSchema,
+    defaults: DEFAULT_SETTINGS.deltaBar,
+  },
+  trackMap: {
+    schema: TrackMapSettingsSchema,
+    defaults: DEFAULT_SETTINGS.trackMap,
+  },
+  twitchChat: {
+    schema: TwitchChatSettingsSchema,
+    defaults: DEFAULT_SETTINGS.twitchChat,
+  },
+} as const;

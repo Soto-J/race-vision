@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { DefaultBoolean } from "../types";
 
 export const StandingsSettingsSchema = z.object({
-  isActive: z.boolean(),
+  isActive: DefaultBoolean,
   //   general: GeneralSchema,
   //   content: ConetentSchama,
   //   header: HeaderSchema,

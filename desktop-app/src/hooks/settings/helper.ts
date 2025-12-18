@@ -1,5 +1,4 @@
 import type { InputsSettings } from "@/modules/dashboard/inputs/types";
-import { PageSettings } from "@/modules/dashboard/types";
 
 type FeatureTab = "content" | "header" | "footer";
 

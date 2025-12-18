@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const TrackMapSettingsSchema = z.object({
-  isActive: z.boolean(),
+  isActive: z.boolean().default(false),
   //   general: GeneralSchema,
   //   content: ConetentSchama,
   //   header: HeaderSchema,

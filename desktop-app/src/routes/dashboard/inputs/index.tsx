@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { usePageSettingsQuery } from "@/hooks/settings/use-settings-query";
-
 import { InputsSettingsSchema } from "@/modules/dashboard/inputs/types";
 import { InputsView } from "@/modules/dashboard/inputs/view";
+import { usePageSettings } from "@/hooks/settings/use-page-settings";
 
 const PAGE_TITLE = "inputs" as const;
 
@@ -16,7 +15,7 @@ export default function Inputs() {
     data: settings,
     isLoading,
     error,
-  } = usePageSettingsQuery(PAGE_TITLE, InputsSettingsSchema);
+  } = usePageSettings(PAGE_TITLE, InputsSettingsSchema, {});
 
   if (isLoading) {
     return null;

@@ -1,22 +1,18 @@
 import { z } from "zod";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { settingsKeys } from "./use-settings-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { LazyStore } from "@tauri-apps/plugin-store";
-
-const settingsStore = new LazyStore("settings.json");
+import { settingsStore } from "@/lib/tauri-store";
+import { settingsKeys } from "@/lib/constants/query-keys";
+import { queryClient } from "@/routes/__root";
 
 export function useUpdateSettings<T>(page: string, schema: z.ZodSchema<T>) {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (next: T) => {
       // Validate before saving
       schema.parse(next);
 
       await settingsStore.set(`pages.${page}`, next);
-      await settingsStore.save();
 
       return next;
     },
@@ -38,12 +34,6 @@ export function useUpdateSettings<T>(page: string, schema: z.ZodSchema<T>) {
       if (ctx?.prev) {
         queryClient.setQueryData(settingsKeys.page(page), ctx.prev);
       }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: settingsKeys.page(page),
-      });
     },
   });
 }

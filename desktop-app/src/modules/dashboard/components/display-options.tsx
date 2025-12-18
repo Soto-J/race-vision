@@ -17,7 +17,9 @@ interface OptionsProps<TSettings extends Record<string, FeatureSettings>> {
   toggleFeature: (feature: keyof TSettings) => void;
 }
 
-export const DisplayOptions = <TSettings extends Record<string, FeatureSettings>>({
+export const DisplayOptions = <
+  TSettings extends Record<string, FeatureSettings>,
+>({
   settings,
   options,
   toggleFeature,
@@ -28,7 +30,10 @@ export const DisplayOptions = <TSettings extends Record<string, FeatureSettings>
         const featureSettings = settings[option.key];
 
         return (
-          <div key={option.key as string} className="flex justify-between gap-x-2">
+          <div
+            key={option.key as string}
+            className="flex justify-between gap-x-2"
+          >
             <div className="flex items-center gap-x-2">
               <Switch
                 id={`${option.key as string}-toggle`}
@@ -48,7 +53,10 @@ export const DisplayOptions = <TSettings extends Record<string, FeatureSettings>
                 <Label>Qualy</Label>
               </div>
               <div className="flex items-center justify-center gap-x-2">
-                <Checkbox checked={featureSettings.displayIn.practice} disabled />
+                <Checkbox
+                  checked={featureSettings.displayIn.practice}
+                  disabled
+                />
                 <Label>Practice</Label>
               </div>
             </div>
