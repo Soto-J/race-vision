@@ -9,3 +9,4 @@ npm run tauri dev
 cd /desktop-app
 npm run dev
 ```
+

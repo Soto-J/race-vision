@@ -15,6 +15,12 @@ pub enum DomainError {
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
 
+    #[error("sqlite error: {0}")]
+    Sqlite(#[from] sqlx::Error),
+
+    #[error("migration error: {0}")]
+    Migration(#[from] sqlx::migrate::MigrateError),
+
     #[error("global shortcut error: {0}")]
     Shortcut(#[from] tauri_plugin_global_shortcut::Error),
 }

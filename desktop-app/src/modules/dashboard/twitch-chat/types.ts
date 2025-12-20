@@ -1,7 +1,9 @@
 import { z } from "zod";
 
+import { DefaultBoolean } from "../common-schemas";
+
 export const TwitchChatSettingsSchema = z.object({
-  isActive: z.boolean(),
+  // isActive: DefaultBoolean,
   //   general: GeneralSchema,
   //   content: ConetentSchama,
   //   header: HeaderSchema,

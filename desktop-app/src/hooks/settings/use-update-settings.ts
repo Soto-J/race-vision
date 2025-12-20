@@ -1,49 +1,39 @@
-import { z } from "zod";
+// import { z } from "zod";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { settingsKeys } from "./use-settings-query";
+// import { useMutation } from "@tanstack/react-query";
 
-import { LazyStore } from "@tauri-apps/plugin-store";
+// import { settingsStore } from "@/lib/tauri-store";
+// import { settingsKeys } from "@/lib/constants/query-keys";
+// import { queryClient } from "@/routes/__root";
 
-const settingsStore = new LazyStore("settings.json");
+// export function useUpdateSettings<T>(page: string, schema: z.ZodSchema<T>) {
+//   return useMutation({
+//     mutationFn: async (next: T) => {
+//       // Validate before saving
+//       schema.parse(next);
 
-export function useUpdateSettings<T>(page: string, schema: z.ZodSchema<T>) {
-  const queryClient = useQueryClient();
+//       await settingsStore.set(`pages.${page}`, next);
 
-  return useMutation({
-    mutationFn: async (next: T) => {
-      // Validate before saving
-      schema.parse(next);
+//       return next;
+//     },
 
-      await settingsStore.set(`pages.${page}`, next);
-      await settingsStore.save();
+//     // Optimistic update
+//     onMutate: async (next) => {
+//       await queryClient.cancelQueries({
+//         queryKey: settingsKeys.page(page),
+//       });
 
-      return next;
-    },
+//       const prev = queryClient.getQueryData<T>(settingsKeys.page(page));
 
-    // Optimistic update
-    onMutate: async (next) => {
-      await queryClient.cancelQueries({
-        queryKey: settingsKeys.page(page),
-      });
+//       queryClient.setQueryData(settingsKeys.page(page), next);
 
-      const prev = queryClient.getQueryData<T>(settingsKeys.page(page));
+//       return { prev };
+//     },
 
-      queryClient.setQueryData(settingsKeys.page(page), next);
-
-      return { prev };
-    },
-
-    onError: (_err, _next, ctx) => {
-      if (ctx?.prev) {
-        queryClient.setQueryData(settingsKeys.page(page), ctx.prev);
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: settingsKeys.page(page),
-      });
-    },
-  });
-}
+//     onError: (_err, _next, ctx) => {
+//       if (ctx?.prev) {
+//         queryClient.setQueryData(settingsKeys.page(page), ctx.prev);
+//       }
+//     },
+//   });
+// }

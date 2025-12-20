@@ -78,3 +78,27 @@ export function toggleGeneralFeature(
 }
 
 export type { FeatureTab, FeatureKey, GeneralFeatureKey };
+
+// -------------
+
+// type TabKey = "general" | "content" | "header" | "footer";
+// type PageKey = keyof PageSettings;
+
+// export function toggleFeature2(
+//   settings: InputsSettings,
+//   tab: TabKey,
+//   feature: FeatureKey<T>,
+// ): InputsSettings {
+//   const currentFeature = settings[tab][feature] as { isActive: boolean };
+
+//   return {
+//     ...settings,
+//     [tab]: {
+//       ...settings[tab],
+//       [feature]: {
+//         ...currentFeature,
+//         isActive: !currentFeature.isActive,
+//       },
+//     },
+//   };
+// }

@@ -12,29 +12,23 @@
 //!
 //! Window geometry is expressed in logical units to ensure proper DPI scaling
 //! across different displays.
+
 use crate::{
     domain::DomainError,
-    utils::constants::{
-        widget::{WidgetConfig, WIDGET_DEFINITIONS},
-        DEFAULT_DASHBOARD_HEIGHT, DEFAULT_DASHBOARD_WIDTH, WIDGET_LAYOUTS_KEY,
-    },
+    utils::constants::{DEFAULT_DASHBOARD_HEIGHT, DEFAULT_DASHBOARD_WIDTH},
 };
 
-use tauri::{App, LogicalPosition, LogicalSize, WebviewWindow};
-use tauri_plugin_store::StoreExt;
+use sqlx::{Row, SqlitePool};
+use tauri::{App, LogicalPosition, LogicalSize, Manager, WebviewWindow};
 
-/// Registers all application webviews.
+/// Registers the main dashboard webview window.
 ///
-/// This function creates:
-/// - The main dashboard window
-/// - All widget overlay windows
-///
-/// Widget windows are restored from persisted layout state when available.
-/// If no saved layout exists for a widget, its default definition is used.
+/// This function creates the main dashboard window with default dimensions.
+/// Widget overlay windows are registered separately via [`register_widget_webviews`].
 ///
 /// # Errors
-/// Returns a [`DomainError`] if any webview fails to be created or configured.
-pub fn register_webviews(app: &App) -> Result<(), DomainError> {
+/// Returns a [`DomainError`] if the dashboard webview fails to be created or configured.
+pub fn register_dashboard(app: &App) -> Result<(), DomainError> {
     tracing::info!(phase = "startup", "registering webviews");
 
     let dashboard_url = tauri::WebviewUrl::App("index.html#/dashboard".into());
@@ -53,55 +47,48 @@ pub fn register_webviews(app: &App) -> Result<(), DomainError> {
             DomainError::Tauri(format!("failed to set size for dashboard webview: {e}"))
         })?;
 
-    load_widget_webviews(app)?;
-
     Ok(())
 }
 
-/// Loads and configures all widget webviews.
+/// Loads and configures all widget webviews from the database.
 ///
-/// For each widget definition:
-/// - Attempts to restore the widget's layout from persistent storage
-/// - Falls back to the widget's default layout if no saved state exists
-/// - Applies overlay-style window configuration
+/// This async function queries the SQLite database for all saved widget layouts
+/// and creates corresponding webview windows with their persisted geometry.
+/// Each widget is configured as an overlay-style window.
+///
+/// Only widgets that exist in the database will be created. No default widgets
+/// are created if the database is empty.
 ///
 /// # Errors
-/// Returns a [`DomainError`] if layout restoration or window configuration fails.
-fn load_widget_webviews(app: &App) -> Result<(), DomainError> {
+/// Returns a [`DomainError`] if database queries fail or window configuration fails.
+pub async fn register_widget_webviews(app: &App) -> Result<(), DomainError> {
     tracing::info!("loading widget webviews");
 
-    let tauri_store = app
-        .store(WIDGET_LAYOUTS_KEY)
-        .map_err(|e| DomainError::Tauri(format!("{e:?}")))?;
+    let sqlite_pool = app.state::<SqlitePool>();
 
-    for widget in WIDGET_DEFINITIONS.iter() {
-        let webview_url =
-            tauri::WebviewUrl::App(format!("index.html#/widget/{}", widget.label).into());
+    let widget_layouts = sqlx::query("SELECT * FROM webview_layout")
+        .fetch_all(&*sqlite_pool)
+        .await?;
 
-        let webview = tauri::WebviewWindowBuilder::new(app, widget.label, webview_url)
-            .title(capitalize_widget(widget.label))
-            .build()
-            .map_err(|e| DomainError::Tauri(format!("failed to load {}: {}", widget.label, e)))?;
+    for widget in widget_layouts {
+        let name = widget.get("name");
+        let x = widget.get("x");
+        let y = widget.get("y");
+        let width = widget.get("width");
+        let height = widget.get("height");
+        tracing::info!("restoring {} → {}x{} @ ({}, {})", name, width, height, x, y);
 
-        match tauri_store.get(widget.label) {
-            Some(value) => match serde_json::from_value(value) {
-                Ok(config) => {
-                    tracing::info!("using saved config");
-                    configure_webview(webview, config)?;
-                }
-                Err(e) => {
-                    tracing::warn!("failed to parse layout for {}: {e}", webview.label());
-                    configure_webview(webview, widget.into())?;
-                }
-            },
-            None => {
-                tracing::info!("No saved layout for {}, using defaults", widget.label);
-                configure_webview(webview, widget.into())?
-            }
-        };
+        let webview = tauri::WebviewWindowBuilder::new(
+            app,
+            name,
+            tauri::WebviewUrl::App(format!("index.html#/widget/{}", name).into()),
+        )
+        .title(capitalize(name))
+        .build()
+        .map_err(|e| DomainError::Tauri(format!("failed to load {}: {}", name, e)))?;
+
+        configure_webview(webview, x, y, width, height)?;
     }
-
-    tauri_store.close_resource();
 
     Ok(())
 }
@@ -109,23 +96,34 @@ fn load_widget_webviews(app: &App) -> Result<(), DomainError> {
 /// Applies overlay window configuration to a widget webview.
 ///
 /// This function:
-/// - Sets the window size and position
+/// - Sets the window size and position from provided coordinates
 /// - Disables window decorations
 /// - Removes the window from the taskbar
 /// - Forces the window to remain always on top
 ///
 /// All geometry is applied using logical units.
 ///
+/// # Parameters
+/// - `webview`: The webview window to configure
+/// - `x`, `y`: Logical position coordinates
+/// - `width`, `height`: Logical dimensions
+///
 /// # Errors
 /// Returns a [`DomainError`] if any window configuration step fails.
-fn configure_webview(webview: WebviewWindow, config: WidgetConfig) -> Result<(), DomainError> {
+fn configure_webview(
+    webview: WebviewWindow,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+) -> Result<(), DomainError> {
     webview
-        .set_size(LogicalSize::new(config.width, config.height))
+        .set_size(LogicalSize::new(width, height))
         .map_err(|e| {
             DomainError::Tauri(format!("failed to set size for {}: {e}", webview.label()))
         })?;
     webview
-        .set_position(LogicalPosition::new(config.x, config.y))
+        .set_position(LogicalPosition::new(x, y))
         .map_err(|e| {
             DomainError::Tauri(format!(
                 "failed to set position for {}: {e}",
@@ -155,7 +153,7 @@ fn configure_webview(webview: WebviewWindow, config: WidgetConfig) -> Result<(),
     Ok(())
 }
 
-fn capitalize_widget(s: &str) -> String {
+fn capitalize(s: &str) -> String {
     let mut c = s.chars();
 
     match c.next() {

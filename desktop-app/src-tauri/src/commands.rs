@@ -1,6 +1,9 @@
+use crate::domain::Settings;
+
 #[cfg(not(target_os = "windows"))]
 use crate::domain::telemetry::{IracingProvider, TelemetryValue};
 
+use sqlx::SqlitePool;
 use std::sync::Arc;
 use tauri::State;
 use tokio::sync::RwLock;
@@ -29,7 +32,11 @@ pub async fn read_value(
     state.read_value(&key).await.map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+// #[tauri::command]
+// pub async fn get_settings(state: State<'_, SqlitePool>) -> Result<Vec<Settings>, String> {
+//     sqlx::query_as!(Settings, "SELECT * FROM settings;")
+//         .fetch_all(&*state)
+//         .await;
+
+//     todo!();
+// }

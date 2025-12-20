@@ -10,11 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [],
-    "security": {
-      "csp": null,
-      "capabilities": ["main-capability"]
-    }
+    "windows": []
   },
   "bundle": {
     "active": true,
