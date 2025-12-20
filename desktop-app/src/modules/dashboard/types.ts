@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import {
+  DefaultBoolean,
+  GeneralSchema,
+  ActiveAndDisplayInSchema,
+} from "./common-schemas";
 import { InputsSettingsSchema } from "./inputs/types";
 import { FuelCalculatorSettingsSchema } from "./fuel-calculator/types";
 import { SpotterSettingsSchema } from "./spotter/types";
@@ -12,8 +17,6 @@ import { DeltaBarSettingsSchema } from "./delta-bar/types";
 import { TrackMapSettingsSchema } from "./track-map/types";
 import { TwitchChatSettingsSchema } from "./twitch-chat/types";
 import { RelativeSettingsSchema } from "./relative/types";
-
-export const DefaultBoolean = z.boolean().default(false);
 
 export const GeneralSettingsSchema = z.object({
   useMetricSystem: DefaultBoolean,
@@ -47,26 +50,6 @@ export const AppSettingsSchema = z.object({
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
 
 export const DEFAULT_SETTINGS = AppSettingsSchema.parse({});
-
-// ****** Schemas shared with folder ************
-export const GeneralSchema = z.object({
-  showOverlayWhen: z.object({
-    inCar: DefaultBoolean,
-    outOfCar: DefaultBoolean,
-    spotting: DefaultBoolean,
-    inGarage: DefaultBoolean,
-  }),
-  showFlags: z.boolean().default(false),
-});
-
-export const ActiveAndDisplayInSchema = z.object({
-  isActive: DefaultBoolean,
-  displayIn: z.object({
-    race: DefaultBoolean,
-    qualy: DefaultBoolean,
-    practice: DefaultBoolean,
-  }),
-});
 
 export const PAGE_SETTINGS = {
   general: {

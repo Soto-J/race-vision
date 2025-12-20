@@ -4,7 +4,7 @@ import {
   ActiveAndDisplayInSchema,
   DefaultBoolean,
   GeneralSchema,
-} from "@/modules/dashboard/types";
+} from "@/modules/dashboard/common-schemas";
 
 export const ContentSchema = z.object({
   revLights: ActiveAndDisplayInSchema,

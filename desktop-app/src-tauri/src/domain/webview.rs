@@ -25,8 +25,8 @@ use tauri::{LogicalPosition, LogicalSize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebviewDefinition {
     pub label: Cow<'static, str>,
-    pub x_axis: f64,
-    pub y_axis: f64,
+    pub x: f64,
+    pub y: f64,
     pub width: f64,
     pub height: f64,
     // pub always_on_top: bool,
@@ -37,22 +37,22 @@ pub struct WebviewDefinition {
 impl WebviewDefinition {
     pub fn new(
         label: impl Into<Cow<'static, str>>,
-        x_axis: f64,
-        y_axis: f64,
+        x: f64,
+        y: f64,
         width: f64,
         height: f64,
     ) -> Self {
         Self {
             label: label.into(),
-            x_axis,
-            y_axis,
+            x,
+            y,
             width,
             height,
         }
     }
 
     pub fn logical_position(&self) -> LogicalPosition<f64> {
-        LogicalPosition::new(self.x_axis, self.y_axis)
+        LogicalPosition::new(self.x, self.y)
     }
 
     pub fn logical_size(&self) -> LogicalSize<f64> {
@@ -62,17 +62,17 @@ impl WebviewDefinition {
 
 // #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 // pub struct WidgetConfig {
-//     pub x_axis: f64,
-//     pub y_axis: f64,
+//     pub x: f64,
+//     pub y: f64,
 //     pub width: f64,
 //     pub height: f64,
 // }
 
 // impl WidgetConfig {
-//     pub fn new(x_axis: f64, y_axis: f64, width: f64, height: f64) -> Self {
+//     pub fn new(x: f64, y: f64, width: f64, height: f64) -> Self {
 //         Self {
-//             x_axis,
-//             y_axis,
+//             x,
+//             y,
 //             width,
 //             height,
 //         }
@@ -82,8 +82,8 @@ impl WebviewDefinition {
 // impl From<&WidgetDefinition> for WidgetConfig {
 //     fn from(def: &WidgetDefinition) -> Self {
 //         Self {
-//             x_axis: def.position.x,
-//             y_axis: def.position.y,
+//             x: def.position.x,
+//             y: def.position.y,
 //             width: def.size.width,
 //             height: def.size.height,
 //         }

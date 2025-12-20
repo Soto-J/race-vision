@@ -72,8 +72,8 @@ pub async fn register_widget_webviews(app: &App) -> Result<(), DomainError> {
 
     for widget in widget_layouts {
         let name = widget.get("name");
-        let x = widget.get("x_axis");
-        let y = widget.get("y_axis");
+        let x = widget.get("x");
+        let y = widget.get("y");
         let width = widget.get("width");
         let height = widget.get("height");
         tracing::info!("restoring {} → {}x{} @ ({}, {})", name, width, height, x, y);

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import type { InputsSettings } from "../types";
 
-import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
+// import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
 import {
   toggleFeature,
   toggleGeneralFeature,
@@ -27,18 +27,18 @@ import {
 
 interface InputsViewProps {
   title: string;
-  settings: InputsSettings;
+  settings: any;
   schema: z.ZodSchema;
 }
 
 export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
-  const updateSettings = useUpdateSettings(title, schema);
+  // const updateSettings = useUpdateSettings(title, schema);
 
   const onToggleActive = () => {
-    updateSettings.mutate({
-      ...settings,
-      isActive: !settings.isActive,
-    });
+    // updateSettings.mutate({
+    //   ...settings,
+    //   isActive: !settings.isActive,
+    // });
   };
 
   return (
@@ -72,28 +72,28 @@ export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
           </TabsList>
 
           <TabsContent value="general">
-            <GeneralTab
+            {/* <GeneralTab
               settings={settings.general}
               updateSettings={updateSettings}
-            />
+            /> */}
           </TabsContent>
           <TabsContent value="content">
-            <ContentTab
+            {/* <ContentTab
               settings={settings.content}
               updateSettings={updateSettings}
-            />
+            /> */}
           </TabsContent>
           <TabsContent value="header">
-            <HeaderTab
+            {/* <HeaderTab
               settings={settings.header}
               updateSettings={updateSettings}
-            />
+            /> */}
           </TabsContent>
           <TabsContent value="footer">
-            <FooterTab
+            {/* <FooterTab
               settings={settings.footer}
               updateSettings={updateSettings}
-            />
+            /> */}
           </TabsContent>
         </Tabs>
       </Activity>

@@ -5,4 +5,9 @@ pub struct Settings {}
 
 pub struct Page {}
 
-pub struct tab {}
+pub enum Tab {
+    General,
+    Header,
+    Content,
+    Footer,
+}

@@ -13,7 +13,7 @@ use domain::mock_data::telemetry::IracingProvider;
 #[cfg(target_os = "windows")]
 use telemetry_core::IracingProvider;
 
-use crate::commands::get_settings;
+// use crate::commands::get_settings;
 
 mod background;
 mod commands;
@@ -22,7 +22,7 @@ mod shortcuts;
 pub mod utils;
 mod webviews;
 
-pub const SQLITE_URL: &str = "sqlite:./db/app.db";
+pub const SQLITE_URL: &str = "sqlite:db/app.db";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), DomainError> {
@@ -42,9 +42,13 @@ pub fn run() -> Result<(), DomainError> {
         .setup(|app| configure_setup(app))
         .invoke_handler(tauri::generate_handler![
             read_value,
-            get_settings,
+            // get_settings,
             set_watched_vars,
         ])
+        .on_window_event(|window, event| {
+            todo!();
+            // presist settings on close
+        })
         .run(tauri::generate_context!())
         .map_err(|e| DomainError::Tauri(format!("{e}")))?;
 
@@ -86,7 +90,7 @@ async fn async_startup(app: &App) -> Result<(), DomainError> {
 pub async fn get_sqlite_pool() -> SqlitePool {
     SqlitePoolOptions::new()
         .max_connections(5)
-        .connect("sqlite:db/app.db")
+        .connect(SQLITE_URL)
         .await
         .expect("failed to create sqlite pool")
 }

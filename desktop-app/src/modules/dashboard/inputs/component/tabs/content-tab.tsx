@@ -1,25 +1,25 @@
 import { DisplayOptions } from "@/modules/dashboard/components/display-options";
 import type { FeatureKey } from "@/hooks/settings/helper";
 import type { InputsSettings } from "../../types";
-import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
+// import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
 
 interface ContentTabProps {
   settings: InputsSettings["content"];
-  updateSettings: ReturnType<typeof useUpdateSettings>;
+  updateSettings: any;
 }
 
 export const ContentTab = ({ settings, updateSettings }: ContentTabProps) => {
   const toggleFeature = (feature: FeatureKey<"content">) => {
-    updateSettings.mutate((prev) => ({
-      ...prev,
-      content: {
-        ...prev.content,
-        [feature]: {
-          ...prev.content[feature],
-          isActive: !prev.content[feature].isActive,
-        },
-      },
-    }));
+    // updateSettings.mutate((prev) => ({
+      // ...prev,
+      // content: {
+      //   ...prev.content,
+      //   [feature]: {
+      //     ...prev.content[feature],
+      //     isActive: !prev.content[feature].isActive,
+      //   },
+      // },
+    // }));
   };
 
   const options = [

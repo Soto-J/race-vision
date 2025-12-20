@@ -32,11 +32,11 @@ pub async fn read_value(
     state.read_value(&key).await.map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub async fn get_settings(state: State<'_, SqlitePool>) -> Result<Vec<Settings>, String> {
-    sqlx::query_as!(Settings, "SELECT * FROM settings;")
-        .fetch_all(&*state)
-        .await;
+// #[tauri::command]
+// pub async fn get_settings(state: State<'_, SqlitePool>) -> Result<Vec<Settings>, String> {
+//     sqlx::query_as!(Settings, "SELECT * FROM settings;")
+//         .fetch_all(&*state)
+//         .await;
 
-    todo!();
-}
+//     todo!();
+// }

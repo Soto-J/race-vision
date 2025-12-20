@@ -3,11 +3,11 @@
 //! Provides application-wide shortcuts such as edit-mode toggling.
 use crate::{
     domain::{DomainError, WebviewDefinition},
-    utils::constants::{widget::WIDGET_DEFINITIONS, TOGGLE_EDIT_MODE, WIDGET_LAYOUTS_KEY},
+    utils::constants::{widget::WIDGET_DEFINITIONS, TOGGLE_EDIT_MODE},
 };
 
 use sqlx::SqlitePool;
-use tauri::{window, App, AppHandle, Emitter, Manager};
+use tauri::{App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 use tokio::sync::RwLock;
@@ -99,16 +99,16 @@ async fn exit_edit_mode_and_save(app: &AppHandle) -> Result<(), DomainError> {
                     UPDATE
                         webview_layout
                     SET
-                        x_axis = ?,
-                        y_axis = ?,
+                        x = ?,
+                        y = ?,
                         width  = ?,
                         height = ?
                     WHERE
                         name = ?
                     "#,
                 )
-                .bind(config.x_axis)
-                .bind(config.y_axis)
+                .bind(config.x)
+                .bind(config.y)
                 .bind(config.width)
                 .bind(config.height)
                 .bind(config.label)
