@@ -2,14 +2,12 @@
 //!
 //! Provides application-wide shortcuts such as edit-mode toggling.
 use crate::{
-    domain::DomainError,
-    utils::constants::{
-        widget::{WidgetConfig, WIDGET_DEFINITIONS},
-        TOGGLE_EDIT_MODE, WIDGET_LAYOUTS_KEY,
-    },
+    domain::{DomainError, WebviewDefinition},
+    utils::constants::{widget::WIDGET_DEFINITIONS, TOGGLE_EDIT_MODE, WIDGET_LAYOUTS_KEY},
 };
 
-use tauri::{App, AppHandle, Emitter, Manager};
+use sqlx::SqlitePool;
+use tauri::{window, App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 use tokio::sync::RwLock;
@@ -51,10 +49,9 @@ pub fn register_shortcuts(app: &App) -> Result<(), DomainError> {
                     // Entering edit mode → enable pointer events
                     enter_edit_mode(app);
                 } else {
-                    // Update widgets + persist only when leaving edit mode
-                    if let Err(e) = exit_edit_mode_and_save(app) {
+                    if let Err(e) = tauri::async_runtime::block_on(exit_edit_mode_and_save(app)) {
                         tracing::error!("Failed to exit edit mode cleanly: {e}");
-                    }
+                    };
                 }
             }
         })?;
@@ -64,7 +61,7 @@ pub fn register_shortcuts(app: &App) -> Result<(), DomainError> {
 
 fn enter_edit_mode(app: &AppHandle) {
     for widget in WIDGET_DEFINITIONS.iter() {
-        if let Some(window) = app.get_webview_window(widget.label) {
+        if let Some(window) = app.get_webview_window(widget.label.as_ref()) {
             if let Err(e) = window.set_ignore_cursor_events(false) {
                 tracing::warn!("Failed to update cursor events for {}: {e}", widget.label);
             }
@@ -72,39 +69,54 @@ fn enter_edit_mode(app: &AppHandle) {
     }
 }
 
-fn exit_edit_mode_and_save(app: &AppHandle) -> Result<(), DomainError> {
-    todo!();
+async fn exit_edit_mode_and_save(app: &AppHandle) -> Result<(), DomainError> {
+    let sqlite_pool = app.state::<SqlitePool>();
 
-    // let tauri_store = app
-    //     .store(WIDGET_LAYOUTS_KEY)
-    //     .map_err(|e| DomainError::Tauri(format!("{e}")))?;
+    for widget in WIDGET_DEFINITIONS.iter() {
+        if let Some(window) = app.get_webview_window(widget.label.as_ref()) {
+            if let Err(e) = window.set_ignore_cursor_events(true) {
+                tracing::warn!("Failed to update cursor events for {}: {e}", widget.label);
+            }
 
-    // for widget in WIDGET_DEFINITIONS.iter() {
-    //     if let Some(window) = app.get_webview_window(widget.label) {
-    //         if let Err(e) = window.set_ignore_cursor_events(true) {
-    //             tracing::warn!("Failed to update cursor events for {}: {e}", widget.label);
-    //         }
+            if let (Ok(pos), Ok(size), Ok(scale)) = (
+                window.outer_position(),
+                window.outer_size(),
+                window.scale_factor(),
+            ) {
+                let pos = pos.to_logical(scale);
+                let size = size.to_logical(scale);
 
-    //         if let (Ok(pos), Ok(size), Ok(scale)) = (
-    //             window.outer_position(),
-    //             window.outer_size(),
-    //             window.scale_factor(),
-    //         ) {
-    //             let pos = pos.to_logical(scale);
-    //             let size = size.to_logical(scale);
+                let config = WebviewDefinition::new(
+                    widget.label.as_ref(),
+                    pos.x,
+                    pos.y,
+                    size.width,
+                    size.height,
+                );
 
-    //             let config = WidgetConfig::new(pos.x, pos.y, size.width, size.height);
-
-    //             if let Ok(value) = serde_json::to_value(config) {
-    //                 tauri_store.set(widget.label, value);
-    //             }
-    //         }
-    //     }
-    // }
-
-    // if let Err(e) = tauri_store.save() {
-    //     tracing::error!("Failed to persist widget layouts: {e}");
-    // }
+                sqlx::query(
+                    r#"
+                    UPDATE
+                        webview_layout
+                    SET
+                        x_axis = ?,
+                        y_axis = ?,
+                        width  = ?,
+                        height = ?
+                    WHERE
+                        name = ?
+                    "#,
+                )
+                .bind(config.x_axis)
+                .bind(config.y_axis)
+                .bind(config.width)
+                .bind(config.height)
+                .bind(config.label)
+                .execute(&*sqlite_pool)
+                .await?;
+            }
+        }
+    }
 
     Ok(())
 }

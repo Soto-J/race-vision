@@ -1,5 +1,5 @@
 use background::register_background_job;
-use commands::{greet, read_value, set_watched_vars};
+use commands::{read_value, set_watched_vars};
 use domain::DomainError;
 use shortcuts::register_shortcuts;
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
@@ -12,6 +12,8 @@ use webviews::{register_dashboard, register_widget_webviews};
 use domain::mock_data::telemetry::IracingProvider;
 #[cfg(target_os = "windows")]
 use telemetry_core::IracingProvider;
+
+use crate::commands::get_settings;
 
 mod background;
 mod commands;
@@ -39,9 +41,9 @@ pub fn run() -> Result<(), DomainError> {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| configure_setup(app))
         .invoke_handler(tauri::generate_handler![
-            greet,
+            read_value,
+            get_settings,
             set_watched_vars,
-            read_value
         ])
         .run(tauri::generate_context!())
         .map_err(|e| DomainError::Tauri(format!("{e}")))?;
@@ -71,7 +73,7 @@ fn configure_setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn async_startup(app: &App) -> Result<(), DomainError> {
-    let sqlite_pool = get_sqlite_pool(app).await;
+    let sqlite_pool = get_sqlite_pool().await;
     sqlx::migrate!().run(&sqlite_pool).await?;
 
     app.manage(sqlite_pool);
@@ -81,16 +83,10 @@ async fn async_startup(app: &App) -> Result<(), DomainError> {
     Ok(())
 }
 
-pub async fn get_sqlite_pool(app: &App) -> SqlitePool {
-    let app_dir = app.path().app_data_dir().unwrap();
-    std::fs::create_dir_all(&app_dir).expect("failed to create directory");
-
-    let db_path = app_dir.join("app.db");
-    let db_url = format!("sqlite:{}", db_path.display());
-
+pub async fn get_sqlite_pool() -> SqlitePool {
     SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&db_url)
+        .connect("sqlite:db/app.db")
         .await
         .expect("failed to create sqlite pool")
 }
