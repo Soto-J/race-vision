@@ -1,34 +1,13 @@
-import { Activity } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
+import { FlatMapView } from "@/modules/dashboard/flat-map/view";
 
-import { PageHeader } from "@/modules/dashboard/components/page-header";
-
-const PAGE_TITLE = "flat-map";
+const PAGE_TITLE = "flat-map" as const;
 
 export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: Flatmap,
 });
 
 export default function Flatmap() {
-  const { pageIsActive, togglePage } = useTelemetryStore();
-
-  const isActive = pageIsActive[PAGE_TITLE] ?? 0;
-
-  return (
-    <div>
-      <PageHeader
-        id={PAGE_TITLE}
-        title={PAGE_TITLE.replace("-", " ")}
-        description="Show drivers trackposition in a horizontal bar."
-        pageIsActive={isActive}
-        togglePage={togglePage}
-      />
-
-      <Activity mode={isActive ? "visible" : "hidden"}>
-        <div></div>
-      </Activity>
-    </div>
-  );
+  return <FlatMapView title={PAGE_TITLE} />;
 }

@@ -1,6 +1,23 @@
+import { Activity } from "react";
 import { cn } from "@/lib/utils";
-import { Activity, useCallback } from "react";
-import { PageHeader } from "../../components/page-header";
+import { z } from "zod";
+
+import type { InputsSettings } from "../types";
+
+import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
+import {
+  toggleFeature,
+  toggleGeneralFeature,
+  type FeatureKey,
+  type GeneralFeatureKey,
+} from "@/hooks/settings/helper";
+
+import { PageHeader } from "@/modules/dashboard/components/page-header";
+import { GeneralTab } from "@/modules/dashboard/inputs/component/tabs/general-tab";
+import { ContentTab } from "@/modules/dashboard/inputs/component/tabs/content-tab";
+import { HeaderTab } from "@/modules/dashboard/inputs/component/tabs/header-tab";
+import { FooterTab } from "@/modules/dashboard/inputs/component/tabs/footer-tab";
+
 import {
   Tabs,
   TabsContent,
@@ -8,30 +25,21 @@ import {
   TabsTrigger,
 } from "@/modules/components/ui/tabs";
 
-import { TelemetryVar } from "@/lib/constants/telemetry-vars";
-import { useTelemetryStore } from "@/hooks/store/use-telemetry-store";
-
-import { GeneralTab } from "../component/tabs/general-tab";
-import { ContentTab } from "../component/tabs/content-tab";
-import { HeaderTab } from "../component/tabs/header-tab";
-import { FooterTab } from "../component/tabs/footer-tab";
-
-const INPUTS_TABS = ["general", "content", "header", "footer"] as const;
-
 interface InputsViewProps {
   title: string;
+  settings: InputsSettings;
+  schema: z.ZodSchema;
 }
 
-export const InputsView = ({ title }: InputsViewProps) => {
-  const { pageIsActive, togglePage, toggleVar } = useTelemetryStore();
+export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
+  const updateSettings = useUpdateSettings(title, schema);
 
-  const isActive = pageIsActive[title] ?? false;
-
-  const toggleInputsVar = useCallback(
-    (varName: TelemetryVar, enabled: boolean) =>
-      toggleVar(title, varName, enabled),
-    [toggleVar],
-  );
+  const onToggleActive = () => {
+    updateSettings.mutate({
+      ...settings,
+      isActive: !settings.isActive,
+    });
+  };
 
   return (
     <div>
@@ -39,17 +47,17 @@ export const InputsView = ({ title }: InputsViewProps) => {
         id={title}
         title={title}
         description="Show your inputs in this window, you can even make this visible in a graph."
-        pageIsActive={isActive}
-        togglePage={togglePage}
+        pageIsActive={settings.isActive}
+        togglePage={onToggleActive}
       />
 
-      <Activity mode={isActive ? "visible" : "hidden"}>
+      <Activity mode={settings.isActive ? "visible" : "hidden"}>
         <Tabs>
           <TabsList
             defaultValue="general"
             className="bg-muted mx-auto mb-4 flex gap-2 rounded-full p-1"
           >
-            {INPUTS_TABS.map((tab) => (
+            {["general", "content", "header", "footer"].map((tab) => (
               <TabsTrigger
                 key={tab}
                 value={tab}
@@ -64,16 +72,28 @@ export const InputsView = ({ title }: InputsViewProps) => {
           </TabsList>
 
           <TabsContent value="general">
-            <GeneralTab />
+            <GeneralTab
+              settings={settings.general}
+              updateSettings={updateSettings}
+            />
           </TabsContent>
           <TabsContent value="content">
-            <ContentTab />
+            <ContentTab
+              settings={settings.content}
+              updateSettings={updateSettings}
+            />
           </TabsContent>
           <TabsContent value="header">
-            <HeaderTab toggleVar={toggleInputsVar} />
+            <HeaderTab
+              settings={settings.header}
+              updateSettings={updateSettings}
+            />
           </TabsContent>
           <TabsContent value="footer">
-            <FooterTab toggleVar={toggleInputsVar} />
+            <FooterTab
+              settings={settings.footer}
+              updateSettings={updateSettings}
+            />
           </TabsContent>
         </Tabs>
       </Activity>

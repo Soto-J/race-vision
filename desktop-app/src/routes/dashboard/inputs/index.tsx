@@ -1,21 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { TelemetryVar, TelemetryVars } from "@/lib/constants/telemetry-vars";
-
+import { InputsSettingsSchema } from "@/modules/dashboard/inputs/types";
 import { InputsView } from "@/modules/dashboard/inputs/view";
+import { usePageSettings } from "@/hooks/settings/use-page-settings";
 
-const INPUT_VARS: TelemetryVar[] = [
-  TelemetryVars.THROTTLE,
-  TelemetryVars.BRAKE,
-  TelemetryVars.CLUTCH,
-];
-
-const PAGE_TITLE = "inputs";
+const PAGE_TITLE = "inputs" as const;
 
 export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
   component: Inputs,
 });
 
 export default function Inputs() {
-  return <InputsView title={PAGE_TITLE} />;
+  const {
+    data: settings,
+    isLoading,
+    error,
+  } = usePageSettings(PAGE_TITLE, InputsSettingsSchema, {});
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (error || !settings) {
+    return <div>Error</div>;
+  }
+
+  return (
+    <InputsView
+      title={PAGE_TITLE}
+      settings={settings}
+      schema={InputsSettingsSchema}
+    />
+  );
 }
