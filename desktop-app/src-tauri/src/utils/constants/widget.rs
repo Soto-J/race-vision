@@ -5,7 +5,7 @@ use tauri::{LogicalPosition, LogicalSize};
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WidgetDefinition {
     pub label: &'static str,
-    
+
     pub size: Size,
     pub position: Position,
     // pub always_on_top: bool,

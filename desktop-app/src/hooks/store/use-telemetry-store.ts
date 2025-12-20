@@ -3,9 +3,12 @@ import { immer } from "zustand/middleware/immer";
 
 import { invoke } from "@tauri-apps/api/core";
 
-import { type TelemetryValue, TelemetryValueSchema } from "@/lib/types";
+import {
+  type TelemetryValue,
+  type TelemetrySnapshot,
+  TelemetryValueSchema,
+} from "@/lib/types";
 import type { TelemetryVar } from "@/lib/constants/telemetry-vars";
-import type { TelemetrySnapshot } from "@/hooks/listeners/use-telemetry-listener";
 
 type TelemetryStore = {
   data: Record<string, TelemetryValue>;
@@ -78,7 +81,7 @@ export const useTelemetryStore = create<TelemetryStore>()(
           if (!vars.includes(varName)) {
             vars.push(varName);
           }
-          
+
           state.pageVars[pageId] = vars;
         } else {
           state.pageVars[pageId] = vars.filter((v) => v !== varName);
