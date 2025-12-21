@@ -2,7 +2,7 @@ use background::register_background_job;
 use commands::{read_value, set_watched_vars};
 use domain::DomainError;
 use shortcuts::register_shortcuts;
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use sqlx::{migrate::Migrator, sqlite::SqlitePoolOptions, Sqlite, SqlitePool, Executor};
 use std::{env, sync::Arc};
 use tauri::{App, Manager};
 use tokio::sync::RwLock;
@@ -94,3 +94,4 @@ pub async fn get_sqlite_pool() -> SqlitePool {
         .await
         .expect("failed to create sqlite pool")
 }
+
