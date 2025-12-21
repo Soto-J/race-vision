@@ -1,8 +1,8 @@
 use background::register_background_job;
-use commands::{read_value, set_watched_vars};
-use domain::DomainError;
+use commands::{get_settings, read_value, set_watched_vars};
+use domain::{Database, DomainError};
 use shortcuts::register_shortcuts;
-use sqlx::{migrate::Migrator, sqlite::SqlitePoolOptions, Sqlite, SqlitePool, Executor};
+use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::{env, sync::Arc};
 use tauri::{App, Manager};
 use tokio::sync::RwLock;
@@ -12,8 +12,6 @@ use webviews::{register_dashboard, register_widget_webviews};
 use domain::mock_data::telemetry::IracingProvider;
 #[cfg(target_os = "windows")]
 use telemetry_core::IracingProvider;
-
-// use crate::commands::get_settings;
 
 mod background;
 mod commands;
@@ -42,13 +40,13 @@ pub fn run() -> Result<(), DomainError> {
         .setup(|app| configure_setup(app))
         .invoke_handler(tauri::generate_handler![
             read_value,
-            // get_settings,
+            get_settings,
             set_watched_vars,
         ])
-        .on_window_event(|window, event| {
-            todo!();
-            // presist settings on close
-        })
+        // .on_window_event(|window, event| {
+        // todo!();
+        // presist settings on close
+        // })
         .run(tauri::generate_context!())
         .map_err(|e| DomainError::Tauri(format!("{e}")))?;
 
@@ -80,7 +78,7 @@ async fn async_startup(app: &App) -> Result<(), DomainError> {
     let sqlite_pool = get_sqlite_pool().await;
     sqlx::migrate!().run(&sqlite_pool).await?;
 
-    app.manage(sqlite_pool);
+    app.manage(Database::new(sqlite_pool));
 
     register_widget_webviews(app).await?;
 
@@ -94,4 +92,3 @@ pub async fn get_sqlite_pool() -> SqlitePool {
         .await
         .expect("failed to create sqlite pool")
 }
-
