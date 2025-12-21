@@ -1,4 +1,4 @@
-use crate::domain::Settings;
+use crate::domain::PageSettings;
 
 #[cfg(not(target_os = "windows"))]
 use crate::domain::telemetry::{IracingProvider, TelemetryValue};
@@ -33,10 +33,12 @@ pub async fn read_value(
 }
 
 #[tauri::command]
-pub async fn get_settings(state: State<'_, SqlitePool>) -> Result<Vec<Settings>, String> {
-    sqlx::query_as!(Settings, "SELECT * FROM settings;")
-        .fetch_all(&*state)
-        .await
-
-    // todo!();
+pub async fn get_settings(state: State<'_, SqlitePool>) -> Result<Vec<PageSettings>, String> {
+    sqlx::query_as!(
+        PageSettings,
+        "SELECT page, setting, value FROM page_settings"
+    )
+    .fetch_all(&*state)
+    .await
+    .map_err(|e| e.to_string())
 }

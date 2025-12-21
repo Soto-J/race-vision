@@ -32,8 +32,6 @@ sqlx = { version = "0.8.6", features = [
     "migrate",
     "sqlite",
 ] }
-dotenvy = "0.15.7"
-
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
