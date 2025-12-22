@@ -1,10 +1,11 @@
 import { Activity } from "react";
 import { cn } from "@/lib/utils";
-import { z } from "zod";
 
-import type { InputsSettings } from "../types";
+import {
+  PageSettings,
+  usePageSettingsStore,
+} from "@/hooks/store/use-page-store";
 
-// import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
 import {
   toggleFeature,
   toggleGeneralFeature,
@@ -26,32 +27,25 @@ import {
 } from "@/modules/components/ui/tabs";
 
 interface InputsViewProps {
-  title: string;
-  settings: any;
-  schema: z.ZodSchema;
+  page: string;
+  settings: PageSettings;
 }
 
-export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
-  // const updateSettings = useUpdateSettings(title, schema);
+export const InputsView = ({ page, settings }: InputsViewProps) => {
+  const { togglePage } = usePageSettingsStore();
 
-  const onToggleActive = () => {
-    // updateSettings.mutate({
-    //   ...settings,
-    //   isActive: !settings.isActive,
-    // });
-  };
-
+  const pageIsActive = settings?.is_active ?? false;
   return (
     <div>
       <PageHeader
-        id={title}
-        title={title}
+        id={page}
+        page={page}
         description="Show your inputs in this window, you can even make this visible in a graph."
-        pageIsActive={settings.isActive}
-        togglePage={onToggleActive}
+        pageIsActive={pageIsActive}
+        onToggleActive={togglePage}
       />
 
-      <Activity mode={settings.isActive ? "visible" : "hidden"}>
+      <Activity mode={pageIsActive ? "visible" : "hidden"}>
         <Tabs>
           <TabsList
             defaultValue="general"
