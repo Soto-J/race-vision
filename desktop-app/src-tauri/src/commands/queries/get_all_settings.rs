@@ -1,5 +1,6 @@
 use crate::domain::{
-    Database, DisplayIn, NestedSetting, PageConfig, PageSettingValue, PageSettings,
+    Database, DisplayIn, DisplayPageSettings, NestedSetting, PageConfig, PageSettingValue,
+    PageSettings, Session,
 };
 use std::collections::{hash_map::Entry, HashMap};
 use tauri::State;
@@ -8,11 +9,13 @@ use tauri::State;
 pub async fn get_all_page_settings(
     db: State<'_, Database>,
 ) -> Result<HashMap<String, PageConfig>, String> {
-    let page_settings = sqlx::query_as!(
+    let page_results = sqlx::query_as!(
         PageSettings,
         "
         SELECT
-            page, setting, value != 0 AS 'value!: bool'
+            page, 
+            setting, 
+            value != 0 AS 'value!: bool'
         FROM
             page_settings
         "
@@ -21,11 +24,14 @@ pub async fn get_all_page_settings(
     .await
     .map_err(|e| e.to_string())?;
 
-    // Fetch all display settings
-    let display_settings = sqlx::query!(
+    let display_results = sqlx::query_as!(
+        DisplayPageSettings,
         "
         SELECT
-            page, setting, session, is_visible != 0 AS 'is_visible!: bool'
+            page, 
+            setting, 
+            session, 
+            is_visible != 0 AS 'is_visible!: bool'
         FROM
             page_setting_display
         "
@@ -34,35 +40,44 @@ pub async fn get_all_page_settings(
     .await
     .map_err(|e| e.to_string())?;
 
-    let mut display_index: HashMap<(String, String, String), bool> = HashMap::new();
+    let normalized = merge_settings(page_results, display_results);
 
-    for d in display_settings {
-        display_index.insert(
-            (d.page.clone(), d.setting.clone(), d.session.clone()),
-            d.is_visible,
-        );
+    Ok(normalized)
+}
+
+fn merge_settings(
+    page_results: Vec<PageSettings>,
+    display_results: Vec<DisplayPageSettings>,
+) -> HashMap<String, PageConfig> {
+    // Build Displayin
+    let mut display_index: HashMap<(String, String, Session), bool> = HashMap::new();
+
+    for d in display_results {
+        if let Some(session) = Session::from_str(&d.session) {
+            display_index.insert((d.page, d.setting, session), d.is_visible);
+        }
     }
 
     // Build nested structure per page
     let mut pages_map: HashMap<String, PageConfig> = HashMap::new();
 
-    for setting in page_settings {
+    for setting in page_results {
+        let page_name = &setting.page;
+        let setting_key = &setting.setting;
+
         let page = pages_map
-            .entry(setting.page.clone())
+            .entry(page_name.clone())
             .or_insert_with(|| PageConfig {
                 settings: HashMap::new(),
             });
 
-        let parts: Vec<&str> = setting.setting.split('.').collect();
+        let mut iter = setting_key.splitn(2, '.');
+        let first = iter.next().unwrap();
+        let second = iter.next();
 
-        if parts.len() == 1 {
-            page.settings.insert(
-                setting.setting.clone(),
-                PageSettingValue::Bool(setting.value),
-            );
-        } else {
-            let section = parts[0].to_string();
-            let field = parts[1].to_string();
+        if let Some(field) = second {
+            let section = first.to_string();
+            let field = field.to_string();
 
             let section_map = match page.settings.entry(section.clone()) {
                 Entry::Vacant(e) => {
@@ -78,28 +93,24 @@ pub async fn get_all_page_settings(
                 },
             };
 
-            let display_in = DisplayIn {
-                practice: display_index
-                    .get(&(
-                        setting.page.clone(),
-                        setting.setting.clone(),
-                        "practice".into(),
-                    ))
-                    .copied()
-                    .unwrap_or(false),
-                qualy: display_index
-                    .get(&(
-                        setting.page.clone(),
-                        setting.setting.clone(),
-                        "qualy".into(),
-                    ))
-                    .copied()
-                    .unwrap_or(false),
-                race: display_index
-                    .get(&(setting.page.clone(), setting.setting.clone(), "race".into()))
-                    .copied()
-                    .unwrap_or(false),
+            let mut display_in = DisplayIn {
+                practice: false,
+                qualy: false,
+                race: false,
             };
+
+            for session in Session::ALL {
+                let visible = display_index
+                    .get(&(page_name.clone(), setting_key.clone(), session))
+                    .copied()
+                    .unwrap_or(false);
+
+                match session {
+                    Session::Practice => display_in.practice = visible,
+                    Session::Qualy => display_in.qualy = visible,
+                    Session::Race => display_in.race = visible,
+                }
+            }
 
             section_map.insert(
                 field,
@@ -108,8 +119,19 @@ pub async fn get_all_page_settings(
                     display_in,
                 },
             );
+        } else {
+            page.settings
+                .insert(setting_key.clone(), PageSettingValue::Bool(setting.value));
         }
     }
 
-    Ok(pages_map)
+    pages_map
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn merges_nested_settings_correctly() {}
 }
