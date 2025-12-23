@@ -1,17 +1,7 @@
 import { Activity } from "react";
 import { cn } from "@/lib/utils";
 
-import {
-  PageSettings,
-  usePageSettingsStore,
-} from "@/hooks/store/use-page-store";
-
-import {
-  toggleFeature,
-  toggleGeneralFeature,
-  type FeatureKey,
-  type GeneralFeatureKey,
-} from "@/hooks/settings/helper";
+import { usePageSettingsStore } from "@/hooks/store/use-page-store";
 
 import { PageHeader } from "@/modules/dashboard/components/page-header";
 import { GeneralTab } from "@/modules/dashboard/inputs/component/tabs/general-tab";
@@ -25,27 +15,26 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/modules/components/ui/tabs";
+import { InputsSettings } from "../types";
 
 interface InputsViewProps {
   page: string;
-  settings: PageSettings;
+  settings: InputsSettings;
+  setPageActive: (page: string, isActive: boolean) => Promise<void>;
 }
 
-export const InputsView = ({ page, settings }: InputsViewProps) => {
-  const { togglePage } = usePageSettingsStore();
-
-  const pageIsActive = settings?.is_active ?? false;
+export const InputsView = ({ page, settings, setPageActive }: InputsViewProps) => {
   return (
     <div>
       <PageHeader
         id={page}
         page={page}
         description="Show your inputs in this window, you can even make this visible in a graph."
-        pageIsActive={pageIsActive}
-        onToggleActive={togglePage}
+        pageIsActive={settings.isActive}
+        setPageActive={setPageActive}
       />
 
-      <Activity mode={pageIsActive ? "visible" : "hidden"}>
+      <Activity mode={settings.isActive ? "visible" : "hidden"}>
         <Tabs>
           <TabsList
             defaultValue="general"

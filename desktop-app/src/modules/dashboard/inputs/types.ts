@@ -6,6 +6,72 @@ import {
   GeneralSchema,
 } from "@/modules/dashboard/common-schemas";
 
+export const InputsSettingsSchema = z.object({
+  isActive: z.boolean().default(false),
+  displayRace: z.boolean().default(false),
+  displayPractice: z.boolean().default(false),
+
+  // Content
+  revLights: ActiveAndDisplayInSchema,
+  gearsAndSpeed: ActiveAndDisplayInSchema,
+  inputsGraph: ActiveAndDisplayInSchema,
+  ABSActivation: ActiveAndDisplayInSchema,
+  inputBars: ActiveAndDisplayInSchema,
+  boostERS: ActiveAndDisplayInSchema,
+  cornerSpeed: ActiveAndDisplayInSchema,
+
+  // Header / Footer
+  sessionName: ActiveAndDisplayInSchema,
+  eventType: ActiveAndDisplayInSchema,
+  trackName: ActiveAndDisplayInSchema,
+  localtime24h: ActiveAndDisplayInSchema,
+  localtimeAmPm: ActiveAndDisplayInSchema,
+  inSimTime24h: ActiveAndDisplayInSchema,
+  inSimTimeAmPm: ActiveAndDisplayInSchema,
+  airTemp: ActiveAndDisplayInSchema,
+  trackTemp: ActiveAndDisplayInSchema,
+  humidity: ActiveAndDisplayInSchema,
+  fogLevel: ActiveAndDisplayInSchema,
+  timeRemaining: ActiveAndDisplayInSchema,
+  lapsRemaining: ActiveAndDisplayInSchema,
+  incidentCount: ActiveAndDisplayInSchema,
+  currentLapTime: ActiveAndDisplayInSchema,
+  sessionBestLapTime: ActiveAndDisplayInSchema,
+  lastLapTime: ActiveAndDisplayInSchema,
+  lastLapTimeCalculated: ActiveAndDisplayInSchema,
+  lapDeltaBest: ActiveAndDisplayInSchema,
+  lapDeltaOptimal: ActiveAndDisplayInSchema,
+  lapDeltaSessionBest: ActiveAndDisplayInSchema,
+  lapDeltaSessionOptimal: ActiveAndDisplayInSchema,
+  lapDeltaSessionLast: ActiveAndDisplayInSchema,
+  brakeBias: ActiveAndDisplayInSchema,
+  fuelLevel: ActiveAndDisplayInSchema,
+  waterTemp: ActiveAndDisplayInSchema,
+  oilTemp: ActiveAndDisplayInSchema,
+  sof: ActiveAndDisplayInSchema,
+  currentStintInLaps: ActiveAndDisplayInSchema,
+  currentStintInTime: ActiveAndDisplayInSchema,
+  rpm: ActiveAndDisplayInSchema,
+  deployMode: ActiveAndDisplayInSchema,
+  arbFront: ActiveAndDisplayInSchema,
+  arbRear: ActiveAndDisplayInSchema,
+  abs: ActiveAndDisplayInSchema,
+  tc1: ActiveAndDisplayInSchema,
+  tc2: ActiveAndDisplayInSchema,
+  weightJacker: ActiveAndDisplayInSchema,
+  rearBrakeValve: ActiveAndDisplayInSchema,
+  precipitation: ActiveAndDisplayInSchema,
+  trackWetness: ActiveAndDisplayInSchema,
+  weatherDeclaredWet: ActiveAndDisplayInSchema,
+  pitTimeLossBeta: ActiveAndDisplayInSchema,
+  windDirectionForDriver: ActiveAndDisplayInSchema,
+  predictedPositionAfterPitStop: ActiveAndDisplayInSchema,
+  iRatingAndGain: ActiveAndDisplayInSchema,
+  pushToPass: ActiveAndDisplayInSchema,
+});
+
+export type InputsSettings = z.infer<typeof InputsSettingsSchema>;
+
 export const ContentSchema = z.object({
   revLights: ActiveAndDisplayInSchema,
   gearsAndSpeed: ActiveAndDisplayInSchema,
@@ -67,13 +133,3 @@ export const HeaderSchema = z.object({
 });
 
 export const FooterSchema = HeaderSchema;
-
-export const InputsSettingsSchema = z.object({
-  isActive: DefaultBoolean,
-  general: GeneralSchema,
-  content: ContentSchema,
-  header: HeaderSchema,
-  footer: FooterSchema,
-});
-
-export type InputsSettings = z.infer<typeof InputsSettingsSchema>;

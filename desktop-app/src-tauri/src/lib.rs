@@ -1,6 +1,8 @@
 use background::register_background_job;
 use commands::{
-    queries::{page_settings, set_watched_vars, toggle_page, update_setting},
+    queries::{
+        get_all_page_settings, get_page_settings, set_watched_vars, set_page_active, update_setting,
+    },
     read_value,
 };
 use domain::{Database, DomainError};
@@ -43,8 +45,9 @@ pub fn run() -> Result<(), DomainError> {
         .setup(|app| configure_setup(app))
         .invoke_handler(tauri::generate_handler![
             read_value,
-            page_settings,
-            toggle_page,
+            get_all_page_settings,
+            get_page_settings,
+            set_page_active,
             update_setting,
             set_watched_vars,
         ])

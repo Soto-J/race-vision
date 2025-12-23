@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PageSettings {
     pub page: String,
     pub setting: String,
-    pub value: i64, // SQLite stores booleans as INTEGER
+    pub value: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
