@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
+use crate::domain::display::DisplayIn;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PageSettings {
@@ -10,35 +10,22 @@ pub struct PageSettings {
 }
 
 // API response types
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PageSettingValue {
     Bool(bool),
     Section(HashMap<String, NestedSetting>),
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NestedSetting {
     pub is_active: bool,
     pub display_in: DisplayIn,
 }
 
-#[derive(Serialize)]
-pub struct DisplayIn {
-    pub practice: bool,
-    pub qualy: bool,
-    pub race: bool,
-}
-
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct PageConfig {
     #[serde(flatten)]
     pub settings: HashMap<String, PageSettingValue>,
-}
-
-pub enum WebviewMode {
-    Edit,
-    Visible,
-    Hidden,
 }

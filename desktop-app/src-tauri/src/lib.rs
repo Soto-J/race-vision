@@ -1,27 +1,25 @@
-use background::register_background_job;
 use commands::{
     get_all_page_settings, get_page_settings, queries::set_watched_vars, read_value,
     set_page_active, update_setting,
 };
+use config::{
+    register_background_job, register_dashboard, register_shortcuts, register_widget_webviews,
+};
 use domain::{Database, DomainError};
-use shortcuts::register_shortcuts;
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::{env, sync::Arc};
 use tauri::{App, Manager};
 use tokio::sync::RwLock;
-use webviews::{register_dashboard, register_widget_webviews};
 
 #[cfg(not(target_os = "windows"))]
 use domain::mock_data::telemetry::IracingProvider;
 #[cfg(target_os = "windows")]
 use telemetry_core::IracingProvider;
 
-mod background;
 mod commands;
+mod config;
 pub mod domain;
-mod shortcuts;
 pub mod utils;
-mod webviews;
 
 pub const SQLITE_URL: &str = "sqlite:db/app.db";
 
