@@ -3,7 +3,7 @@ use super::Session;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DisplayPageSettings {
     pub page: String,
     pub setting: String,
@@ -11,7 +11,7 @@ pub struct DisplayPageSettings {
     pub is_visible: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DisplayIn {
     pub practice: bool,
     pub qualy: bool,
