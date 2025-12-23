@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -13,15 +13,10 @@ export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
 });
 
 export default function Inputs() {
-  const { loadPage, setPageActive, settings } = usePageSettingsStore((s) => ({
-    loadPage: s.loadPage,
+  const { setPageActive, settings } = usePageSettingsStore((s) => ({
     setPageActive: s.setPageActive,
-    settings: s.page[PAGE_TITLE],
+    settings: s.pages[PAGE_TITLE],
   }));
-
-  useEffect(() => {
-    loadPage(PAGE_TITLE);
-  }, [loadPage]);
 
   if (!settings) {
     return null;

@@ -7,6 +7,7 @@ use crate::domain::mock_data::telemetry::{IracingProvider, TelemetryValue};
 use telemetry_core::{iracing_client::telemetry::TelemetryValue, IracingProvider};
 
 pub mod queries;
+pub use queries::*;
 
 #[tauri::command]
 pub async fn read_value(

@@ -1,9 +1,7 @@
 use background::register_background_job;
 use commands::{
-    queries::{
-        get_all_page_settings, get_page_settings, set_watched_vars, set_page_active, update_setting,
-    },
-    read_value,
+    get_all_page_settings, get_page_settings, queries::set_watched_vars, read_value,
+    set_page_active, update_setting,
 };
 use domain::{Database, DomainError};
 use shortcuts::register_shortcuts;

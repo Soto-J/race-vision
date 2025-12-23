@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -7,20 +9,32 @@ pub struct PageSettings {
     pub value: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PageSettingWithDisplay {
-    pub page: String,
-    pub setting: String,
-    pub value: bool,
-    pub session: Option<String>,
-    pub is_visible: Option<bool>,
+// API response types
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum PageSettingValue {
+    Bool(bool),
+    Section(HashMap<String, NestedSetting>),
 }
 
-pub enum Tab {
-    General,
-    Header,
-    Content,
-    Footer,
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NestedSetting {
+    pub is_active: bool,
+    pub display_in: DisplayIn,
+}
+
+#[derive(Serialize)]
+pub struct DisplayIn {
+    pub practice: bool,
+    pub qualy: bool,
+    pub race: bool,
+}
+
+#[derive(Serialize)]
+pub struct PageConfig {
+    #[serde(flatten)]
+    pub settings: HashMap<String, PageSettingValue>,
 }
 
 pub enum WebviewMode {

@@ -2,39 +2,22 @@ import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-export type PageSettingsMap = Record<string, boolean>;
+export type PageSettingsMap = Record<string, unknown>;
 
 type PageStoreSettingsState = {
-  page: PageSettingsMap;
-  allPages: Record<string, PageSettingsMap>;
+  pages: Record<string, PageSettingsMap>;
 
-  loadPage: (page: string) => Promise<PageSettingsMap>;
-  loadAllPages: () => Promise<Record<string, PageSettingsMap>>;
+  loadPages: () => Promise<void>;
+  getPage: (page: string) => PageSettingsMap;
   setPageActive: (page: string, isActive: boolean) => Promise<void>;
   updateSettings: (page: string) => Promise<void>;
 };
 
 export const usePageSettingsStore = create<PageStoreSettingsState>()(
   immer((set, get) => ({
-    page: {},
-    allPages: {},
+    pages: {},
 
-    loadPage: async (page) => {
-      const result = await invoke<Record<string, boolean>>(
-        "get_page_settings",
-        { page },
-      );
-
-      const normalized = normalizeSettings(result);
-
-      set((state) => {
-        state.page = normalized;
-      });
-
-      return normalized;
-    },
-
-    loadAllPages: async () => {
+    loadPages: async () => {
       const result = await invoke<Record<string, PageSettingsMap>>(
         "get_all_page_settings",
       );
@@ -42,23 +25,24 @@ export const usePageSettingsStore = create<PageStoreSettingsState>()(
       const normalized = Object.fromEntries(
         Object.entries(result).map(([page, settings]) => [
           page,
-          normalizeSettings(settings),
+          normalizeKeys(settings),
         ]),
       );
 
       set((state) => {
-        state.allPages = normalized;
+        state.pages = normalized;
       });
+    },
 
-      return normalized;
+    getPage: (page: string) => {
+      return get().pages[page];
     },
 
     setPageActive: async (page, isActive) => {
       await invoke("set_page_active", { page, is_active: isActive });
 
       set((state) => {
-        state.page ??= {};
-        state.page.isActive = isActive;
+        state.pages[page].isActive = isActive;
       });
     },
 
@@ -72,7 +56,20 @@ export const usePageSettingsStore = create<PageStoreSettingsState>()(
 const snakeToCamel = (s: string) =>
   s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 
-const normalizeSettings = (settings: Record<string, boolean>) =>
-  Object.fromEntries(
-    Object.entries(settings).map(([k, v]) => [snakeToCamel(k), v]),
-  );
+const normalizeKeys = (obj: unknown): unknown => {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeKeys);
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = snakeToCamel(key);
+    result[camelKey] = normalizeKeys(value);
+  }
+
+  return result;
+};

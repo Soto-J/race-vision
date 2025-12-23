@@ -10,10 +10,17 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/modules/dashboard/components/sidebar";
+import { usePageSettingsStore } from "@/hooks/store/use-page-store";
+import { useEffect } from "react";
 
 export default function DashboardLayout() {
   useTelemetryListener();
+  const { loadPages } = usePageSettingsStore();
 
+  useEffect(() => {
+    loadPages();
+  }, []);
+  
   return (
     <SidebarProvider>
       <AppSidebar />
