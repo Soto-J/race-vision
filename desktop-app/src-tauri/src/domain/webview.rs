@@ -59,33 +59,3 @@ impl WebviewDefinition {
         LogicalSize::new(self.width, self.height)
     }
 }
-
-// #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-// pub struct WidgetConfig {
-//     pub x: f64,
-//     pub y: f64,
-//     pub width: f64,
-//     pub height: f64,
-// }
-
-// impl WidgetConfig {
-//     pub fn new(x: f64, y: f64, width: f64, height: f64) -> Self {
-//         Self {
-//             x,
-//             y,
-//             width,
-//             height,
-//         }
-//     }
-// }
-
-// impl From<&WidgetDefinition> for WidgetConfig {
-//     fn from(def: &WidgetDefinition) -> Self {
-//         Self {
-//             x: def.position.x,
-//             y: def.position.y,
-//             width: def.size.width,
-//             height: def.size.height,
-//         }
-//     }
-// }

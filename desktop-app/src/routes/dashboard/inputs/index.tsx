@@ -1,8 +1,10 @@
+import { useMemo } from "react";
+
 import { createFileRoute } from "@tanstack/react-router";
 
-import { InputsSettingsSchema } from "@/modules/dashboard/inputs/types";
 import { InputsView } from "@/modules/dashboard/inputs/view";
-// import { usePageSettings } from "@/hooks/settings/use-page-settings";
+import { usePageSettingsStore } from "@/hooks/store/use-page-store";
+import { InputsSettingsSchema } from "@/modules/dashboard/inputs/types";
 
 const PAGE_TITLE = "inputs" as const;
 
@@ -11,25 +13,25 @@ export const Route = createFileRoute(`/dashboard/${PAGE_TITLE}/`)({
 });
 
 export default function Inputs() {
-  // const {
-  //   data: settings,
-  //   isLoading,
-  //   error,
-  // } = usePageSettings(PAGE_TITLE, InputsSettingsSchema, {});
+  const { setPageActive, settings } = usePageSettingsStore((s) => ({
+    setPageActive: s.setPageActive,
+    settings: s.pages[PAGE_TITLE],
+  }));
 
-  // if (isLoading) {
-  //   return null;
-  // }
+  if (!settings) {
+    return null;
+  }
 
-  // if (error || !settings) {
-  //   return <div>Error</div>;
-  // }
+  const parsedSettings = useMemo(
+    () => InputsSettingsSchema.parse(settings),
+    [settings],
+  );
 
   return (
     <InputsView
-      title={PAGE_TITLE}
-      settings={1}
-      schema={InputsSettingsSchema}
+      page={PAGE_TITLE}
+      settings={parsedSettings}
+      setPageActive={setPageActive}
     />
   );
 }

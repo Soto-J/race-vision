@@ -1,16 +1,7 @@
 import { Activity } from "react";
 import { cn } from "@/lib/utils";
-import { z } from "zod";
 
-import type { InputsSettings } from "../types";
-
-// import { useUpdateSettings } from "@/hooks/settings/use-update-settings";
-import {
-  toggleFeature,
-  toggleGeneralFeature,
-  type FeatureKey,
-  type GeneralFeatureKey,
-} from "@/hooks/settings/helper";
+import { usePageSettingsStore } from "@/hooks/store/use-page-store";
 
 import { PageHeader } from "@/modules/dashboard/components/page-header";
 import { GeneralTab } from "@/modules/dashboard/inputs/component/tabs/general-tab";
@@ -24,31 +15,23 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/modules/components/ui/tabs";
+import { InputsSettings } from "../types";
 
 interface InputsViewProps {
-  title: string;
-  settings: any;
-  schema: z.ZodSchema;
+  page: string;
+  settings: InputsSettings;
+  setPageActive: (page: string, isActive: boolean) => Promise<void>;
 }
 
-export const InputsView = ({ title, settings, schema }: InputsViewProps) => {
-  // const updateSettings = useUpdateSettings(title, schema);
-
-  const onToggleActive = () => {
-    // updateSettings.mutate({
-    //   ...settings,
-    //   isActive: !settings.isActive,
-    // });
-  };
-
+export const InputsView = ({ page, settings, setPageActive }: InputsViewProps) => {
   return (
     <div>
       <PageHeader
-        id={title}
-        title={title}
+        id={page}
+        page={page}
         description="Show your inputs in this window, you can even make this visible in a graph."
         pageIsActive={settings.isActive}
-        togglePage={onToggleActive}
+        setPageActive={setPageActive}
       />
 
       <Activity mode={settings.isActive ? "visible" : "hidden"}>

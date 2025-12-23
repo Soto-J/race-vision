@@ -14,11 +14,11 @@
 //! across different displays.
 
 use crate::{
-    domain::DomainError,
+    domain::{Database, DomainError},
     utils::constants::{DEFAULT_DASHBOARD_HEIGHT, DEFAULT_DASHBOARD_WIDTH},
 };
 
-use sqlx::{Row, SqlitePool};
+use sqlx::{Row};
 use tauri::{App, LogicalPosition, LogicalSize, Manager, WebviewWindow};
 
 /// Registers the main dashboard webview window.
@@ -64,10 +64,10 @@ pub fn register_dashboard(app: &App) -> Result<(), DomainError> {
 pub async fn register_widget_webviews(app: &App) -> Result<(), DomainError> {
     tracing::info!("loading widget webviews");
 
-    let sqlite_pool = app.state::<SqlitePool>();
+    let db = app.state::<Database>();
 
     let widget_layouts = sqlx::query("SELECT * FROM webview_layout")
-        .fetch_all(&*sqlite_pool)
+        .fetch_all(&db.pool)
         .await?;
 
     for widget in widget_layouts {

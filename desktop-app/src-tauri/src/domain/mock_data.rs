@@ -1,5 +1,4 @@
 // Mock implementation for non-Windows platforms
-#[cfg(not(target_os = "windows"))]
 pub mod telemetry {
     use serde::{Deserialize, Serialize};
     use std::collections::HashMap;

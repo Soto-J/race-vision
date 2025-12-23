@@ -1,5 +1,8 @@
 use background::register_background_job;
-use commands::{get_settings, read_value, set_watched_vars};
+use commands::{
+    get_all_page_settings, get_page_settings, queries::set_watched_vars, read_value,
+    set_page_active, update_setting,
+};
 use domain::{Database, DomainError};
 use shortcuts::register_shortcuts;
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
@@ -40,7 +43,10 @@ pub fn run() -> Result<(), DomainError> {
         .setup(|app| configure_setup(app))
         .invoke_handler(tauri::generate_handler![
             read_value,
-            get_settings,
+            get_all_page_settings,
+            get_page_settings,
+            set_page_active,
+            update_setting,
             set_watched_vars,
         ])
         // .on_window_event(|window, event| {
@@ -76,6 +82,7 @@ fn configure_setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
 async fn async_startup(app: &App) -> Result<(), DomainError> {
     let sqlite_pool = get_sqlite_pool().await;
+
     sqlx::migrate!().run(&sqlite_pool).await?;
 
     app.manage(Database::new(sqlite_pool));

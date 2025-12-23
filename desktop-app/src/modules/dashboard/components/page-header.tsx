@@ -4,18 +4,18 @@ import { Switch } from "@/modules/components/ui/switch";
 
 interface PageHeaderProps {
   id: string;
-  title: string;
+  page: string;
   description: string;
   pageIsActive: boolean;
-  togglePage: () => void;
+  setPageActive: (page: string, isActive: boolean) => void;
 }
 
 export const PageHeader = ({
   id,
-  title,
+  page,
   description,
-  togglePage,
   pageIsActive,
+  setPageActive,
 }: PageHeaderProps) => {
   return (
     <div
@@ -26,7 +26,7 @@ export const PageHeader = ({
     >
       <div className="flex items-start justify-between">
         <h2 className="text-3xl font-semibold tracking-tight capitalize">
-          {title}
+          {page}
         </h2>
 
         <div className="flex items-center gap-2">
@@ -37,7 +37,7 @@ export const PageHeader = ({
             className=""
             id={`${id}-toggle`}
             checked={pageIsActive}
-            onCheckedChange={() => togglePage()}
+            onCheckedChange={(checked) => setPageActive(page, checked)}
           />
         </div>
       </div>
