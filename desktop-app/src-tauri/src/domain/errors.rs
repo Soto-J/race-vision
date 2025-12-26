@@ -18,6 +18,9 @@ pub enum DomainError {
     #[error("sqlite error: {0}")]
     Sqlite(#[from] sqlx::Error),
 
+    #[error("invalid session")]
+    InvalidSession,
+
     #[error("migration error: {0}")]
     Migration(#[from] sqlx::migrate::MigrateError),
 
