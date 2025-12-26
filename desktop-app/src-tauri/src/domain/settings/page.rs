@@ -1,4 +1,5 @@
 use crate::domain::{display::DisplayIn, DisplayIndex};
+
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ops::Deref};
 
@@ -153,10 +154,10 @@ pub enum PageSettingValue {
 /// Nested settings always include both an activation flag
 /// and session-specific display rules.
 impl PageSettingValue {
-    pub fn as_section_mut(&mut self) -> Option<&mut HashMap<String, NestedSetting>> {
+    pub fn as_section_mut(&mut self) -> &mut HashMap<String, NestedSetting> {
         match self {
-            PageSettingValue::Section(map) => Some(map),
-            _ => None,
+            PageSettingValue::Section(map) => map,
+            _ => panic!("PageSettingValue was not a Section"),
         }
     }
 }
@@ -166,7 +167,6 @@ impl PageSettingValue {
 pub struct NestedSetting {
     /// Whether the setting is enabled.
     pub is_active: bool,
-
     /// Session-specific visibility rules.
     pub display_in: DisplayIn,
 }
@@ -184,16 +184,11 @@ pub struct PageConfig {
 
 impl PageConfig {
     /// Returns a mutable reference to a section, creating it if necessary.
-    ///
-    /// # Panics
-    /// Panics if the section key was previously inserted as a boolean.
-    /// This indicates invalid or inconsistent configuration data.
     pub fn section_mut(&mut self, name: &str) -> &mut HashMap<String, NestedSetting> {
         self.settings
             .entry(name.to_string())
             .or_insert_with(|| PageSettingValue::Section(HashMap::new()))
             .as_section_mut()
-            .expect("Section was overwritten with Bool")
     }
 }
 
