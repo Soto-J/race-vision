@@ -15,15 +15,24 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/modules/components/ui/tabs";
-import { InputsSettings } from "../types";
+import { PageConfig } from "@/hooks/store/types";
 
 interface InputsViewProps {
   page: string;
-  settings: InputsSettings;
+  settings: PageConfig;
   setPageActive: (page: string, isActive: boolean) => Promise<void>;
+  updateSettings: (
+    page: string,
+    setting: string,
+    isActive: boolean,
+  ) => Promise<void>;
 }
 
-export const InputsView = ({ page, settings, setPageActive }: InputsViewProps) => {
+export const InputsView = ({
+  page,
+  settings,
+  setPageActive,
+}: InputsViewProps) => {
   return (
     <div>
       <PageHeader
@@ -55,10 +64,10 @@ export const InputsView = ({ page, settings, setPageActive }: InputsViewProps) =
           </TabsList>
 
           <TabsContent value="general">
-            {/* <GeneralTab
+            <GeneralTab
               settings={settings.general}
               updateSettings={updateSettings}
-            /> */}
+            />
           </TabsContent>
           <TabsContent value="content">
             {/* <ContentTab
