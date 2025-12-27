@@ -1,3 +1,4 @@
+import { Section } from "@/hooks/store/types";
 import { Checkbox } from "@/modules/components/ui/checkbox";
 import { Label } from "@/modules/components/ui/label";
 import { Switch } from "@/modules/components/ui/switch";
@@ -11,10 +12,10 @@ interface FeatureSettings {
   };
 }
 
-interface OptionsProps<TSettings extends Record<string, FeatureSettings>> {
-  settings: TSettings;
+interface OptionsProps {
+  settings: Section;
   options: { title: string; key: keyof TSettings }[];
-  toggleFeature: (feature: keyof TSettings) => void;
+  updateSetting: (setting: string) => void;
 }
 
 export const DisplayOptions = <
@@ -22,7 +23,7 @@ export const DisplayOptions = <
 >({
   settings,
   options,
-  toggleFeature,
+  updateSetting,
 }: OptionsProps<TSettings>) => {
   return (
     <div className="space-y-2">
@@ -38,7 +39,7 @@ export const DisplayOptions = <
               <Switch
                 id={`${option.key as string}-toggle`}
                 checked={featureSettings.isActive}
-                onCheckedChange={() => toggleFeature(option.key)}
+                onCheckedChange={() => updateSetting(option.key)}
               />
               <div>{option.title}</div>
             </div>

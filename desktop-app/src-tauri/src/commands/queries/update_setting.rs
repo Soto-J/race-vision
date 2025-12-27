@@ -1,4 +1,4 @@
-use crate::domain::{Database, PageSettings};
+use crate::domain::{Database};
 
 use tauri::State;
 

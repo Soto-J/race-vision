@@ -1,41 +1,40 @@
 import { Label } from "@/modules/components/ui/label";
 import { Switch } from "@/modules/components/ui/switch";
-import type { GeneralFeatureKey } from "@/hooks/settings/helper";
-import type { InputsSettings } from "../../types";
+import { GeneralSection } from "@/hooks/store/types";
 
 interface GeneralTabProps {
-  settings: InputsSettings["general"];
-  toggleFeature: (feature: GeneralFeatureKey) => void;
+  general: GeneralSection;
+  updateSettings: (setting: string, isActive: boolean) => Promise<void>;
 }
 
-export const GeneralTab = ({ settings, toggleFeature }: GeneralTabProps) => {
+export const GeneralTab = ({ general, updateSettings }: GeneralTabProps) => {
   return (
     <div className="flex justify-around">
       <div className="flex items-center gap-x-2">
         <Switch
-          checked={settings.showOverlayWhen.inCar}
-          onCheckedChange={() => toggleFeature("inCar")}
+          checked={general.inCar.isActive}
+          onCheckedChange={(checked) => updateSettings("inCar", checked)}
         />
         <Label>In car</Label>
       </div>
       <div className="flex items-center gap-x-2">
         <Switch
-          checked={settings.showOverlayWhen.outOfCar}
-          onCheckedChange={() => toggleFeature("outOfCar")}
+          checked={general.outOfCar.isActive}
+          onCheckedChange={(checked) => updateSettings("outOfCar", checked)}
         />
         <Label>Out of car</Label>
       </div>
       <div className="flex items-center gap-x-2">
         <Switch
-          checked={settings.showOverlayWhen.spotting}
-          onCheckedChange={() => toggleFeature("spotting")}
+          checked={general.spotting.isActive}
+          onCheckedChange={(checked) => updateSettings("spotting", checked)}
         />
         <Label>Spotting</Label>
       </div>
       <div className="flex items-center gap-x-2">
         <Switch
-          checked={settings.showOverlayWhen.inGarage}
-          onCheckedChange={() => toggleFeature("inGarage")}
+          checked={general.inGarage.isActive}
+          onCheckedChange={(checked) => updateSettings("inGarage", checked)}
         />
         <Label>In garage</Label>
       </div>

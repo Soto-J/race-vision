@@ -15,12 +15,11 @@ import { useEffect } from "react";
 
 export default function DashboardLayout() {
   useTelemetryListener();
-  const { loadPages } = usePageSettingsStore();
 
   useEffect(() => {
-    loadPages();
+    usePageSettingsStore.getState().loadPagesSettings();
   }, []);
-  
+
   return (
     <SidebarProvider>
       <AppSidebar />

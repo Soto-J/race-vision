@@ -37,7 +37,11 @@ export const PageHeader = ({
             className=""
             id={`${id}-toggle`}
             checked={pageIsActive}
-            onCheckedChange={(checked) => setPageActive(page, checked)}
+            onCheckedChange={(checked) => {
+              console.log("Checked", checked);
+              console.log("Page", page);
+              setPageActive(page, checked);
+            }}
           />
         </div>
       </div>

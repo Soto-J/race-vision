@@ -1,55 +1,33 @@
 use crate::domain::display::DisplayIn;
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// A single row from the `page_settings` query.
-///
-/// This represents a flat, boolean configuration value before
-/// any grouping or transformation is applied.
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PageSettings {
-    /// Page identifier (e.g. `"inputs"`, `"standings"`).
     pub page: String,
-    /// Raw setting key, potentially dotted and underscored
-    /// (e.g. `"inputs_throttle"` or `"inputs.throttle"`).
     pub setting: String,
-    /// Whether the setting is enabled.
     pub value: bool,
 }
 
-/// A value in a page configuration.
-///
-/// A setting is either:
-/// - a simple boolean value
-/// - or a section containing nested settings
-///
-/// This enum is `untagged` to produce a clean JSON shape for the frontend.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PageSettingValue {
-    /// A top-level boolean setting.
     Bool(bool),
-    /// A section containing nested settings.
     Section(HashMap<String, NestedSetting>),
     GeneralSection(HashMap<String, GeneralSetting>),
 }
 
-/// A nested setting belonging to a section.
-///
-/// Nested settings always include both an activation flag
-/// and session-specific display rules.
 impl PageSettingValue {
     pub fn as_section_mut(&mut self) -> &mut HashMap<String, NestedSetting> {
         match self {
-            PageSettingValue::Section(map) => map,
+            Self::Section(map) => map,
             _ => panic!("PageSettingValue was not a Section"),
         }
     }
 
     pub fn as_general_section_mut(&mut self) -> &mut HashMap<String, GeneralSetting> {
         match self {
-            PageSettingValue::GeneralSection(map) => map,
+            Self::GeneralSection(map) => map,
             _ => panic!("PageSettingValue was not a GeneralSection"),
         }
     }
@@ -58,40 +36,26 @@ impl PageSettingValue {
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NestedSetting {
-    /// Whether the setting is enabled.
     pub is_active: bool,
-    /// Session-specific visibility rules.
     pub display_in: DisplayIn,
 }
 
-/// A general setting belonging to a general section.
-///
-/// General settings only include an activation flag without display rules.
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneralSetting {
     pub is_active: bool,
 }
 
-/// Configuration for a single page.
-///
-/// Settings are flattened so that both top-level booleans and
-/// nested sections appear at the same level in the JSON output.
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PageConfig {
-    /// Page settings keyed by their `camelCase` name.
     #[serde(flatten)]
     pub settings: HashMap<String, PageSettingValue>,
 }
 
 impl PageConfig {
-    /// Returns a mutable reference to a section, creating it if necessary.
-    pub fn section_mut(
-        &mut self,
-        section_name: impl Into<String>,
-    ) -> &mut HashMap<String, NestedSetting> {
+    pub fn section_mut(&mut self, name: impl Into<String>) -> &mut HashMap<String, NestedSetting> {
         self.settings
-            .entry(section_name.into())
+            .entry(name.into())
             .or_insert_with(|| PageSettingValue::Section(HashMap::new()))
             .as_section_mut()
     }
