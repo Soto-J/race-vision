@@ -1,7 +1,7 @@
 import { Activity } from "react";
 import { cn } from "@/lib/utils";
 
-import { usePageSettingsStore } from "@/hooks/store/use-page-store";
+import { PageConfig } from "@/hooks/store/types";
 
 import { PageHeader } from "@/modules/dashboard/components/page-header";
 import { GeneralTab } from "@/modules/dashboard/inputs/component/tabs/general-tab";
@@ -15,17 +15,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/modules/components/ui/tabs";
-import { PageConfig } from "@/hooks/store/types";
 
 interface InputsViewProps {
   page: string;
   settings: PageConfig;
   setPageActive: (page: string, isActive: boolean) => Promise<void>;
-  updateSettings: (
-    page: string,
-    setting: string,
-    isActive: boolean,
-  ) => Promise<void>;
+  updateSettings: (setting: string, isActive: boolean) => Promise<void>;
 }
 
 export const InputsView = ({
@@ -65,27 +60,27 @@ export const InputsView = ({
 
           <TabsContent value="general">
             <GeneralTab
-              settings={settings.general}
+              general={settings.general}
               updateSettings={updateSettings}
             />
           </TabsContent>
           <TabsContent value="content">
-            {/* <ContentTab
+            <ContentTab
               settings={settings.content}
               updateSettings={updateSettings}
-            /> */}
+            />
           </TabsContent>
           <TabsContent value="header">
-            {/* <HeaderTab
+            <HeaderTab
               settings={settings.header}
               updateSettings={updateSettings}
-            /> */}
+            />
           </TabsContent>
           <TabsContent value="footer">
-            {/* <FooterTab
+            <FooterTab
               settings={settings.footer}
               updateSettings={updateSettings}
-            /> */}
+            />
           </TabsContent>
         </Tabs>
       </Activity>

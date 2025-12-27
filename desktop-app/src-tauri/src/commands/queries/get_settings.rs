@@ -1,5 +1,6 @@
 use crate::domain::{
-    Database, DisplayIndex, DisplayPageSettings, PageConfig, PageIndex, PageSettings,
+    types::{PageConfig, PageSettings},
+    Database, DisplayIndex, DisplayPageSettings, PageIndex,
 };
 use std::collections::HashMap;
 use tauri::State;
